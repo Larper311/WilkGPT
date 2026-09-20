@@ -12,135 +12,229 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
+        /* Animated White & Black Gradient Background */
         body {
-            background-color: #0f1115;
+            background: linear-gradient(135deg, #0a0a0c, #2b2b36, #ffffff, #121216);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             color: #e1e1e6;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            overflow: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .app-container {
             width: 100%;
-            max-width: 800px;
-            height: 90vh;
-            background-color: #16181d;
-            border: 1px solid #2a2e39;
-            border-radius: 12px;
+            max-width: 850px;
+            height: 92vh;
+            background-color: rgba(22, 24, 29, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         header {
-            padding: 20px;
-            background-color: #1c1f26;
-            border-bottom: 1px solid #2a2e39;
-            text-align: center;
+            padding: 18px 24px;
+            background-color: rgba(28, 31, 38, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        header h1 {
-            font-size: 1.5rem;
+        .header-info h1 {
+            font-size: 1.4rem;
             color: #ffffff;
-            margin-bottom: 4px;
+            letter-spacing: -0.5px;
         }
 
-        header p {
+        .header-info p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .settings-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #cbd5e1;
+            padding: 8px 12px;
+            border-radius: 8px;
             font-size: 0.85rem;
-            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
         }
 
         .chat-box {
             flex: 1;
-            padding: 20px;
+            padding: 24px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 16px;
+            scroll-behavior: smooth;
         }
 
         .message {
-            max-width: 80%;
-            padding: 12px 16px;
-            border-radius: 8px;
-            line-height: 1.5;
+            max-width: 82%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            line-height: 1.6;
             font-size: 0.95rem;
             white-space: pre-wrap;
             word-break: break-word;
+            animation: messagePop 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        @keyframes messagePop {
+            from { opacity: 0; transform: scale(0.97); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .ai-message {
-            background-color: #21262d;
-            color: #c9d1d9;
+            background-color: rgba(33, 38, 45, 0.9);
+            color: #e2e8f0;
             align-self: flex-start;
-            border: 1px solid #30363d;
+            border: 1px solid rgba(255, 255, 255, 0.07);
         }
 
         .user-message {
-            background-color: #1f6feb;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: #ffffff;
             align-self: flex-end;
         }
 
         .input-area {
-            padding: 16px;
-            background-color: #1c1f26;
-            border-top: 1px solid #2a2e39;
+            padding: 20px;
+            background-color: rgba(28, 31, 38, 0.9);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             gap: 12px;
         }
 
         textarea {
             flex: 1;
-            background-color: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            padding: 12px;
+            background-color: rgba(13, 17, 23, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px;
             color: #ffffff;
             font-size: 0.95rem;
             resize: none;
-            height: 50px;
+            height: 54px;
             outline: none;
+            transition: border-color 0.2s;
         }
 
         textarea:focus {
-            border-color: #58a6ff;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
         }
 
-        button {
-            background-color: #238636;
+        button.send-btn {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
             color: white;
             border: none;
-            border-radius: 6px;
-            padding: 0 20px;
-            font-weight: bold;
+            border-radius: 10px;
+            padding: 0 24px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: transform 0.1s, opacity 0.2s;
         }
 
-        button:hover {
-            background-color: #2ea043;
+        button.send-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* Modal for API Key */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            display: none;
+        }
+
+        .modal {
+            background: #181b22;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 24px;
+            border-radius: 14px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .modal h3 { color: #fff; margin-bottom: 10px; font-size: 1.2rem; }
+        .modal p { color: #94a3b8; font-size: 0.85rem; margin-bottom: 16px; line-height: 1.4; }
+        .modal input {
+            width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d;
+            border-radius: 8px; color: #fff; margin-bottom: 16px; outline: none;
+        }
+        .modal button {
+            width: 100%; padding: 10px; background: #2563eb; color: #fff; border: none;
+            border-radius: 8px; font-weight: 600; cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div class="app-container">
         <header>
-            <h1>WilkGPT</h1>
-            <p>Game Logic, Scripting & Debugging Assistant</p>
+            <div class="header-info">
+                <h1>WilkGPT</h1>
+                <p>Game Logic, Scripting & Debugging Engine</p>
+            </div>
+            <button class="settings-btn" onclick="openSettings()">⚙️ API Key</button>
         </header>
         
         <div id="chat-box" class="chat-box">
             <div class="message ai-message">
-                Hello! I am WilkGPT. Ready to tackle some code, game mechanics, or debugging?
+                Hello! I am WilkGPT. Ready to tackle game code, system mechanics, or math vectors. What are we building?
             </div>
         </div>
 
         <div class="input-area">
             <textarea id="user-input" placeholder="Ask a coding question or paste script logic... (Press Enter to send)"></textarea>
-            <button id="send-btn">Send</button>
+            <button id="send-btn" class="send-btn">Send</button>
+        </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>Enter Gemini API Key</h3>
+            <p>Your key is stored securely in your browser's local storage and used directly to power WilkGPT.</p>
+            <input type="password" id="api-key-input" placeholder="AIzaSy...">
+            <button onclick="saveApiKey()">Save Key</button>
         </div>
     </div>
 
@@ -148,25 +242,85 @@
         const chatBox = document.getElementById('chat-box');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const apiKeyInput = document.getElementById('api-key-input');
 
         const SYSTEM_PROMPT = "You are WilkGPT, an elite game developer and coding assistant specializing in game logic, system architecture, math vectors, and debugging. You write clean, optimized code and break down logic step-by-step.";
+
+        // Check for saved API key on load
+        let apiKey = localStorage.getItem('wilkgpt_gemini_key') || '';
+
+        function openSettings() {
+            apiKeyInput.value = apiKey;
+            settingsModal.style.display = 'flex';
+        }
+
+        function saveApiKey() {
+            apiKey = apiKeyInput.value.trim();
+            localStorage.setItem('wilkgpt_gemini_key', apiKey);
+            settingsModal.style.display = 'none';
+        }
+
+        // If no key saved yet, prompt on first load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!apiKey) {
+                openSettings();
+            }
+        });
 
         async function handleSendMessage() {
             const text = userInput.value.trim();
             if (!text) return;
 
+            if (!apiKey) {
+                alert("Please configure your Gemini API Key using the ⚙️ API Key button in the top right first!");
+                openSettings();
+                return;
+            }
+
             appendMessage(text, 'user-message');
             userInput.value = '';
 
-            const loadingId = appendMessage("WilkGPT is analyzing code...", 'ai-message');
+            const loadingId = appendMessage("WilkGPT is computing...", 'ai-message');
 
             try {
-                const aiResponse = await mockAIResponse(text);
+                const aiResponse = await callGeminiAPI(text);
                 document.getElementById(loadingId).remove();
                 appendMessage(aiResponse, 'ai-message');
             } catch (error) {
                 document.getElementById(loadingId).remove();
-                appendMessage("Error: Could not reach WilkGPT core.", 'ai-message');
+                appendMessage("Error communicating with Gemini API: " + error.message, 'ai-message');
+            }
+        }
+
+        async function callGeminiAPI(promptText) {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [
+                                { text: `System Instruction: ${SYSTEM_PROMPT}\n\nUser Query: ${promptText}` }
+                            ]
+                        }
+                    ]
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error.message);
+            }
+
+            try {
+                return data.candidates[0].content.parts[0].text;
+            } catch (err) {
+                return "Received an empty response structure from model.";
             }
         }
 
@@ -178,14 +332,6 @@
             chatBox.appendChild(msgDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
             return msgDiv.id;
-        }
-
-        async function mockAIResponse(promptText) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve(`[System Context: WilkGPT Active]\n\nI received your query about: "${promptText}". Ready for your game scripting or debugging questions!`);
-                }, 1000);
-            });
         }
 
         sendBtn.addEventListener('click', handleSendMessage);
