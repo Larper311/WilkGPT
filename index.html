@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WilkGPT - AI Coding & Game Dev Assistant</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #0f1115;
+            color: #e1e1e6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background-color: #16181d;
+            border: 1px solid #2a2e39;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        header {
+            padding: 20px;
+            background-color: #1c1f26;
+            border-bottom: 1px solid #2a2e39;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        header p {
+            font-size: 0.85rem;
+            color: #8b949e;
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .ai-message {
+            background-color: #21262d;
+            color: #c9d1d9;
+            align-self: flex-start;
+            border: 1px solid #30363d;
+        }
+
+        .user-message {
+            background-color: #1f6feb;
+            color: #ffffff;
+            align-self: flex-end;
+        }
+
+        .input-area {
+            padding: 16px;
+            background-color: #1c1f26;
+            border-top: 1px solid #2a2e39;
+            display: flex;
+            gap: 12px;
+        }
+
+        textarea {
+            flex: 1;
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            resize: none;
+            height: 50px;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #58a6ff;
+        }
+
+        button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #2ea043;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>WilkGPT</h1>
+            <p>Game Logic, Scripting & Debugging Assistant</p>
+        </header>
+        
+        <div id="chat-box" class="chat-box">
+            <div class="message ai-message">
+                Hello! I am WilkGPT. Ready to tackle some code, game mechanics, or debugging?
+            </div>
+        </div>
+
+        <div class="input-area">
+            <textarea id="user-input" placeholder="Ask a coding question or paste script logic... (Press Enter to send)"></textarea>
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        const SYSTEM_PROMPT = "You are WilkGPT, an elite game developer and coding assistant specializing in game logic, system architecture, math vectors, and debugging. You write clean, optimized code and break down logic step-by-step.";
+
+        async function handleSendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user-message');
+            userInput.value = '';
+
+            const loadingId = appendMessage("WilkGPT is analyzing code...", 'ai-message');
+
+            try {
+                const aiResponse = await mockAIResponse(text);
+                document.getElementById(loadingId).remove();
+                appendMessage(aiResponse, 'ai-message');
+            } catch (error) {
+                document.getElementById(loadingId).remove();
+                appendMessage("Error: Could not reach WilkGPT core.", 'ai-message');
+            }
+        }
+
+        function appendMessage(text, className) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${className}`;
+            msgDiv.id = 'msg-' + Date.now() + Math.random();
+            msgDiv.innerText = text;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return msgDiv.id;
+        }
+
+        async function mockAIResponse(promptText) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve(`[System Context: WilkGPT Active]\n\nI received your query about: "${promptText}". Ready for your game scripting or debugging questions!`);
+                }, 1000);
+            });
+        }
+
+        sendBtn.addEventListener('click', handleSendMessage);
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
