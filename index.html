@@ -1,346 +1,659 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WilkGPT - AI Coding & Game Dev Assistant</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cratebound — Unboxing Simulator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@500;700;900&display=swap');
 
-        /* Animated White & Black Gradient Background */
-        body {
-            background: linear-gradient(135deg, #0a0a0c, #2b2b36, #ffffff, #121216);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            color: #e1e1e6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
+    :root {
+      --bg: #0b0f1a;
+      --card: #151b2d;
+      --accent: #6366f1;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        .app-container {
-            width: 100%;
-            max-width: 850px;
-            height: 92vh;
-            background-color: rgba(22, 24, 29, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-            animation: fadeIn 0.6s ease-out;
-        }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: radial-gradient(ellipse at top, #1a1f35 0%, var(--bg) 60%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+    /* ========== HEADER ========== */
+    header {
+      text-align: center;
+      padding: 2rem 1rem 1rem;
+    }
+    header h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 900;
+      background: linear-gradient(90deg, #a5b4fc, #f0abfc, #fcd34d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 2px;
+    }
+    header p {
+      color: var(--muted);
+      margin-top: 0.4rem;
+      font-size: 0.95rem;
+    }
 
-        header {
-            padding: 18px 24px;
-            background-color: rgba(28, 31, 38, 0.9);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    /* ========== MAIN LAYOUT ========== */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
 
-        .header-info h1 {
-            font-size: 1.4rem;
-            color: #ffffff;
-            letter-spacing: -0.5px;
-        }
+    .crates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
 
-        .header-info p {
-            font-size: 0.8rem;
-            color: #94a3b8;
-        }
+    .crate-card {
+      background: var(--card);
+      border: 1px solid #2a334a;
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .crate-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--accent);
+      box-shadow: 0 12px 30px rgba(99, 102, 241, 0.25);
+    }
+    .crate-card.selected {
+      border-color: #a5b4fc;
+      box-shadow: 0 0 0 2px #a5b4fc, 0 12px 30px rgba(99, 102, 241, 0.3);
+    }
+    .crate-emoji {
+      font-size: 3.5rem;
+      margin-bottom: 0.8rem;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+    }
+    .crate-name {
+      font-weight: 700;
+      font-size: 1.15rem;
+      margin-bottom: 0.3rem;
+    }
+    .crate-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .crate-price {
+      display: inline-block;
+      background: #1e293b;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fcd34d;
+    }
 
-        .settings-btn {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #cbd5e1;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+    /* ========== OPEN BUTTON ========== */
+    .open-section {
+      text-align: center;
+      margin: 2.5rem 0 1rem;
+    }
+    #openBtn {
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: white;
+      border: none;
+      padding: 1rem 3.5rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+    }
+    #openBtn:hover:not(:disabled) {
+      transform: scale(1.05);
+      box-shadow: 0 12px 35px rgba(99, 102, 241, 0.55);
+    }
+    #openBtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
 
-        .settings-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: #fff;
-        }
+    /* ========== OPENING OVERLAY ========== */
+    #openingOverlay {
+      position: fixed;
+      inset: 0;
+      background: #05070f;
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #openingOverlay.active { display: flex; }
 
-        .chat-box {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            scroll-behavior: smooth;
-        }
+    .crate-visual {
+      font-size: 7rem;
+      margin-bottom: 2rem;
+      transition: transform 0.15s;
+      filter: drop-shadow(0 0 30px rgba(255,255,255,0.15));
+      z-index: 10;
+    }
+    .crate-visual.shake {
+      animation: shake 0.4s infinite;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translate(0,0) rotate(0); }
+      20% { transform: translate(-6px, 3px) rotate(-2deg); }
+      40% { transform: translate(6px, -4px) rotate(2deg); }
+      60% { transform: translate(-4px, -2px) rotate(-1deg); }
+      80% { transform: translate(5px, 3px) rotate(1deg); }
+    }
 
-        .message {
-            max-width: 82%;
-            padding: 14px 18px;
-            border-radius: 12px;
-            line-height: 1.6;
-            font-size: 0.95rem;
-            white-space: pre-wrap;
-            word-break: break-word;
-            animation: messagePop 0.3s ease-out;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+    /* Rarity line */
+    .rarity-line-container {
+      position: absolute;
+      top: 42%;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      overflow: visible;
+      z-index: 5;
+    }
+    .rarity-line {
+      height: 100%;
+      width: 0%;
+      border-radius: 4px;
+      position: relative;
+      transition: width 0.15s linear;
+      box-shadow: 0 0 20px currentColor;
+    }
+    .rarity-label {
+      position: absolute;
+      top: -45px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+      text-shadow: 0 0 20px currentColor;
+      opacity: 0;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
 
-        @keyframes messagePop {
-            from { opacity: 0; transform: scale(0.97); }
-            to { opacity: 1; transform: scale(1); }
-        }
+    /* Particles canvas */
+    #particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
 
-        .ai-message {
-            background-color: rgba(33, 38, 45, 0.9);
-            color: #e2e8f0;
-            align-self: flex-start;
-            border: 1px solid rgba(255, 255, 255, 0.07);
-        }
+    /* Final reveal */
+    #revealScreen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      background: radial-gradient(circle at center, #1a1f35 0%, #05070f 70%);
+    }
+    #revealScreen.show { display: flex; }
 
-        .user-message {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            color: #ffffff;
-            align-self: flex-end;
-        }
+    .item-emoji {
+      font-size: 6rem;
+      margin-bottom: 1rem;
+      animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      filter: drop-shadow(0 0 40px rgba(255,255,255,0.3));
+    }
+    .item-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 800;
+      margin-bottom: 0.4rem;
+      text-align: center;
+    }
+    .item-rarity {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 0.6rem;
+      text-transform: uppercase;
+    }
+    .item-odds {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+    .item-desc {
+      max-width: 420px;
+      text-align: center;
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin-bottom: 2.5rem;
+      padding: 0 1rem;
+    }
 
-        .input-area {
-            padding: 20px;
-            background-color: rgba(28, 31, 38, 0.9);
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            gap: 12px;
-        }
+    #closeReveal {
+      background: #1e293b;
+      color: white;
+      border: 1px solid #334155;
+      padding: 0.8rem 2.2rem;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #closeReveal:hover {
+      background: #334155;
+      border-color: #64748b;
+    }
 
-        textarea {
-            flex: 1;
-            background-color: rgba(13, 17, 23, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 14px;
-            color: #ffffff;
-            font-size: 0.95rem;
-            resize: none;
-            height: 54px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
+    @keyframes popIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
 
-        textarea:focus {
-            border-color: #60a5fa;
-            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
-        }
+    /* Inventory / History */
+    .history {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid #1e293b;
+    }
+    .history h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--muted);
+    }
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+    }
+    .history-item {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-left: 3px solid;
+    }
 
-        button.send-btn {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 0 24px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
-        }
-
-        button.send-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-        /* Modal for API Key */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            display: none;
-        }
-
-        .modal {
-            background: #181b22;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 24px;
-            border-radius: 14px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
-
-        .modal h3 { color: #fff; margin-bottom: 10px; font-size: 1.2rem; }
-        .modal p { color: #94a3b8; font-size: 0.85rem; margin-bottom: 16px; line-height: 1.4; }
-        .modal input {
-            width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d;
-            border-radius: 8px; color: #fff; margin-bottom: 16px; outline: none;
-        }
-        .modal button {
-            width: 100%; padding: 10px; background: #2563eb; color: #fff; border: none;
-            border-radius: 8px; font-weight: 600; cursor: pointer;
-        }
-    </style>
+    /* Utility */
+    .hidden { display: none !important; }
+  </style>
 </head>
 <body>
-    <div class="app-container">
-        <header>
-            <div class="header-info">
-                <h1>WilkGPT</h1>
-                <p>Game Logic, Scripting & Debugging Engine</p>
-            </div>
-            <button class="settings-btn" onclick="openSettings()">⚙️ API Key</button>
-        </header>
-        
-        <div id="chat-box" class="chat-box">
-            <div class="message ai-message">
-                Hello! I am WilkGPT. Ready to tackle game code, system mechanics, or math vectors. What are we building?
-            </div>
-        </div>
+  <header>
+    <h1>CRATEBOUND</h1>
+    <p>Unboxing Simulator — Open crates. Chase the impossible.</p>
+  </header>
 
-        <div class="input-area">
-            <textarea id="user-input" placeholder="Ask a coding question or paste script logic... (Press Enter to send)"></textarea>
-            <button id="send-btn" class="send-btn">Send</button>
-        </div>
+  <div class="container">
+    <div class="crates-grid" id="cratesGrid"></div>
+
+    <div class="open-section">
+      <button id="openBtn" disabled>SELECT A CRATE</button>
     </div>
 
-    <!-- API Key Modal -->
-    <div id="settings-modal" class="modal-overlay">
-        <div class="modal">
-            <h3>Enter Gemini API Key</h3>
-            <p>Your key is stored securely in your browser's local storage and used directly to power WilkGPT.</p>
-            <input type="password" id="api-key-input" placeholder="AIzaSy...">
-            <button onclick="saveApiKey()">Save Key</button>
-        </div>
+    <div class="history">
+      <h2>Recent Unboxings</h2>
+      <div class="history-list" id="historyList"></div>
     </div>
+  </div>
 
-    <script>
-        const chatBox = document.getElementById('chat-box');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const settingsModal = document.getElementById('settings-modal');
-        const apiKeyInput = document.getElementById('api-key-input');
+  <!-- Opening Overlay -->
+  <div id="openingOverlay">
+    <canvas id="particles"></canvas>
+    <div class="crate-visual" id="crateVisual">📦</div>
+    <div class="rarity-line-container">
+      <div class="rarity-line" id="rarityLine"></div>
+      <div class="rarity-label" id="rarityLabel"></div>
+    </div>
+    <div id="revealScreen">
+      <div class="item-emoji" id="itemEmoji"></div>
+      <div class="item-name" id="itemName"></div>
+      <div class="item-rarity" id="itemRarity"></div>
+      <div class="item-odds" id="itemOdds"></div>
+      <div class="item-desc" id="itemDesc"></div>
+      <button id="closeReveal">Continue</button>
+    </div>
+  </div>
 
-        const SYSTEM_PROMPT = "You are WilkGPT, an elite game developer and coding assistant specializing in game logic, system architecture, math vectors, and debugging. You write clean, optimized code and break down logic step-by-step.";
+  <script>
+    // ====================== DATA ======================
+    const RARITIES = [
+      { name: "Common",       color: "#9ca3af", weight: 4500, glow: "simple" },
+      { name: "Uncommon",     color: "#22c55e", weight: 2500, glow: "soft" },
+      { name: "Rare",         color: "#3b82f6", weight: 1400, glow: "fast" },
+      { name: "Super Rare",   color: "#60a5fa", weight: 800,  glow: "bright" },
+      { name: "Epic",         color: "#a855f7", weight: 450,  glow: "strong" },
+      { name: "Legendary",    color: "#fbbf24", weight: 200,  glow: "gold" },
+      { name: "Mythic",       color: "#f97316", weight: 90,   glow: "intense" },
+      { name: "Divine",       color: "#f8fafc", weight: 40,   glow: "radiant" },
+      { name: "Chroma",       color: "#ec4899", weight: 15,   glow: "rainbow" },
+      { name: "Transcendent", color: "#e879f9", weight: 5,    glow: "insane" }
+    ];
 
-        // Check for saved API key on load
-        let apiKey = localStorage.getItem('wilkgpt_gemini_key') || '';
+    // Total weight for probability
+    const TOTAL_WEIGHT = RARITIES.reduce((s, r) => s + r.weight, 0);
 
-        function openSettings() {
-            apiKeyInput.value = apiKey;
-            settingsModal.style.display = 'flex';
+    // Item pools per crate
+    const CRATES = [
+      {
+        id: "starter",
+        name: "Starter Crate",
+        emoji: "📦",
+        desc: "Basic gear for new explorers",
+        price: "Free",
+        items: [
+          { name: "Rusty Dagger", emoji: "🗡️", rarity: "Common", desc: "Barely sharp. Still better than fists." },
+          { name: "Cloth Bandana", emoji: "🧣", rarity: "Common", desc: "Keeps the dust out of your eyes." },
+          { name: "Wooden Shield", emoji: "🛡️", rarity: "Uncommon", desc: "Cracks under pressure, but holds." },
+          { name: "Spark Potion", emoji: "🧪", rarity: "Rare", desc: "A tiny burst of energy." },
+          { name: "Iron Gauntlets", emoji: "🥊", rarity: "Super Rare", desc: "Heavy, reliable, slightly cold." },
+          { name: "Shadow Cloak", emoji: "🧥", rarity: "Epic", desc: "Blends into darkness a little too well." },
+          { name: "Phoenix Feather", emoji: "🪶", rarity: "Legendary", desc: "Warm to the touch. Never cools." },
+          { name: "Void Shard", emoji: "💎", rarity: "Mythic", desc: "Whispers in a language you almost understand." },
+          { name: "Celestial Key", emoji: "🔑", rarity: "Divine", desc: "Opens doors that shouldn't exist." },
+          { name: "Prism Core", emoji: "🔮", rarity: "Chroma", desc: "Refracts reality itself." },
+          { name: "Origin Fragment", emoji: "✨", rarity: "Transcendent", desc: "A piece of the first light." }
+        ]
+      },
+      {
+        id: "mystic",
+        name: "Mystic Crate",
+        emoji: "🔮",
+        desc: "Arcane relics from forgotten realms",
+        price: "150 Coins",
+        items: [
+          { name: "Mana Dust", emoji: "✨", rarity: "Common", desc: "Faintly glows at night." },
+          { name: "Rune Scroll", emoji: "📜", rarity: "Uncommon", desc: "Words that shift when you look away." },
+          { name: "Crystal Orb", emoji: "🔮", rarity: "Rare", desc: "Shows glimpses of parallel paths." },
+          { name: "Echo Blade", emoji: "⚔️", rarity: "Super Rare", desc: "Every swing leaves a ghostly afterimage." },
+          { name: "Astral Robe", emoji: "👘", rarity: "Epic", desc: "Stars move across the fabric." },
+          { name: "Dragon Scale", emoji: "🐉", rarity: "Legendary", desc: "Still radiates residual heat." },
+          { name: "Time Hourglass", emoji: "⏳", rarity: "Mythic", desc: "Sand flows both ways." },
+          { name: "Godslayer Edge", emoji: "🗡️", rarity: "Divine", desc: "Forged to end immortality." },
+          { name: "Rainbow Anomaly", emoji: "🌈", rarity: "Chroma", desc: "Doesn't obey the laws of color." },
+          { name: "The First Spark", emoji: "⚡", rarity: "Transcendent", desc: "The moment existence began." }
+        ]
+      },
+      {
+        id: "void",
+        name: "Void Crate",
+        emoji: "🌑",
+        desc: "Dangerous artifacts from the abyss",
+        price: "400 Coins",
+        items: [
+          { name: "Black Dust", emoji: "🌫️", rarity: "Common", desc: "Absorbs nearby light." },
+          { name: "Whisper Mask", emoji: "🎭", rarity: "Uncommon", desc: "You hear things that aren't there." },
+          { name: "Abyss Fang", emoji: "🦷", rarity: "Rare", desc: "Never stops dripping shadow." },
+          { name: "Null Ring", emoji: "💍", rarity: "Super Rare", desc: "Removes one memory at a time." },
+          { name: "Horror Relic", emoji: "👁️", rarity: "Epic", desc: "It blinks when you don't look." },
+          { name: "Oblivion Crown", emoji: "👑", rarity: "Legendary", desc: "Wear it and forget your name." },
+          { name: "Endless Hunger", emoji: "🕳️", rarity: "Mythic", desc: "It grows the more you feed it." },
+          { name: "Silent God", emoji: "🤫", rarity: "Divine", desc: "A presence that demands nothing... yet." },
+          { name: "Chromatic Void", emoji: "🌀", rarity: "Chroma", desc: "All colors collapse into one." },
+          { name: "The End of All", emoji: "💀", rarity: "Transcendent", desc: "There is nothing after this." }
+        ]
+      }
+    ];
+
+    // ====================== STATE ======================
+    let selectedCrate = null;
+    let isOpening = false;
+    const history = [];
+
+    // ====================== UI SETUP ======================
+    const cratesGrid = document.getElementById('cratesGrid');
+    const openBtn = document.getElementById('openBtn');
+    const openingOverlay = document.getElementById('openingOverlay');
+    const crateVisual = document.getElementById('crateVisual');
+    const rarityLine = document.getElementById('rarityLine');
+    const rarityLabel = document.getElementById('rarityLabel');
+    const revealScreen = document.getElementById('revealScreen');
+    const historyList = document.getElementById('historyList');
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Render crates
+    CRATES.forEach(crate => {
+      const card = document.createElement('div');
+      card.className = 'crate-card';
+      card.innerHTML = `
+        <div class="crate-emoji">${crate.emoji}</div>
+        <div class="crate-name">${crate.name}</div>
+        <div class="crate-desc">${crate.desc}</div>
+        <div class="crate-price">${crate.price}</div>
+      `;
+      card.addEventListener('click', () => selectCrate(crate, card));
+      cratesGrid.appendChild(card);
+    });
+
+    function selectCrate(crate, cardEl) {
+      if (isOpening) return;
+      selectedCrate = crate;
+      document.querySelectorAll('.crate-card').forEach(c => c.classList.remove('selected'));
+      cardEl.classList.add('selected');
+      openBtn.disabled = false;
+      openBtn.textContent = `OPEN ${crate.name.toUpperCase()}`;
+    }
+
+    openBtn.addEventListener('click', () => {
+      if (!selectedCrate || isOpening) return;
+      startOpening();
+    });
+
+    document.getElementById('closeReveal').addEventListener('click', () => {
+      openingOverlay.classList.remove('active');
+      revealScreen.classList.remove('show');
+      isOpening = false;
+      openBtn.disabled = false;
+      openBtn.textContent = `OPEN ${selectedCrate.name.toUpperCase()}`;
+    });
+
+    // ====================== CORE LOGIC ======================
+    function rollRarity() {
+      let roll = Math.random() * TOTAL_WEIGHT;
+      for (const r of RARITIES) {
+        if (roll < r.weight) return r;
+        roll -= r.weight;
+      }
+      return RARITIES[0];
+    }
+
+    function getItemForRarity(crate, rarityName) {
+      const pool = crate.items.filter(i => i.rarity === rarityName);
+      if (pool.length === 0) {
+        // fallback to any item of that rarity or lower
+        return crate.items[Math.floor(Math.random() * crate.items.length)];
+      }
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function getOddsText(rarityName) {
+      const r = RARITIES.find(x => x.name === rarityName);
+      if (!r) return "";
+      const chance = (r.weight / TOTAL_WEIGHT) * 100;
+      if (chance >= 1) return `~${chance.toFixed(1)}% chance`;
+      const oneIn = Math.round(TOTAL_WEIGHT / r.weight);
+      return `1 in ${oneIn.toLocaleString()}`;
+    }
+
+    // ====================== OPENING SEQUENCE ======================
+    async function startOpening() {
+      isOpening = true;
+      openBtn.disabled = true;
+      openBtn.textContent = "OPENING...";
+
+      // Reset
+      rarityLine.style.width = "0%";
+      rarityLine.style.background = RARITIES[0].color;
+      rarityLine.style.color = RARITIES[0].color;
+      rarityLabel.style.opacity = "0";
+      revealScreen.classList.remove('show');
+      crateVisual.textContent = selectedCrate.emoji;
+      crateVisual.classList.add('shake');
+
+      openingOverlay.classList.add('active');
+
+      // Roll result first
+      const finalRarity = rollRarity();
+      const finalItem = getItemForRarity(selectedCrate, finalRarity.name);
+      const finalIndex = RARITIES.findIndex(r => r.name === finalRarity.name);
+
+      // Small delay + shake
+      await sleep(800);
+
+      // Climb the ladder
+      for (let i = 0; i <= finalIndex; i++) {
+        const r = RARITIES[i];
+        const isFinal = i === finalIndex;
+
+        // Update line
+        rarityLine.style.width = `${((i + 1) / RARITIES.length) * 100}%`;
+        rarityLine.style.background = r.color;
+        rarityLine.style.boxShadow = `0 0 ${20 + i * 8}px ${r.color}`;
+        rarityLabel.textContent = r.name.toUpperCase();
+        rarityLabel.style.color = r.color;
+        rarityLabel.style.opacity = "1";
+        rarityLabel.style.textShadow = `0 0 ${15 + i * 5}px ${r.color}`;
+
+        // Particles intensity based on tier
+        spawnBurst(r.color, 8 + i * 6, i > 5);
+
+        // Screen shake for high tiers
+        if (i >= 5) {
+          document.body.style.transform = `translate(${(Math.random()-0.5)*8}px, ${(Math.random()-0.5)*6}px)`;
+          setTimeout(() => document.body.style.transform = "", 80);
         }
 
-        function saveApiKey() {
-            apiKey = apiKeyInput.value.trim();
-            localStorage.setItem('wilkgpt_gemini_key', apiKey);
-            settingsModal.style.display = 'none';
-        }
+        // Timing: faster at start, slower near the end
+        const delay = isFinal ? 900 : Math.max(180, 320 - i * 25);
+        await sleep(delay);
+      }
 
-        // If no key saved yet, prompt on first load
-        window.addEventListener('DOMContentLoaded', () => {
-            if (!apiKey) {
-                openSettings();
-            }
+      // Final dramatic pause
+      await sleep(600);
+      crateVisual.classList.remove('shake');
+
+      // Big final burst
+      spawnBurst(finalRarity.color, 60 + finalIndex * 15, true);
+      if (finalIndex >= 7) {
+        // Extra chaos for Divine+
+        for (let k = 0; k < 4; k++) {
+          setTimeout(() => spawnBurst(finalRarity.color, 40, true), k * 120);
+        }
+      }
+
+      await sleep(700);
+
+      // Reveal
+      showReveal(finalItem, finalRarity);
+    }
+
+    function showReveal(item, rarity) {
+      document.getElementById('itemEmoji').textContent = item.emoji;
+      document.getElementById('itemName').textContent = item.name;
+      document.getElementById('itemRarity').textContent = rarity.name;
+      document.getElementById('itemRarity').style.color = rarity.color;
+      document.getElementById('itemOdds').textContent = getOddsText(rarity.name);
+      document.getElementById('itemDesc').textContent = item.desc;
+
+      revealScreen.classList.add('show');
+
+      // Add to history
+      history.unshift({ item, rarity, crate: selectedCrate.name });
+      if (history.length > 12) history.pop();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = history.map(h => `
+        <div class="history-item" style="border-color: ${h.rarity.color}">
+          <span>${h.item.emoji}</span>
+          <span>${h.item.name}</span>
+          <span style="color:${h.rarity.color}; font-size:0.75rem">${h.rarity.name}</span>
+        </div>
+      `).join('');
+    }
+
+    // ====================== PARTICLES ======================
+    const particles = [];
+
+    function spawnBurst(color, count = 20, big = false) {
+      const cx = canvas.width / 2;
+      const cy = canvas.height * 0.42;
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (big ? 4 : 2) + Math.random() * (big ? 8 : 4);
+        particles.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - (big ? 2 : 0),
+          life: 1,
+          decay: 0.012 + Math.random() * 0.02,
+          size: (big ? 3 : 1.5) + Math.random() * (big ? 5 : 2.5),
+          color
         });
+      }
+    }
 
-        async function handleSendMessage() {
-            const text = userInput.value.trim();
-            if (!text) return;
-
-            if (!apiKey) {
-                alert("Please configure your Gemini API Key using the ⚙️ API Key button in the top right first!");
-                openSettings();
-                return;
-            }
-
-            appendMessage(text, 'user-message');
-            userInput.value = '';
-
-            const loadingId = appendMessage("WilkGPT is computing...", 'ai-message');
-
-            try {
-                const aiResponse = await callGeminiAPI(text);
-                document.getElementById(loadingId).remove();
-                appendMessage(aiResponse, 'ai-message');
-            } catch (error) {
-                document.getElementById(loadingId).remove();
-                appendMessage("Error communicating with Gemini API: " + error.message, 'ai-message');
-            }
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08; // gravity
+        p.life -= p.decay;
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
         }
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
 
-        async function callGeminiAPI(promptText) {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            role: "user",
-                            parts: [
-                                { text: `System Instruction: ${SYSTEM_PROMPT}\n\nUser Query: ${promptText}` }
-                            ]
-                        }
-                    ]
-                })
-            });
-
-            const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error.message);
-            }
-
-            try {
-                return data.candidates[0].content.parts[0].text;
-            } catch (err) {
-                return "Received an empty response structure from model.";
-            }
-        }
-
-        function appendMessage(text, className) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${className}`;
-            msgDiv.id = 'msg-' + Date.now() + Math.random();
-            msgDiv.innerText = text;
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-            return msgDiv.id;
-        }
-
-        sendBtn.addEventListener('click', handleSendMessage);
-        userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-            }
-        });
-    </script>
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+  </script>
 </body>
 </html>
