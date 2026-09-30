@@ -52,7 +52,7 @@
 
     .crates-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.6rem;
       margin: 2.2rem 0;
     }
@@ -64,7 +64,7 @@
       padding: 1.7rem;
       text-align: center;
       transition: all 0.25s ease;
-      cursor: pointer;
+      position: relative;
     }
     .crate-card:hover {
       transform: translateY(-8px);
@@ -98,17 +98,91 @@
       font-size: 0.92rem;
       font-weight: 600;
       color: #fbbf24;
+      margin-bottom: 1rem;
+    }
+    .crate-actions {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: center;
+    }
+    .btn-inspect {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-inspect:hover {
+      background: #334155;
+      border-color: #64748b;
+    }
+    .btn-select {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-select:hover {
+      filter: brightness(1.15);
     }
 
+    /* Quantity + Open */
     .open-section {
       text-align: center;
       margin: 3rem 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    .quantity-row {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: #0f172a;
+      padding: 0.6rem 1.2rem;
+      border-radius: 14px;
+      border: 1px solid #1e293b;
+    }
+    .quantity-row span {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    .qty-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .qty-btn:hover {
+      background: #334155;
+    }
+    #qtyValue {
+      font-size: 1.3rem;
+      font-weight: 700;
+      min-width: 30px;
+      text-align: center;
     }
     #openBtn {
       background: linear-gradient(135deg, #6366f1, #c026d3);
       color: white;
       border: none;
-      padding: 1.15rem 4rem;
+      padding: 1.15rem 3.5rem;
       font-size: 1.25rem;
       font-weight: 700;
       border-radius: 14px;
@@ -118,7 +192,7 @@
       box-shadow: 0 12px 35px rgba(99, 102, 241, 0.5);
     }
     #openBtn:hover:not(:disabled) {
-      transform: scale(1.06);
+      transform: scale(1.05);
       box-shadow: 0 16px 45px rgba(99, 102, 241, 0.65);
     }
     #openBtn:disabled {
@@ -126,6 +200,69 @@
       cursor: not-allowed;
       transform: none;
     }
+
+    /* ========== INSPECT MODAL ========== */
+    #inspectModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      backdrop-filter: blur(6px);
+    }
+    #inspectModal.active { display: flex; }
+    .modal-content {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 20px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 2rem;
+      position: relative;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .modal-header h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+    }
+    .modal-close {
+      background: #1e293b;
+      border: none;
+      color: white;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+    .drops-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.9rem;
+    }
+    .drop-item {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      border-left: 4px solid;
+    }
+    .drop-emoji { font-size: 1.7rem; }
+    .drop-info { flex: 1; }
+    .drop-name { font-weight: 600; font-size: 0.95rem; }
+    .drop-rarity { font-size: 0.78rem; font-weight: 600; margin-top: 2px; }
 
     /* ========== OPENING OVERLAY ========== */
     #openingOverlay {
@@ -145,7 +282,6 @@
       font-size: 8.5rem;
       z-index: 40;
       filter: drop-shadow(0 0 50px rgba(255,255,255,0.15));
-      transition: transform 0.1s;
     }
     .crate-visual.shake {
       animation: hardShake 0.38s infinite;
@@ -159,7 +295,6 @@
       75% { transform: translate(-7px, 5px) rotate(-1.5deg); }
     }
 
-    /* ===== MASSIVE ROTATED WAVE LINES ===== */
     .wave-container {
       position: absolute;
       inset: 0;
@@ -167,7 +302,6 @@
       z-index: 20;
       overflow: hidden;
     }
-
     .wave {
       position: absolute;
       top: 50%;
@@ -178,7 +312,6 @@
       border-radius: 40px;
       opacity: 0;
       filter: blur(0.5px);
-      will-change: transform, left, opacity;
     }
     .wave::before {
       content: '';
@@ -205,7 +338,6 @@
       pointer-events: none;
       z-index: 10;
     }
-
     .screen-flash {
       position: absolute;
       inset: 0;
@@ -216,7 +348,21 @@
       mix-blend-mode: overlay;
     }
 
-    /* Final reveal */
+    /* Multi counter */
+    .multi-counter {
+      position: absolute;
+      top: 8%;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #a5b4fc;
+      z-index: 45;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .multi-counter.show { opacity: 1; }
+
+    /* Final reveal (single) */
     #revealScreen {
       position: absolute;
       inset: 0;
@@ -241,7 +387,6 @@
       font-weight: 900;
       margin-bottom: 0.55rem;
       text-align: center;
-      letter-spacing: 1px;
     }
     .item-rarity {
       font-size: 1.35rem;
@@ -266,7 +411,47 @@
       font-size: 1.08rem;
     }
 
-    #closeReveal {
+    /* Multi results screen */
+    #multiResults {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 70;
+      background: radial-gradient(circle at center, #0f172a 0%, #010309 80%);
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    #multiResults.show { display: flex; }
+    .multi-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      margin-bottom: 1.8rem;
+      text-align: center;
+    }
+    .multi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      max-width: 900px;
+      width: 100%;
+      margin-bottom: 2.5rem;
+    }
+    .multi-card {
+      background: #1e293b;
+      border-radius: 14px;
+      padding: 1.1rem;
+      text-align: center;
+      border-top: 4px solid;
+      animation: megaPop 0.5s cubic-bezier(0.34, 1.6, 0.64, 1) backwards;
+    }
+    .multi-card .emoji { font-size: 2.8rem; margin-bottom: 0.5rem; }
+    .multi-card .name { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.3rem; }
+    .multi-card .rarity { font-size: 0.8rem; font-weight: 600; }
+
+    .btn-continue {
       background: #1e293b;
       color: white;
       border: 1px solid #334155;
@@ -277,7 +462,7 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    #closeReveal:hover {
+    .btn-continue:hover {
       background: #334155;
       border-color: #64748b;
     }
@@ -325,6 +510,13 @@
     <div class="crates-grid" id="cratesGrid"></div>
 
     <div class="open-section">
+      <div class="quantity-row">
+        <span>Open</span>
+        <button class="qty-btn" id="qtyMinus">−</button>
+        <div id="qtyValue">1</div>
+        <button class="qty-btn" id="qtyPlus">+</button>
+        <span>crate(s)</span>
+      </div>
       <button id="openBtn" disabled>SELECT A CRATE</button>
     </div>
 
@@ -334,20 +526,40 @@
     </div>
   </div>
 
-  <!-- OPENING OVERLAY -->
+  <!-- Inspect Modal -->
+  <div id="inspectModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Crate Drops</h2>
+        <button class="modal-close" id="modalClose">×</button>
+      </div>
+      <div class="drops-grid" id="dropsGrid"></div>
+    </div>
+  </div>
+
+  <!-- Opening Overlay -->
   <div id="openingOverlay">
     <canvas id="particles"></canvas>
     <div class="wave-container" id="waveContainer"></div>
     <div class="screen-flash" id="screenFlash"></div>
+    <div class="multi-counter" id="multiCounter"></div>
     <div class="crate-visual" id="crateVisual">📦</div>
 
+    <!-- Single reveal -->
     <div id="revealScreen">
       <div class="item-emoji" id="itemEmoji"></div>
       <div class="item-name" id="itemName"></div>
       <div class="item-rarity" id="itemRarity"></div>
       <div class="item-odds" id="itemOdds"></div>
       <div class="item-desc" id="itemDesc"></div>
-      <button id="closeReveal">Continue</button>
+      <button class="btn-continue" id="closeReveal">Continue</button>
+    </div>
+
+    <!-- Multi results -->
+    <div id="multiResults">
+      <div class="multi-title">You received</div>
+      <div class="multi-grid" id="multiGrid"></div>
+      <button class="btn-continue" id="closeMulti">Continue</button>
     </div>
   </div>
 
@@ -378,11 +590,17 @@
         items: [
           { name: "Rusty Dagger", emoji: "🗡️", rarity: "Common", desc: "Barely sharp. Still better than fists." },
           { name: "Cloth Bandana", emoji: "🧣", rarity: "Common", desc: "Keeps the dust out of your eyes." },
+          { name: "Worn Boots", emoji: "👢", rarity: "Common", desc: "They've seen better days." },
           { name: "Wooden Shield", emoji: "🛡️", rarity: "Uncommon", desc: "Cracks under pressure, but holds." },
+          { name: "Leather Vest", emoji: "🥋", rarity: "Uncommon", desc: "Light protection, lighter regret." },
           { name: "Spark Potion", emoji: "🧪", rarity: "Rare", desc: "A tiny burst of energy." },
+          { name: "Hunter's Bow", emoji: "🏹", rarity: "Rare", desc: "Quiet and deadly at range." },
           { name: "Iron Gauntlets", emoji: "🥊", rarity: "Super Rare", desc: "Heavy, reliable, slightly cold." },
+          { name: "Steel Longsword", emoji: "⚔️", rarity: "Super Rare", desc: "A proper weapon at last." },
           { name: "Shadow Cloak", emoji: "🧥", rarity: "Epic", desc: "Blends into darkness a little too well." },
+          { name: "Storm Ring", emoji: "💍", rarity: "Epic", desc: "Crackles when danger is near." },
           { name: "Phoenix Feather", emoji: "🪶", rarity: "Legendary", desc: "Warm to the touch. Never cools." },
+          { name: "Dragonbone Axe", emoji: "🪓", rarity: "Legendary", desc: "Still carries ancient heat." },
           { name: "Void Shard", emoji: "💎", rarity: "Mythic", desc: "Whispers in a language you almost understand." },
           { name: "Celestial Key", emoji: "🔑", rarity: "Divine", desc: "Opens doors that shouldn't exist." },
           { name: "Prism Core", emoji: "🔮", rarity: "Chroma", desc: "Refracts reality itself." },
@@ -397,10 +615,15 @@
         price: "150 Coins",
         items: [
           { name: "Mana Dust", emoji: "✨", rarity: "Common", desc: "Faintly glows at night." },
+          { name: "Faded Tome", emoji: "📖", rarity: "Common", desc: "Most pages are blank now." },
           { name: "Rune Scroll", emoji: "📜", rarity: "Uncommon", desc: "Words that shift when you look away." },
+          { name: "Crystal Shard", emoji: "💠", rarity: "Uncommon", desc: "Hums with residual power." },
           { name: "Crystal Orb", emoji: "🔮", rarity: "Rare", desc: "Shows glimpses of parallel paths." },
+          { name: "Spirit Charm", emoji: "🧿", rarity: "Rare", desc: "Protects against unseen things." },
           { name: "Echo Blade", emoji: "⚔️", rarity: "Super Rare", desc: "Every swing leaves a ghostly afterimage." },
+          { name: "Arcane Staff", emoji: "🪄", rarity: "Super Rare", desc: "Channels raw magic." },
           { name: "Astral Robe", emoji: "👘", rarity: "Epic", desc: "Stars move across the fabric." },
+          { name: "Moonstone Amulet", emoji: "🌙", rarity: "Epic", desc: "Grows brighter under moonlight." },
           { name: "Dragon Scale", emoji: "🐉", rarity: "Legendary", desc: "Still radiates residual heat." },
           { name: "Time Hourglass", emoji: "⏳", rarity: "Mythic", desc: "Sand flows both ways." },
           { name: "Godslayer Edge", emoji: "🗡️", rarity: "Divine", desc: "Forged to end immortality." },
@@ -416,10 +639,15 @@
         price: "400 Coins",
         items: [
           { name: "Black Dust", emoji: "🌫️", rarity: "Common", desc: "Absorbs nearby light." },
+          { name: "Torn Veil", emoji: "🕸️", rarity: "Common", desc: "Something moved behind it." },
           { name: "Whisper Mask", emoji: "🎭", rarity: "Uncommon", desc: "You hear things that aren't there." },
+          { name: "Cursed Coin", emoji: "🪙", rarity: "Uncommon", desc: "Always lands on the wrong side." },
           { name: "Abyss Fang", emoji: "🦷", rarity: "Rare", desc: "Never stops dripping shadow." },
+          { name: "Night Dagger", emoji: "🗡️", rarity: "Rare", desc: "Silent. Permanent." },
           { name: "Null Ring", emoji: "💍", rarity: "Super Rare", desc: "Removes one memory at a time." },
+          { name: "Hollow Lantern", emoji: "🏮", rarity: "Super Rare", desc: "Lights the way into darkness." },
           { name: "Horror Relic", emoji: "👁️", rarity: "Epic", desc: "It blinks when you don't look." },
+          { name: "Soul Chain", emoji: "⛓️", rarity: "Epic", desc: "Binds more than just the body." },
           { name: "Oblivion Crown", emoji: "👑", rarity: "Legendary", desc: "Wear it and forget your name." },
           { name: "Endless Hunger", emoji: "🕳️", rarity: "Mythic", desc: "It grows the more you feed it." },
           { name: "Silent God", emoji: "🤫", rarity: "Divine", desc: "A presence that demands nothing... yet." },
@@ -432,17 +660,25 @@
     // ====================== STATE ======================
     let selectedCrate = null;
     let isOpening = false;
+    let quantity = 1;
     const history = [];
+    let multiResults = [];
 
     // ====================== UI ======================
     const cratesGrid = document.getElementById('cratesGrid');
     const openBtn = document.getElementById('openBtn');
+    const qtyValue = document.getElementById('qtyValue');
     const openingOverlay = document.getElementById('openingOverlay');
     const crateVisual = document.getElementById('crateVisual');
     const waveContainer = document.getElementById('waveContainer');
     const screenFlash = document.getElementById('screenFlash');
+    const multiCounter = document.getElementById('multiCounter');
     const revealScreen = document.getElementById('revealScreen');
+    const multiResultsEl = document.getElementById('multiResults');
+    const multiGrid = document.getElementById('multiGrid');
     const historyList = document.getElementById('historyList');
+    const inspectModal = document.getElementById('inspectModal');
+    const dropsGrid = document.getElementById('dropsGrid');
     const canvas = document.getElementById('particles');
     const ctx = canvas.getContext('2d');
 
@@ -453,6 +689,7 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
+    // Render crates
     CRATES.forEach(crate => {
       const card = document.createElement('div');
       card.className = 'crate-card';
@@ -461,7 +698,19 @@
         <div class="crate-name">${crate.name}</div>
         <div class="crate-desc">${crate.desc}</div>
         <div class="crate-price">${crate.price}</div>
+        <div class="crate-actions">
+          <button class="btn-inspect">Inspect Drops</button>
+          <button class="btn-select">Select</button>
+        </div>
       `;
+      card.querySelector('.btn-inspect').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openInspect(crate);
+      });
+      card.querySelector('.btn-select').addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectCrate(crate, card);
+      });
       card.addEventListener('click', () => selectCrate(crate, card));
       cratesGrid.appendChild(card);
     });
@@ -472,22 +721,84 @@
       document.querySelectorAll('.crate-card').forEach(c => c.classList.remove('selected'));
       cardEl.classList.add('selected');
       openBtn.disabled = false;
-      openBtn.textContent = `OPEN ${crate.name.toUpperCase()}`;
+      updateOpenButton();
     }
+
+    function updateOpenButton() {
+      if (!selectedCrate) return;
+      openBtn.textContent = quantity === 1 
+        ? `OPEN ${selectedCrate.name.toUpperCase()}`
+        : `OPEN ${quantity}× ${selectedCrate.name.toUpperCase()}`;
+    }
+
+    // Quantity controls
+    document.getElementById('qtyMinus').addEventListener('click', () => {
+      if (quantity > 1) {
+        quantity--;
+        qtyValue.textContent = quantity;
+        updateOpenButton();
+      }
+    });
+    document.getElementById('qtyPlus').addEventListener('click', () => {
+      if (quantity < 5) {
+        quantity++;
+        qtyValue.textContent = quantity;
+        updateOpenButton();
+      }
+    });
 
     openBtn.addEventListener('click', () => {
       if (!selectedCrate || isOpening) return;
       startOpening();
     });
 
-    document.getElementById('closeReveal').addEventListener('click', () => {
+    // Inspect
+    function openInspect(crate) {
+      document.getElementById('modalTitle').textContent = `${crate.name} — Possible Drops`;
+      dropsGrid.innerHTML = '';
+      
+      // Sort by rarity order
+      const sorted = [...crate.items].sort((a, b) => {
+        return RARITIES.findIndex(r => r.name === a.rarity) - RARITIES.findIndex(r => r.name === b.rarity);
+      });
+
+      sorted.forEach(item => {
+        const rarity = RARITIES.find(r => r.name === item.rarity);
+        const el = document.createElement('div');
+        el.className = 'drop-item';
+        el.style.borderColor = rarity.color;
+        el.innerHTML = `
+          <div class="drop-emoji">${item.emoji}</div>
+          <div class="drop-info">
+            <div class="drop-name">${item.name}</div>
+            <div class="drop-rarity" style="color:${rarity.color}">${item.rarity}</div>
+          </div>
+        `;
+        dropsGrid.appendChild(el);
+      });
+      inspectModal.classList.add('active');
+    }
+    document.getElementById('modalClose').addEventListener('click', () => {
+      inspectModal.classList.remove('active');
+    });
+    inspectModal.addEventListener('click', (e) => {
+      if (e.target === inspectModal) inspectModal.classList.remove('active');
+    });
+
+    // Close handlers
+    document.getElementById('closeReveal').addEventListener('click', finishOpening);
+    document.getElementById('closeMulti').addEventListener('click', finishOpening);
+
+    function finishOpening() {
       openingOverlay.classList.remove('active');
       revealScreen.classList.remove('show');
+      multiResultsEl.classList.remove('show');
+      multiCounter.classList.remove('show');
       isOpening = false;
       openBtn.disabled = false;
-      openBtn.textContent = `OPEN ${selectedCrate.name.toUpperCase()}`;
+      updateOpenButton();
       waveContainer.innerHTML = '';
-    });
+    }
 
     // ====================== CORE ======================
     function rollRarity() {
@@ -517,14 +828,9 @@
       const wave = document.createElement('div');
       wave.className = 'wave';
       wave.style.background = color;
-      
-      // Thickness scales hard with intensity
       const height = 22 + intensity * 9;
       wave.style.height = `${height}px`;
-      
-      // Stronger glow
       wave.style.boxShadow = `0 0 ${50 + intensity * 40}px ${color}`;
-      
       waveContainer.appendChild(wave);
       return wave;
     }
@@ -532,28 +838,19 @@
     function fireWave(color, intensity) {
       return new Promise(resolve => {
         const wave = createWave(color, intensity);
-        
-        // Force reflow
         wave.offsetHeight;
-
-        // Slower, heavier sweep
         const duration = 0.85 + intensity * 0.12;
         wave.style.transition = `left ${duration}s cubic-bezier(0.25, 0.7, 0.3, 1), opacity 0.2s`;
-        
-        // Start off-screen right, sweep all the way through to the left
         wave.style.left = '-60%';
         wave.style.opacity = '1';
 
-        // Particles
         spawnWaveParticles(color, 22 + intensity * 14, intensity >= 4);
 
-        // Flash + shake for higher tiers
         if (intensity >= 4) {
           flashScreen(color, 0.18 + intensity * 0.05);
           hardShake(intensity);
         }
         if (intensity >= 7) {
-          // Extra impact for Divine+
           setTimeout(() => flashScreen(color, 0.35), 180);
         }
 
@@ -590,76 +887,102 @@
       isOpening = true;
       openBtn.disabled = true;
       openBtn.textContent = "OPENING...";
+      multiResults = [];
 
       waveContainer.innerHTML = '';
       revealScreen.classList.remove('show');
+      multiResultsEl.classList.remove('show');
       crateVisual.textContent = selectedCrate.emoji;
-      crateVisual.classList.add('shake');
       openingOverlay.classList.add('active');
 
-      const finalRarity = rollRarity();
-      const finalItem = getItemForRarity(selectedCrate, finalRarity.name);
-      const finalIndex = RARITIES.findIndex(r => r.name === finalRarity.name);
+      const total = quantity;
 
-      // Longer quiet build-up
-      await sleep(1100);
-
-      // Fire the waves (slower gaps)
-      for (let i = 0; i <= finalIndex; i++) {
-        const r = RARITIES[i];
-        const intensity = i;
-        const isFinal = i === finalIndex;
-
-        await fireWave(r.color, intensity);
-
-        if (isFinal) {
-          // Extra dramatic ending
-          await sleep(280);
-          spawnWaveParticles(r.color, 100 + i * 30, true);
-          
-          if (i >= 7) {
-            // Divine / Chroma / Transcendent chaos
-            for (let k = 0; k < 6; k++) {
-              setTimeout(() => {
-                spawnWaveParticles(r.color, 55, true);
-                flashScreen(r.color, 0.32);
-                hardShake(i);
-              }, k * 110);
-            }
-          }
-        } else {
-          // Slower gap between waves (builds tension)
-          await sleep(210 + i * 18);
+      for (let n = 0; n < total; n++) {
+        // Show counter if multi
+        if (total > 1) {
+          multiCounter.textContent = `${n + 1} / ${total}`;
+          multiCounter.classList.add('show');
         }
+
+        crateVisual.classList.add('shake');
+        await sleep(total > 1 ? 700 : 1100);
+
+        const finalRarity = rollRarity();
+        const finalItem = getItemForRarity(selectedCrate, finalRarity.name);
+        const finalIndex = RARITIES.findIndex(r => r.name === finalRarity.name);
+
+        // Waves
+        for (let i = 0; i <= finalIndex; i++) {
+          const r = RARITIES[i];
+          await fireWave(r.color, i);
+
+          if (i === finalIndex) {
+            await sleep(250);
+            spawnWaveParticles(r.color, 90 + i * 25, true);
+            if (i >= 7) {
+              for (let k = 0; k < 5; k++) {
+                setTimeout(() => {
+                  spawnWaveParticles(r.color, 50, true);
+                  flashScreen(r.color, 0.3);
+                }, k * 100);
+              }
+            }
+          } else {
+            await sleep(180 + i * 15);
+          }
+        }
+
+        crateVisual.classList.remove('shake');
+        await sleep(600);
+
+        spawnWaveParticles(finalRarity.color, 120 + finalIndex * 20, true);
+        flashScreen(finalRarity.color, 0.55);
+        hardShake(finalIndex + 3);
+
+        await sleep(500);
+
+        // Store result
+        multiResults.push({ item: finalItem, rarity: finalRarity });
+        history.unshift({ item: finalItem, rarity: finalRarity, crate: selectedCrate.name });
+        if (history.length > 20) history.pop();
       }
 
-      // Long silence before reveal
-      crateVisual.classList.remove('shake');
-      await sleep(900);
+      multiCounter.classList.remove('show');
+      renderHistory();
 
-      // Final detonation
-      spawnWaveParticles(finalRarity.color, 140 + finalIndex * 25, true);
-      flashScreen(finalRarity.color, 0.6);
-      hardShake(finalIndex + 4);
-
-      await sleep(700);
-
-      showReveal(finalItem, finalRarity);
+      // Show results
+      if (total === 1) {
+        showSingleReveal(multiResults[0]);
+      } else {
+        showMultiResults();
+      }
     }
 
-    function showReveal(item, rarity) {
-      document.getElementById('itemEmoji').textContent = item.emoji;
-      document.getElementById('itemName').textContent = item.name;
-      document.getElementById('itemRarity').textContent = rarity.name;
-      document.getElementById('itemRarity').style.color = rarity.color;
-      document.getElementById('itemOdds').textContent = getOddsText(rarity.name);
-      document.getElementById('itemDesc').textContent = item.desc;
-
+    function showSingleReveal(result) {
+      document.getElementById('itemEmoji').textContent = result.item.emoji;
+      document.getElementById('itemName').textContent = result.item.name;
+      document.getElementById('itemRarity').textContent = result.rarity.name;
+      document.getElementById('itemRarity').style.color = result.rarity.color;
+      document.getElementById('itemOdds').textContent = getOddsText(result.rarity.name);
+      document.getElementById('itemDesc').textContent = result.item.desc;
       revealScreen.classList.add('show');
+    }
 
-      history.unshift({ item, rarity, crate: selectedCrate.name });
-      if (history.length > 14) history.pop();
-      renderHistory();
+    function showMultiResults() {
+      multiGrid.innerHTML = '';
+      multiResults.forEach((res, idx) => {
+        const card = document.createElement('div');
+        card.className = 'multi-card';
+        card.style.borderColor = res.rarity.color;
+        card.style.animationDelay = `${idx * 0.08}s`;
+        card.innerHTML = `
+          <div class="emoji">${res.item.emoji}</div>
+          <div class="name">${res.item.name}</div>
+          <div class="rarity" style="color:${res.rarity.color}">${res.rarity.name}</div>
+        `;
+        multiGrid.appendChild(card);
+      });
+      multiResultsEl.classList.add('show');
     }
 
     function renderHistory() {
@@ -682,8 +1005,7 @@
         const angle = (Math.random() - 0.5) * Math.PI * 1.5;
         const speed = (big ? 6 : 3) + Math.random() * (big ? 13 : 6);
         particles.push({
-          x,
-          y: cy + (Math.random() - 0.5) * 60,
+          x, y: cy + (Math.random() - 0.5) * 60,
           vx: Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1),
           vy: Math.sin(angle) * speed - (big ? 4 : 1.5),
           life: 1,
@@ -703,12 +1025,10 @@
         p.y += p.vy;
         p.vy += 0.065;
         p.life -= p.decay;
-
         if (p.life <= 0) {
           particles.splice(i, 1);
           continue;
         }
-
         ctx.globalAlpha = p.life * 0.92;
         ctx.fillStyle = p.color;
         ctx.shadowColor = p.color;
