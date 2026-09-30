@@ -8,8 +8,8 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@500;700;900&display=swap');
 
     :root {
-      --bg: #05070f;
-      --card: #111827;
+      --bg: #03050c;
+      --card: #0f172a;
       --accent: #818cf8;
       --text: #f1f5f9;
       --muted: #94a3b8;
@@ -19,7 +19,7 @@
 
     body {
       font-family: 'Inter', system-ui, sans-serif;
-      background: radial-gradient(ellipse at top, #0f172a 0%, var(--bg) 65%);
+      background: radial-gradient(ellipse at top, #0f172a 0%, var(--bg) 70%);
       color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
@@ -27,11 +27,11 @@
 
     header {
       text-align: center;
-      padding: 2.2rem 1rem 1rem;
+      padding: 2.4rem 1rem 1.2rem;
     }
     header h1 {
       font-family: 'Orbitron', sans-serif;
-      font-size: clamp(2rem, 5.5vw, 3.2rem);
+      font-size: clamp(2.1rem, 5.8vw, 3.4rem);
       font-weight: 900;
       background: linear-gradient(90deg, #a5b4fc, #e879f9, #fbbf24);
       -webkit-background-clip: text;
@@ -41,7 +41,7 @@
     header p {
       color: var(--muted);
       margin-top: 0.5rem;
-      font-size: 1rem;
+      font-size: 1.05rem;
     }
 
     .container {
@@ -53,75 +53,73 @@
     .crates-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1.5rem;
-      margin: 2rem 0;
+      gap: 1.6rem;
+      margin: 2.2rem 0;
     }
 
     .crate-card {
       background: var(--card);
       border: 1px solid #1e293b;
       border-radius: 18px;
-      padding: 1.6rem;
+      padding: 1.7rem;
       text-align: center;
       transition: all 0.25s ease;
       cursor: pointer;
-      position: relative;
-      overflow: hidden;
     }
     .crate-card:hover {
       transform: translateY(-8px);
       border-color: #6366f1;
-      box-shadow: 0 15px 40px rgba(99, 102, 241, 0.25);
+      box-shadow: 0 16px 42px rgba(99, 102, 241, 0.28);
     }
     .crate-card.selected {
       border-color: #a5b4fc;
-      box-shadow: 0 0 0 2px #a5b4fc, 0 15px 40px rgba(99, 102, 241, 0.35);
+      box-shadow: 0 0 0 2px #a5b4fc, 0 16px 42px rgba(99, 102, 241, 0.4);
     }
     .crate-emoji {
-      font-size: 3.8rem;
+      font-size: 4rem;
       margin-bottom: 0.9rem;
-      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.5));
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.5));
     }
     .crate-name {
       font-weight: 700;
-      font-size: 1.2rem;
+      font-size: 1.25rem;
       margin-bottom: 0.35rem;
     }
     .crate-desc {
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       color: var(--muted);
-      margin-bottom: 1.1rem;
+      margin-bottom: 1.15rem;
     }
     .crate-price {
       display: inline-block;
-      background: #0f172a;
-      padding: 0.4rem 1rem;
+      background: #020617;
+      padding: 0.4rem 1.1rem;
       border-radius: 999px;
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       font-weight: 600;
       color: #fbbf24;
     }
 
     .open-section {
       text-align: center;
-      margin: 2.8rem 0 1.5rem;
+      margin: 3rem 0 1.5rem;
     }
     #openBtn {
       background: linear-gradient(135deg, #6366f1, #c026d3);
       color: white;
       border: none;
-      padding: 1.1rem 3.8rem;
-      font-size: 1.2rem;
+      padding: 1.15rem 4rem;
+      font-size: 1.25rem;
       font-weight: 700;
       border-radius: 14px;
       cursor: pointer;
       letter-spacing: 1.5px;
       transition: all 0.2s;
-      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.45);
+      box-shadow: 0 12px 35px rgba(99, 102, 241, 0.5);
     }
     #openBtn:hover:not(:disabled) {
       transform: scale(1.06);
-      box-shadow: 0 14px 40px rgba(99, 102, 241, 0.6);
+      box-shadow: 0 16px 45px rgba(99, 102, 241, 0.65);
     }
     #openBtn:disabled {
       opacity: 0.45;
@@ -133,7 +131,7 @@
     #openingOverlay {
       position: fixed;
       inset: 0;
-      background: #02040a;
+      background: #010309;
       z-index: 1000;
       display: none;
       flex-direction: column;
@@ -144,74 +142,76 @@
     #openingOverlay.active { display: flex; }
 
     .crate-visual {
-      font-size: 8rem;
-      z-index: 30;
-      filter: drop-shadow(0 0 40px rgba(255,255,255,0.12));
+      font-size: 8.5rem;
+      z-index: 40;
+      filter: drop-shadow(0 0 50px rgba(255,255,255,0.15));
       transition: transform 0.1s;
     }
     .crate-visual.shake {
-      animation: hardShake 0.35s infinite;
+      animation: hardShake 0.38s infinite;
     }
     @keyframes hardShake {
       0%, 100% { transform: translate(0,0) rotate(0); }
-      15% { transform: translate(-10px, 6px) rotate(-3deg); }
-      30% { transform: translate(12px, -8px) rotate(3deg); }
-      45% { transform: translate(-8px, -5px) rotate(-2deg); }
-      60% { transform: translate(9px, 7px) rotate(2deg); }
-      75% { transform: translate(-6px, 4px) rotate(-1deg); }
+      15% { transform: translate(-12px, 7px) rotate(-3.5deg); }
+      30% { transform: translate(14px, -9px) rotate(3.5deg); }
+      45% { transform: translate(-9px, -6px) rotate(-2.5deg); }
+      60% { transform: translate(11px, 8px) rotate(2.5deg); }
+      75% { transform: translate(-7px, 5px) rotate(-1.5deg); }
     }
 
-    /* MASSIVE WAVE LINES */
+    /* ===== MASSIVE ROTATED WAVE LINES ===== */
     .wave-container {
       position: absolute;
       inset: 0;
       pointer-events: none;
-      z-index: 10;
+      z-index: 20;
       overflow: hidden;
     }
+
     .wave {
       position: absolute;
       top: 50%;
-      right: -120%;
-      width: 140%;
-      height: 14px;
-      transform: translateY(-50%);
-      border-radius: 20px;
+      left: 110%;
+      width: 160%;
+      height: 28px;
+      transform: translateY(-50%) rotate(-18deg);
+      border-radius: 40px;
       opacity: 0;
-      filter: blur(1px);
+      filter: blur(0.5px);
+      will-change: transform, left, opacity;
     }
     .wave::before {
       content: '';
       position: absolute;
-      inset: -30px 0;
+      inset: -45px 0;
       background: inherit;
-      filter: blur(35px);
-      opacity: 0.7;
+      filter: blur(50px);
+      opacity: 0.75;
+      border-radius: 60px;
     }
     .wave::after {
       content: '';
       position: absolute;
-      inset: -60px 0;
+      inset: -90px 0;
       background: inherit;
-      filter: blur(70px);
-      opacity: 0.35;
+      filter: blur(100px);
+      opacity: 0.4;
+      border-radius: 80px;
     }
 
-    /* Particles */
     #particles {
       position: absolute;
       inset: 0;
       pointer-events: none;
-      z-index: 5;
+      z-index: 10;
     }
 
-    /* Full screen flash / energy */
     .screen-flash {
       position: absolute;
       inset: 0;
       background: white;
       opacity: 0;
-      z-index: 40;
+      z-index: 50;
       pointer-events: none;
       mix-blend-mode: overlay;
     }
@@ -224,56 +224,56 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 50;
-      background: radial-gradient(circle at center, #0f172a 0%, #02040a 75%);
+      z-index: 60;
+      background: radial-gradient(circle at center, #0f172a 0%, #010309 75%);
     }
     #revealScreen.show { display: flex; }
 
     .item-emoji {
-      font-size: 7rem;
-      margin-bottom: 1.2rem;
-      animation: megaPop 0.7s cubic-bezier(0.34, 1.7, 0.64, 1);
-      filter: drop-shadow(0 0 50px rgba(255,255,255,0.35));
+      font-size: 7.5rem;
+      margin-bottom: 1.3rem;
+      animation: megaPop 0.75s cubic-bezier(0.34, 1.7, 0.64, 1);
+      filter: drop-shadow(0 0 60px rgba(255,255,255,0.4));
     }
     .item-name {
       font-family: 'Orbitron', sans-serif;
-      font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+      font-size: clamp(1.9rem, 4.8vw, 3rem);
       font-weight: 900;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.55rem;
       text-align: center;
       letter-spacing: 1px;
     }
     .item-rarity {
-      font-size: 1.25rem;
+      font-size: 1.35rem;
       font-weight: 800;
-      letter-spacing: 4px;
-      margin-bottom: 0.7rem;
+      letter-spacing: 5px;
+      margin-bottom: 0.8rem;
       text-transform: uppercase;
-      text-shadow: 0 0 30px currentColor;
+      text-shadow: 0 0 35px currentColor;
     }
     .item-odds {
       color: var(--muted);
-      font-size: 1rem;
-      margin-bottom: 1.8rem;
+      font-size: 1.05rem;
+      margin-bottom: 1.9rem;
     }
     .item-desc {
-      max-width: 440px;
+      max-width: 460px;
       text-align: center;
       color: #cbd5e1;
-      line-height: 1.55;
-      margin-bottom: 2.8rem;
-      padding: 0 1.2rem;
-      font-size: 1.05rem;
+      line-height: 1.6;
+      margin-bottom: 3rem;
+      padding: 0 1.3rem;
+      font-size: 1.08rem;
     }
 
     #closeReveal {
       background: #1e293b;
       color: white;
       border: 1px solid #334155;
-      padding: 0.9rem 2.5rem;
+      padding: 0.95rem 2.6rem;
       border-radius: 12px;
       font-weight: 600;
-      font-size: 1rem;
+      font-size: 1.05rem;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -283,34 +283,34 @@
     }
 
     @keyframes megaPop {
-      0% { transform: scale(0.2); opacity: 0; }
-      70% { transform: scale(1.15); }
+      0% { transform: scale(0.15); opacity: 0; }
+      70% { transform: scale(1.18); }
       100% { transform: scale(1); opacity: 1; }
     }
 
     .history {
-      margin-top: 3.5rem;
-      padding-top: 2rem;
+      margin-top: 3.8rem;
+      padding-top: 2.2rem;
       border-top: 1px solid #1e293b;
     }
     .history h2 {
-      font-size: 1.15rem;
-      margin-bottom: 1.1rem;
+      font-size: 1.2rem;
+      margin-bottom: 1.2rem;
       color: var(--muted);
     }
     .history-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.8rem;
+      gap: 0.85rem;
     }
     .history-item {
       background: #1e293b;
       border-radius: 12px;
-      padding: 0.55rem 1rem;
-      font-size: 0.88rem;
+      padding: 0.6rem 1.05rem;
+      font-size: 0.9rem;
       display: flex;
       align-items: center;
-      gap: 0.55rem;
+      gap: 0.6rem;
       border-left: 4px solid;
     }
   </style>
@@ -486,7 +486,6 @@
       isOpening = false;
       openBtn.disabled = false;
       openBtn.textContent = `OPEN ${selectedCrate.name.toUpperCase()}`;
-      // clean residual waves
       waveContainer.innerHTML = '';
     });
 
@@ -514,66 +513,76 @@
     }
 
     // ====================== WAVE SYSTEM ======================
-    function createWave(color, intensity = 1) {
+    function createWave(color, intensity) {
       const wave = document.createElement('div');
       wave.className = 'wave';
       wave.style.background = color;
-      wave.style.height = `${10 + intensity * 6}px`;
-      wave.style.boxShadow = `0 0 ${40 + intensity * 30}px ${color}`;
+      
+      // Thickness scales hard with intensity
+      const height = 22 + intensity * 9;
+      wave.style.height = `${height}px`;
+      
+      // Stronger glow
+      wave.style.boxShadow = `0 0 ${50 + intensity * 40}px ${color}`;
+      
       waveContainer.appendChild(wave);
       return wave;
     }
 
-    function fireWave(color, intensity = 1) {
+    function fireWave(color, intensity) {
       return new Promise(resolve => {
         const wave = createWave(color, intensity);
         
         // Force reflow
         wave.offsetHeight;
 
-        wave.style.transition = `right ${0.55 + intensity * 0.08}s cubic-bezier(0.22, 0.8, 0.3, 1), opacity 0.15s`;
-        wave.style.right = '-20%';
+        // Slower, heavier sweep
+        const duration = 0.85 + intensity * 0.12;
+        wave.style.transition = `left ${duration}s cubic-bezier(0.25, 0.7, 0.3, 1), opacity 0.2s`;
+        
+        // Start off-screen right, sweep all the way through to the left
+        wave.style.left = '-60%';
         wave.style.opacity = '1';
 
-        // Particles along the wave
-        spawnWaveParticles(color, 18 + intensity * 12, intensity > 4);
+        // Particles
+        spawnWaveParticles(color, 22 + intensity * 14, intensity >= 4);
 
-        // Screen flash for high tiers
-        if (intensity >= 5) {
-          flashScreen(color, 0.15 + intensity * 0.04);
-        }
-
-        // Camera shake
+        // Flash + shake for higher tiers
         if (intensity >= 4) {
+          flashScreen(color, 0.18 + intensity * 0.05);
           hardShake(intensity);
+        }
+        if (intensity >= 7) {
+          // Extra impact for Divine+
+          setTimeout(() => flashScreen(color, 0.35), 180);
         }
 
         setTimeout(() => {
           wave.style.opacity = '0';
-          setTimeout(() => wave.remove(), 300);
+          setTimeout(() => wave.remove(), 350);
           resolve();
-        }, 580 + intensity * 70);
+        }, duration * 1000 + 80);
       });
     }
 
-    function flashScreen(color, strength = 0.25) {
+    function flashScreen(color, strength = 0.3) {
       screenFlash.style.background = color;
       screenFlash.style.opacity = strength;
-      screenFlash.style.transition = 'opacity 0.08s';
+      screenFlash.style.transition = 'opacity 0.07s';
       setTimeout(() => {
-        screenFlash.style.transition = 'opacity 0.45s';
+        screenFlash.style.transition = 'opacity 0.55s';
         screenFlash.style.opacity = '0';
-      }, 80);
+      }, 70);
     }
 
     function hardShake(intensity) {
-      const amount = 6 + intensity * 3;
+      const amount = 8 + intensity * 4;
       document.body.style.transition = 'none';
-      document.body.style.transform = `translate(${(Math.random()-0.5)*amount*2}px, ${(Math.random()-0.5)*amount}px)`;
+      document.body.style.transform = `translate(${(Math.random()-0.5)*amount*2}px, ${(Math.random()-0.5)*amount}px) rotate(${(Math.random()-0.5)*1.2}deg)`;
       setTimeout(() => {
-        document.body.style.transition = 'transform 0.08s';
+        document.body.style.transition = 'transform 0.1s';
         document.body.style.transform = '';
-      }, 60);
+      }, 70);
     }
 
     // ====================== OPENING SEQUENCE ======================
@@ -582,59 +591,58 @@
       openBtn.disabled = true;
       openBtn.textContent = "OPENING...";
 
-      // Reset
       waveContainer.innerHTML = '';
       revealScreen.classList.remove('show');
       crateVisual.textContent = selectedCrate.emoji;
       crateVisual.classList.add('shake');
       openingOverlay.classList.add('active');
 
-      // Roll result
       const finalRarity = rollRarity();
       const finalItem = getItemForRarity(selectedCrate, finalRarity.name);
       const finalIndex = RARITIES.findIndex(r => r.name === finalRarity.name);
 
-      // Initial quiet moment + shake
-      await sleep(900);
+      // Longer quiet build-up
+      await sleep(1100);
 
-      // Fire waves from Common up to final rarity
+      // Fire the waves (slower gaps)
       for (let i = 0; i <= finalIndex; i++) {
         const r = RARITIES[i];
-        const intensity = i;               // 0 = Common … 9 = Transcendent
+        const intensity = i;
         const isFinal = i === finalIndex;
 
         await fireWave(r.color, intensity);
 
-        // Extra pause + bigger effects right before the final wave ends
         if (isFinal) {
-          await sleep(200);
-          // Final massive burst
-          spawnWaveParticles(r.color, 80 + i * 25, true);
+          // Extra dramatic ending
+          await sleep(280);
+          spawnWaveParticles(r.color, 100 + i * 30, true);
+          
           if (i >= 7) {
-            // Divine / Chroma / Transcendent extra chaos
-            for (let k = 0; k < 5; k++) {
+            // Divine / Chroma / Transcendent chaos
+            for (let k = 0; k < 6; k++) {
               setTimeout(() => {
-                spawnWaveParticles(r.color, 50, true);
-                flashScreen(r.color, 0.3);
-              }, k * 90);
+                spawnWaveParticles(r.color, 55, true);
+                flashScreen(r.color, 0.32);
+                hardShake(i);
+              }, k * 110);
             }
           }
         } else {
-          // Short gap between waves (gets slightly longer near the top)
-          await sleep(Math.max(90, 160 - i * 8));
+          // Slower gap between waves (builds tension)
+          await sleep(210 + i * 18);
         }
       }
 
-      // Dramatic silence
+      // Long silence before reveal
       crateVisual.classList.remove('shake');
-      await sleep(750);
+      await sleep(900);
 
-      // Final explosion
-      spawnWaveParticles(finalRarity.color, 120 + finalIndex * 20, true);
-      flashScreen(finalRarity.color, 0.55);
-      hardShake(finalIndex + 3);
+      // Final detonation
+      spawnWaveParticles(finalRarity.color, 140 + finalIndex * 25, true);
+      flashScreen(finalRarity.color, 0.6);
+      hardShake(finalIndex + 4);
 
-      await sleep(600);
+      await sleep(700);
 
       showReveal(finalItem, finalRarity);
     }
@@ -659,7 +667,7 @@
         <div class="history-item" style="border-color: ${h.rarity.color}">
           <span>${h.item.emoji}</span>
           <span>${h.item.name}</span>
-          <span style="color:${h.rarity.color}; font-size:0.78rem; font-weight:600">${h.rarity.name}</span>
+          <span style="color:${h.rarity.color}; font-size:0.8rem; font-weight:600">${h.rarity.name}</span>
         </div>
       `).join('');
     }
@@ -667,20 +675,20 @@
     // ====================== PARTICLES ======================
     const particles = [];
 
-    function spawnWaveParticles(color, count = 25, big = false) {
+    function spawnWaveParticles(color, count = 30, big = false) {
       const cy = canvas.height * 0.5;
       for (let i = 0; i < count; i++) {
-        const x = canvas.width * (0.1 + Math.random() * 0.8);
-        const angle = (Math.random() - 0.5) * Math.PI * 1.4;
-        const speed = (big ? 5 : 2.5) + Math.random() * (big ? 11 : 5);
+        const x = canvas.width * (0.05 + Math.random() * 0.9);
+        const angle = (Math.random() - 0.5) * Math.PI * 1.5;
+        const speed = (big ? 6 : 3) + Math.random() * (big ? 13 : 6);
         particles.push({
           x,
-          y: cy + (Math.random() - 0.5) * 40,
+          y: cy + (Math.random() - 0.5) * 60,
           vx: Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1),
-          vy: Math.sin(angle) * speed - (big ? 3 : 1),
+          vy: Math.sin(angle) * speed - (big ? 4 : 1.5),
           life: 1,
-          decay: 0.008 + Math.random() * 0.015,
-          size: (big ? 3.5 : 1.8) + Math.random() * (big ? 6 : 3),
+          decay: 0.007 + Math.random() * 0.012,
+          size: (big ? 4 : 2) + Math.random() * (big ? 7 : 3.5),
           color,
           glow: big
         });
@@ -693,7 +701,7 @@
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.07;
+        p.vy += 0.065;
         p.life -= p.decay;
 
         if (p.life <= 0) {
@@ -701,10 +709,10 @@
           continue;
         }
 
-        ctx.globalAlpha = p.life * 0.9;
+        ctx.globalAlpha = p.life * 0.92;
         ctx.fillStyle = p.color;
         ctx.shadowColor = p.color;
-        ctx.shadowBlur = p.glow ? 25 : 8;
+        ctx.shadowBlur = p.glow ? 28 : 10;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
