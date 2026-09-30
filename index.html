@@ -27,11 +27,12 @@
 
     header {
       text-align: center;
-      padding: 2.4rem 1rem 1.2rem;
+      padding: 2rem 1rem 0.8rem;
+      position: relative;
     }
     header h1 {
       font-family: 'Orbitron', sans-serif;
-      font-size: clamp(2.1rem, 5.8vw, 3.4rem);
+      font-size: clamp(2rem, 5.5vw, 3.2rem);
       font-weight: 900;
       background: linear-gradient(90deg, #a5b4fc, #e879f9, #fbbf24);
       -webkit-background-clip: text;
@@ -40,160 +41,166 @@
     }
     header p {
       color: var(--muted);
-      margin-top: 0.5rem;
-      font-size: 1.05rem;
+      margin-top: 0.4rem;
+      font-size: 1rem;
     }
 
+    .top-bar {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 1.2rem 0 0.5rem;
+      flex-wrap: wrap;
+    }
+    .stat-pill {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      padding: 0.5rem 1.2rem;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .stat-pill span { color: #fbbf24; }
+
     .container {
-      max-width: 1100px;
+      max-width: 1150px;
       margin: 0 auto;
       padding: 1rem;
     }
 
     .crates-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.6rem;
-      margin: 2.2rem 0;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.4rem;
+      margin: 1.8rem 0;
     }
 
     .crate-card {
       background: var(--card);
       border: 1px solid #1e293b;
       border-radius: 18px;
-      padding: 1.7rem;
+      padding: 1.5rem;
       text-align: center;
       transition: all 0.25s ease;
       position: relative;
     }
     .crate-card:hover {
-      transform: translateY(-8px);
+      transform: translateY(-7px);
       border-color: #6366f1;
-      box-shadow: 0 16px 42px rgba(99, 102, 241, 0.28);
+      box-shadow: 0 14px 38px rgba(99, 102, 241, 0.25);
     }
     .crate-card.selected {
       border-color: #a5b4fc;
-      box-shadow: 0 0 0 2px #a5b4fc, 0 16px 42px rgba(99, 102, 241, 0.4);
+      box-shadow: 0 0 0 2px #a5b4fc, 0 14px 38px rgba(99, 102, 241, 0.35);
     }
     .crate-emoji {
-      font-size: 4rem;
-      margin-bottom: 0.9rem;
-      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.5));
+      font-size: 3.6rem;
+      margin-bottom: 0.7rem;
+      filter: drop-shadow(0 5px 12px rgba(0,0,0,0.5));
     }
     .crate-name {
       font-weight: 700;
-      font-size: 1.25rem;
-      margin-bottom: 0.35rem;
+      font-size: 1.15rem;
+      margin-bottom: 0.3rem;
     }
     .crate-desc {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: var(--muted);
-      margin-bottom: 1.15rem;
+      margin-bottom: 0.9rem;
+      min-height: 2.4em;
     }
     .crate-price {
       display: inline-block;
       background: #020617;
-      padding: 0.4rem 1.1rem;
+      padding: 0.35rem 1rem;
       border-radius: 999px;
-      font-size: 0.92rem;
+      font-size: 0.88rem;
       font-weight: 600;
       color: #fbbf24;
-      margin-bottom: 1rem;
+      margin-bottom: 0.9rem;
     }
     .crate-actions {
       display: flex;
-      gap: 0.6rem;
+      gap: 0.5rem;
       justify-content: center;
+    }
+    .btn-inspect, .btn-select {
+      padding: 0.45rem 0.9rem;
+      border-radius: 9px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
     }
     .btn-inspect {
       background: #1e293b;
       color: #e2e8f0;
       border: 1px solid #334155;
-      padding: 0.5rem 1rem;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
     }
-    .btn-inspect:hover {
-      background: #334155;
-      border-color: #64748b;
-    }
+    .btn-inspect:hover { background: #334155; }
     .btn-select {
       background: linear-gradient(135deg, #4f46e5, #7c3aed);
       color: white;
-      border: none;
-      padding: 0.5rem 1.1rem;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
     }
-    .btn-select:hover {
-      filter: brightness(1.15);
-    }
+    .btn-select:hover { filter: brightness(1.15); }
 
     /* Quantity + Open */
     .open-section {
       text-align: center;
-      margin: 3rem 0 1.5rem;
+      margin: 2.5rem 0 1.5rem;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1.2rem;
+      gap: 1.1rem;
     }
     .quantity-row {
       display: flex;
       align-items: center;
-      gap: 0.8rem;
+      gap: 0.7rem;
       background: #0f172a;
-      padding: 0.6rem 1.2rem;
+      padding: 0.55rem 1.1rem;
       border-radius: 14px;
       border: 1px solid #1e293b;
     }
-    .quantity-row span {
-      font-size: 0.95rem;
-      color: var(--muted);
-    }
+    .quantity-row span { font-size: 0.9rem; color: var(--muted); }
     .qty-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
       border: 1px solid #334155;
       background: #1e293b;
       color: white;
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.15s;
     }
-    .qty-btn:hover {
-      background: #334155;
-    }
+    .qty-btn:hover { background: #334155; }
     #qtyValue {
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      min-width: 30px;
+      min-width: 28px;
       text-align: center;
     }
     #openBtn {
       background: linear-gradient(135deg, #6366f1, #c026d3);
       color: white;
       border: none;
-      padding: 1.15rem 3.5rem;
-      font-size: 1.25rem;
+      padding: 1.05rem 3.2rem;
+      font-size: 1.2rem;
       font-weight: 700;
       border-radius: 14px;
       cursor: pointer;
-      letter-spacing: 1.5px;
+      letter-spacing: 1.2px;
       transition: all 0.2s;
-      box-shadow: 0 12px 35px rgba(99, 102, 241, 0.5);
+      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.45);
     }
     #openBtn:hover:not(:disabled) {
       transform: scale(1.05);
-      box-shadow: 0 16px 45px rgba(99, 102, 241, 0.65);
+      box-shadow: 0 14px 40px rgba(99, 102, 241, 0.6);
     }
     #openBtn:disabled {
       opacity: 0.45;
@@ -201,68 +208,110 @@
       transform: none;
     }
 
-    /* ========== INSPECT MODAL ========== */
-    #inspectModal {
+    /* Inventory button */
+    .inv-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: white;
+      padding: 0.55rem 1.3rem;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .inv-btn:hover {
+      background: #334155;
+      border-color: #64748b;
+    }
+
+    /* ========== MODALS ========== */
+    .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.75);
+      background: rgba(0,0,0,0.78);
       z-index: 2000;
       display: none;
       align-items: center;
       justify-content: center;
       padding: 1rem;
-      backdrop-filter: blur(6px);
+      backdrop-filter: blur(7px);
     }
-    #inspectModal.active { display: flex; }
+    .modal-overlay.active { display: flex; }
     .modal-content {
       background: #0f172a;
       border: 1px solid #1e293b;
       border-radius: 20px;
-      max-width: 720px;
+      max-width: 820px;
       width: 100%;
-      max-height: 85vh;
+      max-height: 88vh;
       overflow-y: auto;
-      padding: 2rem;
+      padding: 1.8rem;
       position: relative;
     }
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.4rem;
     }
     .modal-header h2 {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.5rem;
+      font-size: 1.45rem;
     }
     .modal-close {
       background: #1e293b;
       border: none;
       color: white;
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 10px;
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       cursor: pointer;
     }
-    .drops-grid {
+
+    .drops-grid, .inv-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.9rem;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 0.85rem;
     }
-    .drop-item {
+    .drop-item, .inv-item {
       background: #1e293b;
       border-radius: 12px;
-      padding: 0.9rem;
+      padding: 0.85rem;
       display: flex;
       align-items: center;
-      gap: 0.8rem;
+      gap: 0.75rem;
       border-left: 4px solid;
+      cursor: default;
     }
-    .drop-emoji { font-size: 1.7rem; }
-    .drop-info { flex: 1; }
-    .drop-name { font-weight: 600; font-size: 0.95rem; }
-    .drop-rarity { font-size: 0.78rem; font-weight: 600; margin-top: 2px; }
+    .inv-item {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .inv-item:hover {
+      background: #334155;
+      transform: translateY(-2px);
+    }
+    .drop-emoji, .inv-emoji { font-size: 1.6rem; }
+    .drop-info, .inv-info { flex: 1; min-width: 0; }
+    .drop-name, .inv-name { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .drop-rarity, .inv-rarity { font-size: 0.75rem; font-weight: 600; margin-top: 2px; }
+    .inv-value { font-size: 0.78rem; color: #fbbf24; margin-top: 2px; }
+
+    /* Item inspect inside inventory */
+    #itemInspect {
+      display: none;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #1e293b;
+      text-align: center;
+    }
+    #itemInspect.active { display: block; }
+    .inspect-emoji { font-size: 4rem; margin-bottom: 0.6rem; }
+    .inspect-name { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .inspect-rarity { font-size: 1rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 0.4rem; }
+    .inspect-value { font-size: 1.15rem; color: #fbbf24; font-weight: 700; margin-bottom: 0.8rem; }
+    .inspect-desc { color: #94a3b8; max-width: 420px; margin: 0 auto; line-height: 1.5; }
 
     /* ========== OPENING OVERLAY ========== */
     #openingOverlay {
@@ -278,21 +327,29 @@
     }
     #openingOverlay.active { display: flex; }
 
-    .crate-visual {
-      font-size: 8.5rem;
+    .crates-row {
+      display: flex;
+      gap: 1.5rem;
       z-index: 40;
-      filter: drop-shadow(0 0 50px rgba(255,255,255,0.15));
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 0 1rem;
     }
-    .crate-visual.shake {
+    .opening-crate {
+      font-size: 5.5rem;
+      filter: drop-shadow(0 0 30px rgba(255,255,255,0.12));
+      transition: transform 0.1s;
+    }
+    .opening-crate.shake {
       animation: hardShake 0.38s infinite;
     }
     @keyframes hardShake {
       0%, 100% { transform: translate(0,0) rotate(0); }
-      15% { transform: translate(-12px, 7px) rotate(-3.5deg); }
-      30% { transform: translate(14px, -9px) rotate(3.5deg); }
-      45% { transform: translate(-9px, -6px) rotate(-2.5deg); }
-      60% { transform: translate(11px, 8px) rotate(2.5deg); }
-      75% { transform: translate(-7px, 5px) rotate(-1.5deg); }
+      15% { transform: translate(-10px, 6px) rotate(-3deg); }
+      30% { transform: translate(12px, -8px) rotate(3deg); }
+      45% { transform: translate(-8px, -5px) rotate(-2deg); }
+      60% { transform: translate(9px, 7px) rotate(2deg); }
+      75% { transform: translate(-6px, 4px) rotate(-1deg); }
     }
 
     .wave-container {
@@ -311,7 +368,6 @@
       transform: translateY(-50%) rotate(-18deg);
       border-radius: 40px;
       opacity: 0;
-      filter: blur(0.5px);
     }
     .wave::before {
       content: '';
@@ -348,70 +404,7 @@
       mix-blend-mode: overlay;
     }
 
-    /* Multi counter */
-    .multi-counter {
-      position: absolute;
-      top: 8%;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #a5b4fc;
-      z-index: 45;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-    .multi-counter.show { opacity: 1; }
-
-    /* Final reveal (single) */
-    #revealScreen {
-      position: absolute;
-      inset: 0;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 60;
-      background: radial-gradient(circle at center, #0f172a 0%, #010309 75%);
-    }
-    #revealScreen.show { display: flex; }
-
-    .item-emoji {
-      font-size: 7.5rem;
-      margin-bottom: 1.3rem;
-      animation: megaPop 0.75s cubic-bezier(0.34, 1.7, 0.64, 1);
-      filter: drop-shadow(0 0 60px rgba(255,255,255,0.4));
-    }
-    .item-name {
-      font-family: 'Orbitron', sans-serif;
-      font-size: clamp(1.9rem, 4.8vw, 3rem);
-      font-weight: 900;
-      margin-bottom: 0.55rem;
-      text-align: center;
-    }
-    .item-rarity {
-      font-size: 1.35rem;
-      font-weight: 800;
-      letter-spacing: 5px;
-      margin-bottom: 0.8rem;
-      text-transform: uppercase;
-      text-shadow: 0 0 35px currentColor;
-    }
-    .item-odds {
-      color: var(--muted);
-      font-size: 1.05rem;
-      margin-bottom: 1.9rem;
-    }
-    .item-desc {
-      max-width: 460px;
-      text-align: center;
-      color: #cbd5e1;
-      line-height: 1.6;
-      margin-bottom: 3rem;
-      padding: 0 1.3rem;
-      font-size: 1.08rem;
-    }
-
-    /* Multi results screen */
+    /* Multi results */
     #multiResults {
       position: absolute;
       inset: 0;
@@ -421,44 +414,45 @@
       justify-content: center;
       z-index: 70;
       background: radial-gradient(circle at center, #0f172a 0%, #010309 80%);
-      padding: 2rem;
+      padding: 1.5rem;
       overflow-y: auto;
     }
     #multiResults.show { display: flex; }
     .multi-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.8rem;
-      margin-bottom: 1.8rem;
+      font-size: 1.7rem;
+      margin-bottom: 1.5rem;
       text-align: center;
     }
     .multi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-      max-width: 900px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.9rem;
+      max-width: 920px;
       width: 100%;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
     }
     .multi-card {
       background: #1e293b;
       border-radius: 14px;
-      padding: 1.1rem;
+      padding: 1rem;
       text-align: center;
       border-top: 4px solid;
-      animation: megaPop 0.5s cubic-bezier(0.34, 1.6, 0.64, 1) backwards;
+      animation: megaPop 0.55s cubic-bezier(0.34, 1.6, 0.64, 1) backwards;
     }
-    .multi-card .emoji { font-size: 2.8rem; margin-bottom: 0.5rem; }
-    .multi-card .name { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.3rem; }
-    .multi-card .rarity { font-size: 0.8rem; font-weight: 600; }
+    .multi-card .emoji { font-size: 2.6rem; margin-bottom: 0.4rem; }
+    .multi-card .name { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem; }
+    .multi-card .rarity { font-size: 0.78rem; font-weight: 600; }
+    .multi-card .value { font-size: 0.8rem; color: #fbbf24; margin-top: 0.3rem; }
 
     .btn-continue {
       background: #1e293b;
       color: white;
       border: 1px solid #334155;
-      padding: 0.95rem 2.6rem;
+      padding: 0.9rem 2.4rem;
       border-radius: 12px;
       font-weight: 600;
-      font-size: 1.05rem;
+      font-size: 1rem;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -468,34 +462,34 @@
     }
 
     @keyframes megaPop {
-      0% { transform: scale(0.15); opacity: 0; }
-      70% { transform: scale(1.18); }
+      0% { transform: scale(0.2); opacity: 0; }
+      70% { transform: scale(1.15); }
       100% { transform: scale(1); opacity: 1; }
     }
 
     .history {
-      margin-top: 3.8rem;
-      padding-top: 2.2rem;
+      margin-top: 3rem;
+      padding-top: 1.8rem;
       border-top: 1px solid #1e293b;
     }
     .history h2 {
-      font-size: 1.2rem;
-      margin-bottom: 1.2rem;
+      font-size: 1.15rem;
+      margin-bottom: 1rem;
       color: var(--muted);
     }
     .history-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.85rem;
+      gap: 0.7rem;
     }
     .history-item {
       background: #1e293b;
-      border-radius: 12px;
-      padding: 0.6rem 1.05rem;
-      font-size: 0.9rem;
+      border-radius: 11px;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.85rem;
       display: flex;
       align-items: center;
-      gap: 0.6rem;
+      gap: 0.5rem;
       border-left: 4px solid;
     }
   </style>
@@ -504,6 +498,11 @@
   <header>
     <h1>CRATEBOUND</h1>
     <p>Unboxing Simulator — Open crates. Chase the impossible.</p>
+    <div class="top-bar">
+      <div class="stat-pill">Wealth: <span id="wealthDisplay">0</span></div>
+      <div class="stat-pill">Items: <span id="itemCount">0</span></div>
+      <button class="inv-btn" id="invBtn">Inventory</button>
+    </div>
   </header>
 
   <div class="container">
@@ -515,7 +514,7 @@
         <button class="qty-btn" id="qtyMinus">−</button>
         <div id="qtyValue">1</div>
         <button class="qty-btn" id="qtyPlus">+</button>
-        <span>crate(s)</span>
+        <span>at once</span>
       </div>
       <button id="openBtn" disabled>SELECT A CRATE</button>
     </div>
@@ -526,8 +525,8 @@
     </div>
   </div>
 
-  <!-- Inspect Modal -->
-  <div id="inspectModal">
+  <!-- Inspect Drops Modal -->
+  <div class="modal-overlay" id="inspectModal">
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modalTitle">Crate Drops</h2>
@@ -537,25 +536,31 @@
     </div>
   </div>
 
+  <!-- Inventory Modal -->
+  <div class="modal-overlay" id="inventoryModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Your Inventory</h2>
+        <button class="modal-close" id="invClose">×</button>
+      </div>
+      <div class="inv-grid" id="invGrid"></div>
+      <div id="itemInspect">
+        <div class="inspect-emoji" id="inspEmoji"></div>
+        <div class="inspect-name" id="inspName"></div>
+        <div class="inspect-rarity" id="inspRarity"></div>
+        <div class="inspect-value" id="inspValue"></div>
+        <div class="inspect-desc" id="inspDesc"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Opening Overlay -->
   <div id="openingOverlay">
     <canvas id="particles"></canvas>
     <div class="wave-container" id="waveContainer"></div>
     <div class="screen-flash" id="screenFlash"></div>
-    <div class="multi-counter" id="multiCounter"></div>
-    <div class="crate-visual" id="crateVisual">📦</div>
+    <div class="crates-row" id="cratesRow"></div>
 
-    <!-- Single reveal -->
-    <div id="revealScreen">
-      <div class="item-emoji" id="itemEmoji"></div>
-      <div class="item-name" id="itemName"></div>
-      <div class="item-rarity" id="itemRarity"></div>
-      <div class="item-odds" id="itemOdds"></div>
-      <div class="item-desc" id="itemDesc"></div>
-      <button class="btn-continue" id="closeReveal">Continue</button>
-    </div>
-
-    <!-- Multi results -->
     <div id="multiResults">
       <div class="multi-title">You received</div>
       <div class="multi-grid" id="multiGrid"></div>
@@ -566,16 +571,16 @@
   <script>
     // ====================== DATA ======================
     const RARITIES = [
-      { name: "Common",       color: "#9ca3af", weight: 4500 },
-      { name: "Uncommon",     color: "#22c55e", weight: 2500 },
-      { name: "Rare",         color: "#3b82f6", weight: 1400 },
-      { name: "Super Rare",   color: "#60a5fa", weight: 800  },
-      { name: "Epic",         color: "#a855f7", weight: 450  },
-      { name: "Legendary",    color: "#fbbf24", weight: 200  },
-      { name: "Mythic",       color: "#f97316", weight: 90   },
-      { name: "Divine",       color: "#f8fafc", weight: 40   },
-      { name: "Chroma",       color: "#ec4899", weight: 15   },
-      { name: "Transcendent", color: "#e879f9", weight: 5    }
+      { name: "Common",       color: "#9ca3af", weight: 4200, baseValue: 15 },
+      { name: "Uncommon",     color: "#22c55e", weight: 2400, baseValue: 45 },
+      { name: "Rare",         color: "#3b82f6", weight: 1500, baseValue: 120 },
+      { name: "Super Rare",   color: "#60a5fa", weight: 850,  baseValue: 280 },
+      { name: "Epic",         color: "#a855f7", weight: 480,  baseValue: 650 },
+      { name: "Legendary",    color: "#fbbf24", weight: 220,  baseValue: 1800 },
+      { name: "Mythic",       color: "#f97316", weight: 100,  baseValue: 4500 },
+      { name: "Divine",       color: "#f8fafc", weight: 40,   baseValue: 12000 },
+      { name: "Chroma",       color: "#ec4899", weight: 15,   baseValue: 35000 },
+      { name: "Transcendent", color: "#e879f9", weight: 5,    baseValue: 100000 }
     ];
 
     const TOTAL_WEIGHT = RARITIES.reduce((s, r) => s + r.weight, 0);
@@ -585,25 +590,25 @@
         id: "starter",
         name: "Starter Crate",
         emoji: "📦",
-        desc: "Basic gear for new explorers",
+        desc: "Essential gear for beginners",
         price: "Free",
         items: [
-          { name: "Rusty Dagger", emoji: "🗡️", rarity: "Common", desc: "Barely sharp. Still better than fists." },
-          { name: "Cloth Bandana", emoji: "🧣", rarity: "Common", desc: "Keeps the dust out of your eyes." },
-          { name: "Worn Boots", emoji: "👢", rarity: "Common", desc: "They've seen better days." },
-          { name: "Wooden Shield", emoji: "🛡️", rarity: "Uncommon", desc: "Cracks under pressure, but holds." },
-          { name: "Leather Vest", emoji: "🥋", rarity: "Uncommon", desc: "Light protection, lighter regret." },
-          { name: "Spark Potion", emoji: "🧪", rarity: "Rare", desc: "A tiny burst of energy." },
-          { name: "Hunter's Bow", emoji: "🏹", rarity: "Rare", desc: "Quiet and deadly at range." },
-          { name: "Iron Gauntlets", emoji: "🥊", rarity: "Super Rare", desc: "Heavy, reliable, slightly cold." },
-          { name: "Steel Longsword", emoji: "⚔️", rarity: "Super Rare", desc: "A proper weapon at last." },
-          { name: "Shadow Cloak", emoji: "🧥", rarity: "Epic", desc: "Blends into darkness a little too well." },
-          { name: "Storm Ring", emoji: "💍", rarity: "Epic", desc: "Crackles when danger is near." },
-          { name: "Phoenix Feather", emoji: "🪶", rarity: "Legendary", desc: "Warm to the touch. Never cools." },
-          { name: "Dragonbone Axe", emoji: "🪓", rarity: "Legendary", desc: "Still carries ancient heat." },
-          { name: "Void Shard", emoji: "💎", rarity: "Mythic", desc: "Whispers in a language you almost understand." },
-          { name: "Celestial Key", emoji: "🔑", rarity: "Divine", desc: "Opens doors that shouldn't exist." },
-          { name: "Prism Core", emoji: "🔮", rarity: "Chroma", desc: "Refracts reality itself." },
+          { name: "Rusty Dagger", emoji: "🗡️", rarity: "Common", desc: "Better than nothing." },
+          { name: "Cloth Bandana", emoji: "🧣", rarity: "Common", desc: "Keeps sweat and dust away." },
+          { name: "Worn Boots", emoji: "👢", rarity: "Common", desc: "Comfortable, but falling apart." },
+          { name: "Wooden Buckler", emoji: "🛡️", rarity: "Uncommon", desc: "Light and surprisingly sturdy." },
+          { name: "Leather Vest", emoji: "🥋", rarity: "Uncommon", desc: "Basic protection for the road." },
+          { name: "Health Vial", emoji: "🧪", rarity: "Rare", desc: "Restores a small amount of vitality." },
+          { name: "Short Bow", emoji: "🏹", rarity: "Rare", desc: "Reliable at medium range." },
+          { name: "Iron Gauntlets", emoji: "🥊", rarity: "Super Rare", desc: "Heavy, cold, and effective." },
+          { name: "Steel Longsword", emoji: "⚔️", rarity: "Super Rare", desc: "A proper knight's weapon." },
+          { name: "Shadow Cloak", emoji: "🧥", rarity: "Epic", desc: "Blends into darkness almost too well." },
+          { name: "Storm Ring", emoji: "💍", rarity: "Epic", desc: "Crackles when danger approaches." },
+          { name: "Phoenix Feather", emoji: "🪶", rarity: "Legendary", desc: "Warm forever. Never cools." },
+          { name: "Dragonbone Axe", emoji: "🪓", rarity: "Legendary", desc: "Still radiates ancient heat." },
+          { name: "Void Shard", emoji: "💎", rarity: "Mythic", desc: "Whispers in a forgotten tongue." },
+          { name: "Celestial Key", emoji: "🔑", rarity: "Divine", desc: "Opens doors that should not exist." },
+          { name: "Prism Core", emoji: "🔮", rarity: "Chroma", desc: "Refracts reality around it." },
           { name: "Origin Fragment", emoji: "✨", rarity: "Transcendent", desc: "A piece of the first light." }
         ]
       },
@@ -611,24 +616,24 @@
         id: "mystic",
         name: "Mystic Crate",
         emoji: "🔮",
-        desc: "Arcane relics from forgotten realms",
+        desc: "Arcane relics and forgotten knowledge",
         price: "150 Coins",
         items: [
-          { name: "Mana Dust", emoji: "✨", rarity: "Common", desc: "Faintly glows at night." },
-          { name: "Faded Tome", emoji: "📖", rarity: "Common", desc: "Most pages are blank now." },
-          { name: "Rune Scroll", emoji: "📜", rarity: "Uncommon", desc: "Words that shift when you look away." },
-          { name: "Crystal Shard", emoji: "💠", rarity: "Uncommon", desc: "Hums with residual power." },
-          { name: "Crystal Orb", emoji: "🔮", rarity: "Rare", desc: "Shows glimpses of parallel paths." },
-          { name: "Spirit Charm", emoji: "🧿", rarity: "Rare", desc: "Protects against unseen things." },
-          { name: "Echo Blade", emoji: "⚔️", rarity: "Super Rare", desc: "Every swing leaves a ghostly afterimage." },
-          { name: "Arcane Staff", emoji: "🪄", rarity: "Super Rare", desc: "Channels raw magic." },
-          { name: "Astral Robe", emoji: "👘", rarity: "Epic", desc: "Stars move across the fabric." },
+          { name: "Mana Dust", emoji: "✨", rarity: "Common", desc: "Faintly glows in the dark." },
+          { name: "Faded Grimoire", emoji: "📖", rarity: "Common", desc: "Most pages have faded to blank." },
+          { name: "Rune Scroll", emoji: "📜", rarity: "Uncommon", desc: "The words rearrange when unread." },
+          { name: "Crystal Fragment", emoji: "💠", rarity: "Uncommon", desc: "Hums with residual magic." },
+          { name: "Scrying Orb", emoji: "🔮", rarity: "Rare", desc: "Shows brief glimpses of other paths." },
+          { name: "Spirit Charm", emoji: "🧿", rarity: "Rare", desc: "Wards against unseen things." },
+          { name: "Echo Blade", emoji: "⚔️", rarity: "Super Rare", desc: "Leaves ghostly afterimages with every swing." },
+          { name: "Arcane Staff", emoji: "🪄", rarity: "Super Rare", desc: "Channels raw magical energy." },
+          { name: "Astral Robes", emoji: "👘", rarity: "Epic", desc: "Constellations slowly drift across the fabric." },
           { name: "Moonstone Amulet", emoji: "🌙", rarity: "Epic", desc: "Grows brighter under moonlight." },
-          { name: "Dragon Scale", emoji: "🐉", rarity: "Legendary", desc: "Still radiates residual heat." },
-          { name: "Time Hourglass", emoji: "⏳", rarity: "Mythic", desc: "Sand flows both ways." },
-          { name: "Godslayer Edge", emoji: "🗡️", rarity: "Divine", desc: "Forged to end immortality." },
-          { name: "Rainbow Anomaly", emoji: "🌈", rarity: "Chroma", desc: "Doesn't obey the laws of color." },
-          { name: "The First Spark", emoji: "⚡", rarity: "Transcendent", desc: "The moment existence began." }
+          { name: "Dragon Scale", emoji: "🐉", rarity: "Legendary", desc: "Still warm centuries later." },
+          { name: "Chrono Hourglass", emoji: "⏳", rarity: "Mythic", desc: "Sand flows in both directions." },
+          { name: "Godslayer Edge", emoji: "🗡️", rarity: "Divine", desc: "Forged for the sole purpose of ending immortality." },
+          { name: "Rainbow Anomaly", emoji: "🌈", rarity: "Chroma", desc: "Refuses to obey the normal rules of color." },
+          { name: "The First Spark", emoji: "⚡", rarity: "Transcendent", desc: "The exact moment existence began." }
         ]
       },
       {
@@ -639,20 +644,44 @@
         price: "400 Coins",
         items: [
           { name: "Black Dust", emoji: "🌫️", rarity: "Common", desc: "Absorbs nearby light." },
-          { name: "Torn Veil", emoji: "🕸️", rarity: "Common", desc: "Something moved behind it." },
-          { name: "Whisper Mask", emoji: "🎭", rarity: "Uncommon", desc: "You hear things that aren't there." },
-          { name: "Cursed Coin", emoji: "🪙", rarity: "Uncommon", desc: "Always lands on the wrong side." },
+          { name: "Torn Veil", emoji: "🕸️", rarity: "Common", desc: "Something occasionally moves behind it." },
+          { name: "Whisper Mask", emoji: "🎭", rarity: "Uncommon", desc: "You hear voices that aren't there." },
+          { name: "Cursed Coin", emoji: "🪙", rarity: "Uncommon", desc: "Always lands on the side you didn't want." },
           { name: "Abyss Fang", emoji: "🦷", rarity: "Rare", desc: "Never stops dripping shadow." },
           { name: "Night Dagger", emoji: "🗡️", rarity: "Rare", desc: "Silent. Permanent." },
-          { name: "Null Ring", emoji: "💍", rarity: "Super Rare", desc: "Removes one memory at a time." },
-          { name: "Hollow Lantern", emoji: "🏮", rarity: "Super Rare", desc: "Lights the way into darkness." },
-          { name: "Horror Relic", emoji: "👁️", rarity: "Epic", desc: "It blinks when you don't look." },
-          { name: "Soul Chain", emoji: "⛓️", rarity: "Epic", desc: "Binds more than just the body." },
-          { name: "Oblivion Crown", emoji: "👑", rarity: "Legendary", desc: "Wear it and forget your name." },
+          { name: "Null Ring", emoji: "💍", rarity: "Super Rare", desc: "Erases one memory at a time." },
+          { name: "Hollow Lantern", emoji: "🏮", rarity: "Super Rare", desc: "Lights the path deeper into darkness." },
+          { name: "Horror Relic", emoji: "👁️", rarity: "Epic", desc: "It blinks when you're not looking." },
+          { name: "Soul Chain", emoji: "⛓️", rarity: "Epic", desc: "Binds more than just flesh." },
+          { name: "Oblivion Crown", emoji: "👑", rarity: "Legendary", desc: "Wear it long enough and you forget your name." },
           { name: "Endless Hunger", emoji: "🕳️", rarity: "Mythic", desc: "It grows the more you feed it." },
-          { name: "Silent God", emoji: "🤫", rarity: "Divine", desc: "A presence that demands nothing... yet." },
-          { name: "Chromatic Void", emoji: "🌀", rarity: "Chroma", desc: "All colors collapse into one." },
+          { name: "Silent God", emoji: "🤫", rarity: "Divine", desc: "A presence that asks for nothing... yet." },
+          { name: "Chromatic Void", emoji: "🌀", rarity: "Chroma", desc: "All colors collapse into one impossible shade." },
           { name: "The End of All", emoji: "💀", rarity: "Transcendent", desc: "There is nothing after this." }
+        ]
+      },
+      {
+        id: "celestial",
+        name: "Celestial Crate",
+        emoji: "🌌",
+        desc: "Gifts from the stars themselves",
+        price: "750 Coins",
+        items: [
+          { name: "Stardust", emoji: "🌟", rarity: "Common", desc: "Tiny glowing particles from distant suns." },
+          { name: "Meteor Fragment", emoji: "☄️", rarity: "Common", desc: "Still slightly warm." },
+          { name: "Comet Tail", emoji: "💫", rarity: "Uncommon", desc: "Leaves a faint trail when moved." },
+          { name: "Nebula Shard", emoji: "🪐", rarity: "Uncommon", desc: "Contains swirling gases." },
+          { name: "Solar Flare", emoji: "☀️", rarity: "Rare", desc: "Burns without heat." },
+          { name: "Lunar Mirror", emoji: "🪞", rarity: "Rare", desc: "Reflects the night sky even in daylight." },
+          { name: "Gravity Well", emoji: "🌀", rarity: "Super Rare", desc: "Slightly pulls nearby objects." },
+          { name: "Pulsar Core", emoji: "💥", rarity: "Super Rare", desc: "Pulses with rhythmic energy." },
+          { name: "Aurora Cloak", emoji: "👘", rarity: "Epic", desc: "Shifts through northern lights colors." },
+          { name: "Event Horizon", emoji: "⚫", rarity: "Epic", desc: "Light bends strangely around it." },
+          { name: "Supernova Ember", emoji: "🔥", rarity: "Legendary", desc: "The last light of a dying star." },
+          { name: "Quasar Heart", emoji: "💖", rarity: "Mythic", desc: "The brightest object in its galaxy." },
+          { name: "Cosmic Crown", emoji: "👑", rarity: "Divine", desc: "Worn by the first starborne kings." },
+          { name: "Galaxy Prism", emoji: "🌈", rarity: "Chroma", desc: "Contains an entire spiral galaxy." },
+          { name: "The Big Bang", emoji: "🌌", rarity: "Transcendent", desc: "A compressed moment of creation." }
         ]
       }
     ];
@@ -661,24 +690,22 @@
     let selectedCrate = null;
     let isOpening = false;
     let quantity = 1;
-    const history = [];
-    let multiResults = [];
+    let inventory = JSON.parse(localStorage.getItem('cratebound_inv') || '[]');
+    let history = [];
 
-    // ====================== UI ======================
+    // ====================== UI ELEMENTS ======================
     const cratesGrid = document.getElementById('cratesGrid');
     const openBtn = document.getElementById('openBtn');
     const qtyValue = document.getElementById('qtyValue');
     const openingOverlay = document.getElementById('openingOverlay');
-    const crateVisual = document.getElementById('crateVisual');
+    const cratesRow = document.getElementById('cratesRow');
     const waveContainer = document.getElementById('waveContainer');
     const screenFlash = document.getElementById('screenFlash');
-    const multiCounter = document.getElementById('multiCounter');
-    const revealScreen = document.getElementById('revealScreen');
     const multiResultsEl = document.getElementById('multiResults');
     const multiGrid = document.getElementById('multiGrid');
     const historyList = document.getElementById('historyList');
-    const inspectModal = document.getElementById('inspectModal');
-    const dropsGrid = document.getElementById('dropsGrid');
+    const wealthDisplay = document.getElementById('wealthDisplay');
+    const itemCount = document.getElementById('itemCount');
     const canvas = document.getElementById('particles');
     const ctx = canvas.getContext('2d');
 
@@ -689,7 +716,7 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Render crates
+    // ====================== RENDER CRATES ======================
     CRATES.forEach(crate => {
       const card = document.createElement('div');
       card.className = 'crate-card';
@@ -699,15 +726,15 @@
         <div class="crate-desc">${crate.desc}</div>
         <div class="crate-price">${crate.price}</div>
         <div class="crate-actions">
-          <button class="btn-inspect">Inspect Drops</button>
+          <button class="btn-inspect">Inspect</button>
           <button class="btn-select">Select</button>
         </div>
       `;
-      card.querySelector('.btn-inspect').addEventListener('click', (e) => {
+      card.querySelector('.btn-inspect').addEventListener('click', e => {
         e.stopPropagation();
         openInspect(crate);
       });
-      card.querySelector('.btn-select').addEventListener('click', (e) => {
+      card.querySelector('.btn-select').addEventListener('click', e => {
         e.stopPropagation();
         selectCrate(crate, card);
       });
@@ -726,12 +753,12 @@
 
     function updateOpenButton() {
       if (!selectedCrate) return;
-      openBtn.textContent = quantity === 1 
+      openBtn.textContent = quantity === 1
         ? `OPEN ${selectedCrate.name.toUpperCase()}`
         : `OPEN ${quantity}× ${selectedCrate.name.toUpperCase()}`;
     }
 
-    // Quantity controls
+    // Quantity
     document.getElementById('qtyMinus').addEventListener('click', () => {
       if (quantity > 1) {
         quantity--;
@@ -752,18 +779,17 @@
       startOpening();
     });
 
-    // Inspect
+    // ====================== INSPECT DROPS ======================
     function openInspect(crate) {
       document.getElementById('modalTitle').textContent = `${crate.name} — Possible Drops`;
-      dropsGrid.innerHTML = '';
-      
-      // Sort by rarity order
-      const sorted = [...crate.items].sort((a, b) => {
-        return RARITIES.findIndex(r => r.name === a.rarity) - RARITIES.findIndex(r => r.name === b.rarity);
-      });
-
+      const grid = document.getElementById('dropsGrid');
+      grid.innerHTML = '';
+      const sorted = [...crate.items].sort((a, b) =>
+        RARITIES.findIndex(r => r.name === a.rarity) - RARITIES.findIndex(r => r.name === b.rarity)
+      );
       sorted.forEach(item => {
         const rarity = RARITIES.find(r => r.name === item.rarity);
+        const value = calcValue(item);
         const el = document.createElement('div');
         el.className = 'drop-item';
         el.style.borderColor = rarity.color;
@@ -772,35 +798,79 @@
           <div class="drop-info">
             <div class="drop-name">${item.name}</div>
             <div class="drop-rarity" style="color:${rarity.color}">${item.rarity}</div>
+            <div class="inv-value">${value.toLocaleString()} coins</div>
           </div>
         `;
-        dropsGrid.appendChild(el);
+        grid.appendChild(el);
       });
-      inspectModal.classList.add('active');
+      document.getElementById('inspectModal').classList.add('active');
     }
     document.getElementById('modalClose').addEventListener('click', () => {
-      inspectModal.classList.remove('active');
-    });
-    inspectModal.addEventListener('click', (e) => {
-      if (e.target === inspectModal) inspectModal.classList.remove('active');
+      document.getElementById('inspectModal').classList.remove('active');
     });
 
-    // Close handlers
-    document.getElementById('closeReveal').addEventListener('click', finishOpening);
-    document.getElementById('closeMulti').addEventListener('click', finishOpening);
+    // ====================== INVENTORY ======================
+    document.getElementById('invBtn').addEventListener('click', openInventory);
+    document.getElementById('invClose').addEventListener('click', () => {
+      document.getElementById('inventoryModal').classList.remove('active');
+      document.getElementById('itemInspect').classList.remove('active');
+    });
 
-    function finishOpening() {
-      openingOverlay.classList.remove('active');
-      revealScreen.classList.remove('show');
-      multiResultsEl.classList.remove('show');
-      multiCounter.classList.remove('show');
-      isOpening = false;
-      openBtn.disabled = false;
-      updateOpenButton();
-      waveContainer.innerHTML = '';
+    function openInventory() {
+      const grid = document.getElementById('invGrid');
+      grid.innerHTML = '';
+      document.getElementById('itemInspect').classList.remove('active');
+
+      if (inventory.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#64748b;padding:2rem;">No items yet. Go open some crates!</div>`;
+      } else {
+        // Newest first
+        [...inventory].reverse().forEach((entry, idx) => {
+          const rarity = RARITIES.find(r => r.name === entry.rarity);
+          const el = document.createElement('div');
+          el.className = 'inv-item';
+          el.style.borderColor = rarity.color;
+          el.innerHTML = `
+            <div class="inv-emoji">${entry.emoji}</div>
+            <div class="inv-info">
+              <div class="inv-name">${entry.name}</div>
+              <div class="inv-rarity" style="color:${rarity.color}">${entry.rarity}</div>
+              <div class="inv-value">${entry.value.toLocaleString()} coins</div>
+            </div>
+          `;
+          el.addEventListener('click', () => showItemInspect(entry));
+          grid.appendChild(el);
+        });
+      }
+      document.getElementById('inventoryModal').classList.add('active');
     }
 
-    // ====================== CORE ======================
+    function showItemInspect(entry) {
+      const rarity = RARITIES.find(r => r.name === entry.rarity);
+      document.getElementById('inspEmoji').textContent = entry.emoji;
+      document.getElementById('inspName').textContent = entry.name;
+      document.getElementById('inspRarity').textContent = entry.rarity;
+      document.getElementById('inspRarity').style.color = rarity.color;
+      document.getElementById('inspValue').textContent = `${entry.value.toLocaleString()} coins`;
+      document.getElementById('inspDesc').textContent = entry.desc;
+      document.getElementById('itemInspect').classList.add('active');
+    }
+
+    function updateStats() {
+      const totalWealth = inventory.reduce((s, i) => s + i.value, 0);
+      wealthDisplay.textContent = totalWealth.toLocaleString();
+      itemCount.textContent = inventory.length;
+    }
+    updateStats();
+
+    // ====================== CORE LOGIC ======================
+    function calcValue(item) {
+      const rarity = RARITIES.find(r => r.name === item.rarity);
+      // slight random variance
+      const variance = 0.85 + Math.random() * 0.3;
+      return Math.round(rarity.baseValue * variance);
+    }
+
     function rollRarity() {
       let roll = Math.random() * TOTAL_WEIGHT;
       for (const r of RARITIES) {
@@ -816,21 +886,13 @@
       return pool[Math.floor(Math.random() * pool.length)];
     }
 
-    function getOddsText(rarityName) {
-      const r = RARITIES.find(x => x.name === rarityName);
-      if (!r) return "";
-      const oneIn = Math.round(TOTAL_WEIGHT / r.weight);
-      return `1 in ${oneIn.toLocaleString()}`;
-    }
-
     // ====================== WAVE SYSTEM ======================
     function createWave(color, intensity) {
       const wave = document.createElement('div');
       wave.className = 'wave';
       wave.style.background = color;
-      const height = 22 + intensity * 9;
-      wave.style.height = `${height}px`;
-      wave.style.boxShadow = `0 0 ${50 + intensity * 40}px ${color}`;
+      wave.style.height = `${20 + intensity * 8}px`;
+      wave.style.boxShadow = `0 0 ${45 + intensity * 35}px ${color}`;
       waveContainer.appendChild(wave);
       return wave;
     }
@@ -839,180 +901,174 @@
       return new Promise(resolve => {
         const wave = createWave(color, intensity);
         wave.offsetHeight;
-        const duration = 0.85 + intensity * 0.12;
+        const duration = 0.8 + intensity * 0.1;
         wave.style.transition = `left ${duration}s cubic-bezier(0.25, 0.7, 0.3, 1), opacity 0.2s`;
         wave.style.left = '-60%';
         wave.style.opacity = '1';
 
-        spawnWaveParticles(color, 22 + intensity * 14, intensity >= 4);
+        spawnWaveParticles(color, 18 + intensity * 12, intensity >= 4);
 
         if (intensity >= 4) {
-          flashScreen(color, 0.18 + intensity * 0.05);
-          hardShake(intensity);
-        }
-        if (intensity >= 7) {
-          setTimeout(() => flashScreen(color, 0.35), 180);
+          flashScreen(color, 0.16 + intensity * 0.04);
+          hardShake(intensity * 0.7);
         }
 
         setTimeout(() => {
           wave.style.opacity = '0';
-          setTimeout(() => wave.remove(), 350);
+          setTimeout(() => wave.remove(), 300);
           resolve();
-        }, duration * 1000 + 80);
+        }, duration * 1000 + 60);
       });
     }
 
-    function flashScreen(color, strength = 0.3) {
+    function flashScreen(color, strength = 0.25) {
       screenFlash.style.background = color;
       screenFlash.style.opacity = strength;
-      screenFlash.style.transition = 'opacity 0.07s';
+      screenFlash.style.transition = 'opacity 0.06s';
       setTimeout(() => {
-        screenFlash.style.transition = 'opacity 0.55s';
+        screenFlash.style.transition = 'opacity 0.5s';
         screenFlash.style.opacity = '0';
-      }, 70);
+      }, 60);
     }
 
     function hardShake(intensity) {
-      const amount = 8 + intensity * 4;
+      const amount = 6 + intensity * 3;
       document.body.style.transition = 'none';
-      document.body.style.transform = `translate(${(Math.random()-0.5)*amount*2}px, ${(Math.random()-0.5)*amount}px) rotate(${(Math.random()-0.5)*1.2}deg)`;
+      document.body.style.transform = `translate(${(Math.random()-0.5)*amount*2}px, ${(Math.random()-0.5)*amount}px)`;
       setTimeout(() => {
-        document.body.style.transition = 'transform 0.1s';
+        document.body.style.transition = 'transform 0.09s';
         document.body.style.transform = '';
-      }, 70);
+      }, 60);
     }
 
-    // ====================== OPENING SEQUENCE ======================
+    // ====================== OPENING (SIMULTANEOUS) ======================
     async function startOpening() {
       isOpening = true;
       openBtn.disabled = true;
       openBtn.textContent = "OPENING...";
-      multiResults = [];
 
-      waveContainer.innerHTML = '';
-      revealScreen.classList.remove('show');
-      multiResultsEl.classList.remove('show');
-      crateVisual.textContent = selectedCrate.emoji;
-      openingOverlay.classList.add('active');
-
-      const total = quantity;
-
-      for (let n = 0; n < total; n++) {
-        // Show counter if multi
-        if (total > 1) {
-          multiCounter.textContent = `${n + 1} / ${total}`;
-          multiCounter.classList.add('show');
-        }
-
-        crateVisual.classList.add('shake');
-        await sleep(total > 1 ? 700 : 1100);
-
-        const finalRarity = rollRarity();
-        const finalItem = getItemForRarity(selectedCrate, finalRarity.name);
-        const finalIndex = RARITIES.findIndex(r => r.name === finalRarity.name);
-
-        // Waves
-        for (let i = 0; i <= finalIndex; i++) {
-          const r = RARITIES[i];
-          await fireWave(r.color, i);
-
-          if (i === finalIndex) {
-            await sleep(250);
-            spawnWaveParticles(r.color, 90 + i * 25, true);
-            if (i >= 7) {
-              for (let k = 0; k < 5; k++) {
-                setTimeout(() => {
-                  spawnWaveParticles(r.color, 50, true);
-                  flashScreen(r.color, 0.3);
-                }, k * 100);
-              }
-            }
-          } else {
-            await sleep(180 + i * 15);
-          }
-        }
-
-        crateVisual.classList.remove('shake');
-        await sleep(600);
-
-        spawnWaveParticles(finalRarity.color, 120 + finalIndex * 20, true);
-        flashScreen(finalRarity.color, 0.55);
-        hardShake(finalIndex + 3);
-
-        await sleep(500);
-
-        // Store result
-        multiResults.push({ item: finalItem, rarity: finalRarity });
-        history.unshift({ item: finalItem, rarity: finalRarity, crate: selectedCrate.name });
-        if (history.length > 20) history.pop();
+      // Roll all results first
+      const results = [];
+      for (let i = 0; i < quantity; i++) {
+        const rarity = rollRarity();
+        const item = getItemForRarity(selectedCrate, rarity.name);
+        const value = calcValue(item);
+        results.push({ item, rarity, value });
       }
 
-      multiCounter.classList.remove('show');
+      // Find the highest rarity for the shared wave climb
+      const maxIndex = Math.max(...results.map(r => RARITIES.findIndex(x => x.name === r.rarity.name)));
+
+      // Setup multiple crates
+      cratesRow.innerHTML = '';
+      waveContainer.innerHTML = '';
+      multiResultsEl.classList.remove('show');
+
+      for (let i = 0; i < quantity; i++) {
+        const crateEl = document.createElement('div');
+        crateEl.className = 'opening-crate shake';
+        crateEl.textContent = selectedCrate.emoji;
+        crateEl.style.fontSize = quantity >= 4 ? '4.2rem' : quantity === 3 ? '5rem' : '6.5rem';
+        cratesRow.appendChild(crateEl);
+      }
+
+      openingOverlay.classList.add('active');
+      await sleep(900);
+
+      // Shared dramatic wave sequence (based on highest roll)
+      for (let i = 0; i <= maxIndex; i++) {
+        const r = RARITIES[i];
+        await fireWave(r.color, i);
+        if (i < maxIndex) await sleep(160 + i * 12);
+      }
+
+      // Final impact
+      await sleep(300);
+      spawnWaveParticles(RARITIES[maxIndex].color, 100 + maxIndex * 20, true);
+      flashScreen(RARITIES[maxIndex].color, 0.5);
+      hardShake(maxIndex + 2);
+
+      // Stop shaking
+      document.querySelectorAll('.opening-crate').forEach(c => c.classList.remove('shake'));
+      await sleep(700);
+
+      // Add to inventory + history
+      results.forEach(res => {
+        const entry = {
+          name: res.item.name,
+          emoji: res.item.emoji,
+          rarity: res.rarity.name,
+          desc: res.item.desc,
+          value: res.value,
+          crate: selectedCrate.name,
+          id: Date.now() + Math.random()
+        };
+        inventory.push(entry);
+        history.unshift({ ...entry, rarityObj: res.rarity });
+      });
+      if (history.length > 24) history.length = 24;
+      localStorage.setItem('cratebound_inv', JSON.stringify(inventory));
+      updateStats();
       renderHistory();
 
-      // Show results
-      if (total === 1) {
-        showSingleReveal(multiResults[0]);
-      } else {
-        showMultiResults();
-      }
+      // Show multi results (works for 1 or many)
+      showResults(results);
     }
 
-    function showSingleReveal(result) {
-      document.getElementById('itemEmoji').textContent = result.item.emoji;
-      document.getElementById('itemName').textContent = result.item.name;
-      document.getElementById('itemRarity').textContent = result.rarity.name;
-      document.getElementById('itemRarity').style.color = result.rarity.color;
-      document.getElementById('itemOdds').textContent = getOddsText(result.rarity.name);
-      document.getElementById('itemDesc').textContent = result.item.desc;
-      revealScreen.classList.add('show');
-    }
-
-    function showMultiResults() {
+    function showResults(results) {
       multiGrid.innerHTML = '';
-      multiResults.forEach((res, idx) => {
+      results.forEach((res, idx) => {
         const card = document.createElement('div');
         card.className = 'multi-card';
         card.style.borderColor = res.rarity.color;
-        card.style.animationDelay = `${idx * 0.08}s`;
+        card.style.animationDelay = `${idx * 0.07}s`;
         card.innerHTML = `
           <div class="emoji">${res.item.emoji}</div>
           <div class="name">${res.item.name}</div>
           <div class="rarity" style="color:${res.rarity.color}">${res.rarity.name}</div>
+          <div class="value">${res.value.toLocaleString()} coins</div>
         `;
         multiGrid.appendChild(card);
       });
       multiResultsEl.classList.add('show');
     }
 
+    document.getElementById('closeMulti').addEventListener('click', () => {
+      openingOverlay.classList.remove('active');
+      multiResultsEl.classList.remove('show');
+      isOpening = false;
+      openBtn.disabled = false;
+      updateOpenButton();
+      waveContainer.innerHTML = '';
+      cratesRow.innerHTML = '';
+    });
+
     function renderHistory() {
       historyList.innerHTML = history.map(h => `
-        <div class="history-item" style="border-color: ${h.rarity.color}">
-          <span>${h.item.emoji}</span>
-          <span>${h.item.name}</span>
-          <span style="color:${h.rarity.color}; font-size:0.8rem; font-weight:600">${h.rarity.name}</span>
+        <div class="history-item" style="border-color: ${h.rarityObj ? h.rarityObj.color : '#64748b'}">
+          <span>${h.emoji}</span>
+          <span>${h.name}</span>
+          <span style="color:${h.rarityObj ? h.rarityObj.color : '#94a3b8'};font-size:0.78rem;font-weight:600">${h.rarity}</span>
         </div>
       `).join('');
     }
 
     // ====================== PARTICLES ======================
     const particles = [];
-
-    function spawnWaveParticles(color, count = 30, big = false) {
+    function spawnWaveParticles(color, count = 25, big = false) {
       const cy = canvas.height * 0.5;
       for (let i = 0; i < count; i++) {
-        const x = canvas.width * (0.05 + Math.random() * 0.9);
-        const angle = (Math.random() - 0.5) * Math.PI * 1.5;
-        const speed = (big ? 6 : 3) + Math.random() * (big ? 13 : 6);
+        const x = canvas.width * (0.08 + Math.random() * 0.84);
+        const angle = (Math.random() - 0.5) * Math.PI * 1.4;
+        const speed = (big ? 5.5 : 2.8) + Math.random() * (big ? 12 : 5);
         particles.push({
-          x, y: cy + (Math.random() - 0.5) * 60,
+          x, y: cy + (Math.random() - 0.5) * 50,
           vx: Math.cos(angle) * speed * (Math.random() > 0.5 ? 1 : -1),
-          vy: Math.sin(angle) * speed - (big ? 4 : 1.5),
+          vy: Math.sin(angle) * speed - (big ? 3.5 : 1.2),
           life: 1,
           decay: 0.007 + Math.random() * 0.012,
-          size: (big ? 4 : 2) + Math.random() * (big ? 7 : 3.5),
-          color,
-          glow: big
+          size: (big ? 3.8 : 1.9) + Math.random() * (big ? 6.5 : 3),
+          color, glow: big
         });
       }
     }
@@ -1023,16 +1079,13 @@
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.065;
+        p.vy += 0.06;
         p.life -= p.decay;
-        if (p.life <= 0) {
-          particles.splice(i, 1);
-          continue;
-        }
-        ctx.globalAlpha = p.life * 0.92;
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
+        ctx.globalAlpha = p.life * 0.9;
         ctx.fillStyle = p.color;
         ctx.shadowColor = p.color;
-        ctx.shadowBlur = p.glow ? 28 : 10;
+        ctx.shadowBlur = p.glow ? 26 : 9;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
