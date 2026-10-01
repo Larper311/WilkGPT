@@ -71,15 +71,17 @@ h1{font-family:Impact,Orbitron,sans-serif;text-align:center;font-size:clamp(2rem
 .rb .fb::after,.it.rb::after{content:'';position:absolute;inset:0;border-radius:11px;pointer-events:none;background:linear-gradient(110deg,transparent 30%,#ffffff66 50%,transparent 70%);background-size:250% 100%;animation:sw 2.2s linear infinite}
 .rb .fb,.it.rb{border-color:#fff!important}
 @keyframes sw{from{background-position:150% 0}to{background-position:-50% 0}}
+.si{background:linear-gradient(160deg,#1e1b4b,#0b1020) padding-box,conic-gradient(from var(--a,0deg),#6366f1,#e879f9,#fbbf24,#22d3ee,#6366f1) border-box;border:2px solid transparent;border-radius:14px;padding:1rem;text-align:center;display:flex;flex-direction:column;gap:.35rem;align-items:center;animation:spinA 6s linear infinite}
+.si .em{font-size:2.6rem}.si small{color:#94a3b8;min-height:2.6em}.gb:disabled{opacity:.4;cursor:not-allowed;transform:none}
 </style></head><body>
 <h1>CRATEBOUND</h1>
 <div class="bar"><div class="pill">🪙 <b id="coins">0</b></div><div class="pill">Wealth <b id="wealth">0</b></div><div class="pill">Items <b id="cnt">0</b></div>
-<button class="btn" id="bInv">Inventory</button><button class="btn" id="bBook">Collection</button><button class="btn" id="bDaily">Daily reward</button><button class="btn" id="bTrade">Trade-up</button><button class="btn" id="bAch">Achievements</button><button class="btn" id="bBoost"></button><button class="btn" id="bBail" style="display:none">🆘 Bailout +50</button><button class="btn" id="bDbg">🛠 Debug</button><button class="btn" id="bSnd">🔊</button></div>
+<button class="btn" id="bInv">Inventory</button><button class="btn" id="bBook">Collection</button><button class="btn" id="bDaily">Daily reward</button><button class="btn" id="bTrade">Trade-up</button><button class="btn" id="bAch">Achievements</button><button class="btn" id="bBoost"></button><button class="btn" id="bBail" style="display:none">🆘 Bailout +50</button><button class="btn" id="bShop">🛒 Shop</button><button class="btn" id="bDbg">🛠 Debug</button><button class="btn" id="bSnd">🔊</button></div>
 <div id="feed"></div>
 <div class="wrap"><div class="grid" id="crates"></div>
 <div class="open"><div class="bar" style="margin:0"><button class="btn" id="qm">−</button><div class="pill" id="qv">1</div><button class="btn" id="qp">+</button></div>
 <button id="openBtn" disabled>SELECT A CRATE</button>
-<div class="pity"><span id="pt"></span><div><i id="pb"></i></div></div><div id="net" style="font-size:.75rem;color:var(--mu)"></div></div></div>
+<div class="pity"><span id="pt"></span><div><i id="pb"></i></div></div><div id="buffs" style="font-size:.8rem;color:#c4b5fd;text-align:center"></div><div id="net" style="font-size:.75rem;color:var(--mu)"></div></div></div>
 <div class="modal" id="m1"><div class="mc"><div class="mh"><h2 id="m1t"></h2><button class="btn" data-x="m1">×</button></div><div class="items" id="m1g"></div></div></div>
 <div id="ov"><div id="crow"></div><div id="cards"></div><div id="ovb" style="display:none;gap:.6rem"><button class="btn" id="revAll">Reveal all</button><button class="btn" id="done">Continue</button></div></div><div id="fl"></div>
 <script>
@@ -94,19 +96,19 @@ const CR=[
 {id:"void",n:"Void Crate",e:"🌑",p:800,l:1.22,d:"Dangerous artifacts from the abyss",it:[I("Black Dust","🌫️",0),I("Torn Veil","🕸️",0),I("Bone Chime","🦴",0),I("Whisper Mask","🎭",1),I("Cursed Coin","🪙",1),I("Shadow Bat","🦇",1),I("Abyss Fang","🦷",2),I("Night Dagger","🗡️",2),I("Hollow Lantern","🏮",3),I("Null Ring","💍",3),I("Horror Relic","👁️",4),I("Soul Chain","⛓️",4),I("Oblivion Crown","👑",5),I("Reaper's Hourglass","⌛",5),I("Endless Hunger","🕳️",6),I("Devourer's Eye","🧿",6),I("Silent God","🤫",7),I("Chromatic Void","🌀",8),I("The End of All","💀",9),I("Abyssal Heart","🖤",7,15),I("Last Whisper","👄",6,40),I("Void Emperor","👾",9,3),I("Grave Dirt","🪦",0),I("Nightmare Mask","😈",3),I("Eclipse Blade","🌘",6),I("Gate of Nothing","🚪",8),I("Maw of the Deep","🦑",8,6),I("Shadow Dragon","🐲",6),I("Rift Walker Boots","🥾",4),I("Cosmic Horror","🐙",8),I("Throne of Ruin","🪑",7,10)]},
 {id:"celestial",n:"Celestial Crate",e:"🌌",p:1600,l:1.32,d:"Gifts from the stars themselves",it:[I("Stardust","🌟",0),I("Meteor Fragment","☄️",0),I("Moon Pebble","🪨",0),I("Comet Tail","💫",1),I("Nebula Shard","🪐",1),I("Star Map","🔭",1),I("Solar Flare","☀️",2),I("Lunar Mirror","🪞",2),I("Rocket Core","🚀",2),I("Gravity Well","🌀",3),I("Pulsar Core","💥",3),I("Aurora Cloak","👘",4),I("Event Horizon","⚫",4),I("Supernova Ember","🔥",5),I("Zodiac Wheel","♈",5),I("Quasar Heart","💖",6),I("Dyson Sphere","🛰️",6),I("Cosmic Crown","👑",7),I("Galaxy Prism","🌈",8),I("The Big Bang","🌌",9),I("Starforged Crown","👑",8,10),I("Genesis Seed","🌱",9,5),I("Comet Rider","🌠",6,30),I("Astro Helmet","👨‍🚀",2),I("Ion Drive","🔋",3),I("Orbital Ring","⭕",4),I("Galactic Throne","🪑",7),I("Dark Matter Core","⚛️",8,8),I("Star Whale","🐋",6),I("Comet Sword","⚔️",5),I("Galaxy Core","🌐",8),I("Sun God's Halo","😇",9,3)]},
 {id:"inferno",n:"Inferno Crate",e:"🔥",p:2400,l:1.3,d:"Forged in volcanic fury",it:[I("Ember Chip","🔸",0),I("Charred Bone","🍖",0),I("Smoke Vial","💨",0),I("Flame Charm","🧯",1),I("Lava Rock","🪨",1),I("Fire Sprite","🧚",1),I("Magma Gauntlet","🥊",2),I("Cinder Blade","🗡️",2),I("Ifrit Lamp","🪔",2),I("Volcano Heart","🌋",3),I("Dragonfire Bow","🏹",3),I("Phoenix Crown","🦅",4),I("Inferno Cloak","🔥",4),I("Hellfire Ring","💍",5),I("Forge Hammer","🔨",5),I("Balrog Whip","➰",6),I("Sun Shard","🌞",6),I("Ragnarok Flame","☄️",7),I("Chroma Blaze","🎇",8),I("Heat Death","🌡️",9),I("Eternal Pyre","⛩️",7,10),I("Solar Forge","🏭",9,4),I("Dragon's Heart","🫀",5),I("Volcanic Colossus","🗿",8),I("Phoenix Reborn","🐦",8,7)]}];
-const $=id=>document.getElementById(id),sl=ms=>new Promise(r=>setTimeout(r,ms));
+const $=id=>document.getElementById(id),sl=ms=>new Promise(r=>setTimeout(r,ms*act('spd')));
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let coins=ld('cb_coins',500),inv=ld('cb_inv',[]),seen=ld('cb_seen',{}),pity=ld('cb_pity',0),daily=ld('cb_daily',{d:'',s:0}),sel=null,qty=1,busy=false,snd=true,db=null,stock={},localStock=ld('cb_lstock',{});
 let cdt=ld("cb_cd",0),boost=ld("cb_boost",0),ach=ld("cb_ach",{}),opens=ld("cb_opens",0),bail=ld("cb_bail",0);
 if(window.claude&&claude.use)claude.use('db').then(d=>{if(!d)return;db=d;$('net').textContent='🌐 Limited stock is shared with all players';
  try{db.collection('stock').onSnapshot(s=>{const a=s.docs||[];a.forEach(x=>{const v=typeof x.data==='function'?x.data():x.data;stock[x.id]=(v&&v.n)||0});},()=>{})}catch(e){}}).catch(()=>{});
-const rem=i=>i.t-(db?stock[i.s]||0:localStock[i.s]||0);
+const rem=i=>i.t-(db?stock['v2-'+i.s]||0:localStock[i.s]||0);
 async function claim(i){
- if(!db){const n=(localStock[i.s]||0)+1;if(n>i.t)return null;localStock[i.s]=n;sv('cb_lstock',localStock);return n}
- const ref=db.doc('stock/'+i.s);
+ if(!db){const n=(localStock[i.s]||0)+1;if(n>i.t)return null;localStock[i.s]=n;sv('cb_lstock',localStock);return i.t-n+1}
+ const ref=db.doc('stock/v2-'+i.s);
  for(let k=0;k<6;k++){try{const a=await ref.acquire({ttlMs:4000});
   if(a.acquired){const s=await ref.get();const v=s.exists?(typeof s.data==='function'?s.data():s.data):{};const n=((v&&v.n)||0);
-   if(n>=i.t){stock[i.s]=n;return null}await ref.set({n:n+1});stock[i.s]=n+1;return n+1}}catch(e){}
+   if(n>=i.t){stock['v2-'+i.s]=n;return null}await ref.set({n:n+1});stock['v2-'+i.s]=n+1;return i.t-n}}catch(e){}
   await sl(250+Math.random()*450)}
  return null}
 // audio
@@ -126,19 +128,19 @@ $('bInv').onclick=()=>{$('m1t').innerHTML=`Inventory <button class="btn" id="sAl
  if(!inv.length)g.innerHTML='<p style="color:var(--mu)">Nothing yet.</p>';
  [...inv].reverse().forEach(e=>{const it=findItem(e.s),w=document.createElement('div');w.innerHTML=card(it,{sn:e.sn,v:e.vr,val:e.v,vc:'v-'+e.vr});const x=w.firstChild;x.style.cursor='pointer';x.title='Click to sell for '+sell(e);x.onclick=()=>{if(arm(e)){coins+=sell(e);inv=inv.filter(y=>y.id!==e.id);stats();$('bInv').click()}};g.appendChild(x)});
  setTimeout(()=>{const b=$('sAll');if(b)b.onclick=()=>{const k=inv.filter(e=>e.r<=2);if(!k.length)return;coins+=k.reduce((s,e)=>s+sell(e),0);inv=inv.filter(e=>e.r>2);stats();$('bInv').click()}});$('m1').classList.add('on')};
-const sell=e=>Math.floor(e.v*.25),findItem=s=>{for(const c of CR)for(const i of c.it)if(i.s===s)return i};
+const sell=e=>{const b=BF.sell&&BF.sell.t>Date.now()?BF.sell.m:1;return b===0?1:Math.floor(e.v*.25*b)},findItem=s=>{for(const c of CR)for(const i of c.it)if(i.s===s)return i};
 $('bBook').onclick=()=>{$('m1t').textContent='Collection';const g=$('m1g');g.innerHTML='';CR.forEach(c=>{const n=c.it.filter(i=>seen[i.s]).length;const h=document.createElement('h3');h.style.cssText='grid-column:1/-1;margin-top:.6rem';h.textContent=`${c.e} ${c.n} — ${n}/${c.it.length}`+(n===c.it.length?' ✅':'');g.appendChild(h);
  c.it.forEach(i=>{const w=document.createElement('div');w.innerHTML=seen[i.s]?card(i):`<div class="it dim"><div class="em">❔</div><b>???</b></div>`;g.appendChild(w.firstChild)})});$('m1').classList.add('on')};
 $('bDaily').onclick=()=>{const t=new Date().toDateString();if(daily.d===t)return toast('Come back tomorrow!');const y=new Date(Date.now()-864e5).toDateString();daily.s=daily.d===y?Math.min(daily.s+1,7):1;daily.d=t;const g=200+daily.s*50;coins+=g;sv('cb_daily',daily);stats();upd();toast(`+${g} coins! Streak: ${daily.s} day(s)`)};
 // opening
-function pickRarity(c){if(forceR!==null&&forceR<(c.hi||10)){const f=forceR;forceR=null;return f}const hi=c.hi||10,b=boost>0?1.25:1;const W=R.map((r,i)=>r[2]*Math.pow(c.l*b,i)).slice(0,hi);let lo=(pity>=14&&!c.cd)?4:0;const T=W.slice(lo).reduce((a,b)=>a+b,0);let x=Math.random()*T;for(let i=lo;i<hi;i++){if(x<W[i])return i;x-=W[i]}return lo}
-function pickItem(c,r){const p=c.it.filter(i=>i.r===r&&(!i.t||rem(i)>0));const w=p.map(i=>i.t?.3:1);let x=Math.random()*w.reduce((a,b)=>a+b,0);for(let k=0;k<p.length;k++){if(x<w[k])return p[k];x-=w[k]}return p[0]}
-function value(i,vm,sn){let v=BV[i.r]*(.9+Math.random()*.2)*vm;if(i.t)v*=1+4*(1-(sn-1)/Math.max(1,i.t-1));return Math.round(v)}
+function pickRarity(c){if(forceR!==null&&forceR<(c.hi||10)){const f=forceR;forceR=null;return f}const hi=c.hi||10,b=boost>0?1.25:1;const W=R.map((r,i)=>r[2]*Math.pow(c.l*b*act('luck'),i)).slice(0,hi);let lo=(pity>=14&&!c.cd)?4:0;const T=W.slice(lo).reduce((a,b)=>a+b,0);let x=Math.random()*T;for(let i=lo;i<hi;i++){if(x<W[i])return i;x-=W[i]}return lo}
+function pickItem(c,r){const p=c.it.filter(i=>i.r===r&&(!i.t||rem(i)>0));const w=p.map(i=>i.t?.3*act('lim'):1);let x=Math.random()*w.reduce((a,b)=>a+b,0);for(let k=0;k<p.length;k++){if(x<w[k])return p[k];x-=w[k]}return p[0]}
+function value(i,vm,sn){let v=BV[i.r]*(.9+Math.random()*.2)*vm*act('val');if(i.t)v*=1+4*((sn-1)/Math.max(1,i.t-1));return Math.round(v)}
 $('openBtn').onclick=async()=>{if(!sel||busy||coins<sel.p*qty)return;if(sel.cd){if(Date.now()<cdt)return;cdt=Date.now()+sel.cd;sv("cb_cd",cdt)}busy=true;coins-=sel.p*qty;$('openBtn').disabled=true;const res=[];
  for(let k=0;k<qty;k++){let r=pickRarity(sel),it=pickItem(sel,r),sn=null;if(it.t){sn=await claim(it);if(!sn){it=sel.it.find(i=>i.r===r&&!i.t)||it;sn=null}}
-  const rr=Math.random();let vn='',vm=1;for(const v of VAR)if(rr<v[2]){vn=v[0];vm=v[1];break}
+  const rr=Math.random();let vn='',vm=1;for(const v of VAR)if(rr<v[2]*act('var')){vn=v[0];vm=v[1];break}
   if(!sel.cd)pity=r>=4?0:pity+1;res.push({i:it,r,sn,vr:vn,v:value(it,vm,sn)})}
- opens+=qty;sv("cb_opens",opens);if(boost>0){boost=Math.max(0,boost-qty);sv("cb_boost",boost)}const mx=Math.max(...res.map(x=>x.r));$('crow').innerHTML=res.map(()=>`<span class="oc shake" style="font-size:${qty>6?2.8:qty>3?4:6}rem">${sel.e}</span>`).join('');$('cards').style.display='none';$('ovb').style.display='none';$('ov').classList.add('on');
+ opens+=qty;sv("cb_opens",opens);if(boost>0){boost=Math.max(0,boost-qty);sv("cb_boost",boost)}use(qty);const mx=Math.max(...res.map(x=>x.r));$('crow').innerHTML=res.map(()=>`<span class="oc shake" style="font-size:${qty>6?2.8:qty>3?4:6}rem">${sel.e}</span>`).join('');$('cards').style.display='none';$('ovb').style.display='none';$('ov').classList.add('on');
  await sl(800);await shine(mx);
  $('crow').innerHTML='';$('cards').style.display='grid';$('cards').innerHTML=res.map((x,n)=>`<div class="fc v-${x.vr} r${x.r}${x.r===9?' rb':''}" data-n="${n}"><div class="fi"><div class="fa" style="--c:${R[x.r][1]}">❓</div><div class="fb" style="--c:${R[x.r][1]};border-color:${R[x.r][1]};box-shadow:0 0 ${x.r*7}px ${R[x.r][1]}"><div class="em">${x.i.e}</div><b>${x.i.n}${x.sn?' #'+x.sn:''}</b><span style="color:${R[x.r][1]}">${x.vr?x.vr+' ':''}${R[x.r][0]}</span><div class="gold">${x.v.toLocaleString()} 🪙</div>${x.sn?`<div class="lim">Serial ${x.sn}/${x.i.t}</div>`:''}</div></div></div>`).join('');
  $('ovb').style.display='flex';
@@ -156,7 +158,7 @@ $('bTrade').onclick=()=>{$('m1t').textContent='Trade-up: 5 items → 1 of the ne
  for(let r=0;r<9;r++){const p=inv.filter(e=>e.r===r&&!findItem(e.s).t),b=document.createElement('button');b.className='btn';b.disabled=p.length<5;b.style.margin='.3rem';b.textContent=`${R[r][0]} ×${p.length} → ${R[r+1][0]}`;
   b.onclick=()=>{p.sort((a,c)=>a.v-c.v).slice(0,5).forEach(e=>inv.splice(inv.indexOf(e),1));const pool=CR.flatMap(c=>c.it).filter(i=>i.r===r+1&&!i.t),it=pool[Math.floor(Math.random()*pool.length)];inv.push({id:Date.now()+Math.random(),s:it.s,n:it.n,r:it.r,sn:null,vr:'',v:Math.round(BV[it.r]*(.9+Math.random()*.2))});seen[it.s]=1;stats();toast(`Got ${it.e} ${it.n} (${R[it.r][0]})!`);$('bTrade').click()};g.appendChild(b)}
  $('m1').classList.add('on')};
-const AC=[["First Steps","Open 1 crate",()=>opens>=1,50],["Hooked","Open 50 crates",()=>opens>=50,300],["Whale","Open 250 crates",()=>opens>=250,1500],["Shiny Hunter","Own a variant item",()=>inv.some(e=>e.vr),400],["Numbered","Own a limited item",()=>inv.some(e=>e.sn),500],["Top 3","Own a serial #1-3",()=>inv.some(e=>e.sn&&e.sn<=3),3000],["Mythic Touch","Own a Mythic or better",()=>inv.some(e=>e.r>=6),400],["Transcendent","Own a Transcendent",()=>inv.some(e=>e.r===9),5000],["Completionist","Complete a crate's collection",()=>CR.some(c=>c.it.every(i=>seen[i.s])),2500],["Rich","Hold 10,000 coins",()=>coins>=10000,1000]];
+const AC=[["First Steps","Open 1 crate",()=>opens>=1,50],["Hooked","Open 50 crates",()=>opens>=50,300],["Whale","Open 250 crates",()=>opens>=250,1500],["Shiny Hunter","Own a variant item",()=>inv.some(e=>e.vr),400],["Numbered","Own a limited item",()=>inv.some(e=>e.sn),500],["Top 3","Own one of the first 3 copies of a limited item",()=>inv.some(e=>e.sn&&e.sn>findItem(e.s).t-3),3000],["Mythic Touch","Own a Mythic or better",()=>inv.some(e=>e.r>=6),400],["Transcendent","Own a Transcendent",()=>inv.some(e=>e.r===9),5000],["Completionist","Complete a crate's collection",()=>CR.some(c=>c.it.every(i=>seen[i.s])),2500],["Rich","Hold 10,000 coins",()=>coins>=10000,1000]];
 function ach2(){AC.forEach(a=>{if(!ach[a[0]]&&a[2]()){ach[a[0]]=1;coins+=a[3];toast(`🏆 ${a[0]}! +${a[3]} coins`)}});sv('cb_ach',ach);stats();upd()}
 $('bAch').onclick=()=>{$('m1t').textContent='Achievements';$('m1g').innerHTML=AC.map(a=>`<div class="it ${ach[a[0]]?'':'dim'}"><div class="em">${ach[a[0]]?'🏆':'🔒'}</div><div><b>${a[0]}</b>${a[1]}<div class="gold">+${a[3]} 🪙</div></div></div>`).join('');$('m1').classList.add('on')};
 setInterval(upd,1000);upd();
@@ -189,5 +191,40 @@ const _fx=fx;fx=function(r,el){_fx(r,el);
  if(r===7){pillar(el,'#fde68a');ring(el,'#fde68a',16);setTimeout(()=>{ring(el,'#fff',20);burst(el,'#fff',40,260)},250)}
  if(r===8){rbBurst(el,60);[0,200,400].forEach(t=>setTimeout(()=>ring(el,`hsl(${t} 100% 60%)`,15),t));pillar(el,'#ec4899')}
  if(r===9){rbBurst(el,120);pillar(el,'#fff');[0,150,300,450,600].forEach(t=>setTimeout(()=>{ring(el,`hsl(${t/2} 100% 60%)`,18);flash(`hsl(${t} 100% 70%)`,.5)},t))}};
+let BF=ld('cb_bf',{}),SH=ld('cb_shop',{t:0,i:[],x:[]});
+function act(k){const b=BF[k];return b&&(b.n>0||b.t>Date.now())?b.m:1}
+function use(n){['luck','var','lim','val'].forEach(k=>{if(BF[k]&&BF[k].n>0)BF[k].n=Math.max(0,BF[k].n-n)});sv('cb_bf',BF)}
+const bn=(k,n,m)=>{BF[k]={n,m}},bt=(k,min,m)=>{BF[k]={t:Date.now()+min*6e4,m}};
+const S=(n,e,p,d,f)=>({n,e,p,d,f});
+const rnd=(a,b)=>{const p=CR.flatMap(c=>c.it).filter(i=>i.r>=a&&i.r<=b&&!i.t);return p[Math.floor(Math.random()*p.length)]};
+const give=i=>{inv.push({id:Date.now()+Math.random(),s:i.s,n:i.n,r:i.r,sn:null,vr:'',v:Math.round(BV[i.r]*(.9+Math.random()*.2))});seen[i.s]=1;toast(`Got ${i.e} ${i.n}!`)};
+const POOL=[
+S("Clover Charm","🍀",1200,"+15% luck for 5 opens",()=>bn('luck',5,1.15)),S("Rabbit's Foot","🐇",3500,"+30% luck for 5 opens",()=>bn('luck',5,1.3)),
+S("Wishing Star","🌠",9000,"+60% luck for 5 opens",()=>bn('luck',5,1.6)),S("Dragon's Blessing","🐲",25000,"+60% luck for 15 opens",()=>bn('luck',15,1.6)),
+S("Black Cat","🐈",600,"−50% luck for 5 opens (why?)",()=>bn('luck',5,.5)),S("Broken Mirror","🪞",300,"−30% luck for 3 opens",()=>bn('luck',3,.7)),
+S("Merchant's Charm","🤝",2000,"Sell prices ×1.5 for 5 min",()=>bt('sell',5,1.5)),S("Golden Scale","⚖️",6000,"Sell prices ×2 for 5 min",()=>bt('sell',5,2)),
+S("Midas Touch","👑",15000,"Sell prices ×3 for 10 min",()=>bt('sell',10,3)),S("Pawn Shop Scam","🪙",200,"Everything sells for 1 coin for 3 min",()=>bt('sell',3,0)),
+S("Tax Collector","🧾",500,"Sell prices ×0.5 for 5 min",()=>bt('sell',5,.5)),
+S("Turbo Opening","⚡",1000,"Opening animations 60% faster for 5 min",()=>bt('spd',5,.4)),S("Hyperdrive","🚀",3000,"Opening 80% faster for 10 min",()=>bt('spd',10,.2)),
+S("Molasses","🍯",400,"Opening twice as slow for 3 min",()=>bt('spd',3,2)),S("Sloth Spirit","🦥",250,"Opening 3× slower for 3 min",()=>bt('spd',3,3)),
+S("Shiny Dust","✨",2500,"Variant chance ×2 for 5 opens",()=>bn('var',5,2)),S("Holo Prism","🌈",8000,"Variant chance ×4 for 5 opens",()=>bn('var',5,4)),
+S("Variant Overdrive","💥",20000,"Variant chance ×8 for 10 opens",()=>bn('var',10,8)),
+S("Collector's Magnet","🧲",5000,"Limited items drop ~3× more for 5 opens",()=>bn('lim',5,3)),S("Limited Beacon","📡",15000,"Limited items drop ~8× more for 5 opens",()=>bn('lim',5,8)),
+S("Appraiser's Lens","🔍",4000,"+25% item value for 5 opens",()=>bn('val',5,1.25)),S("Jeweler's Loupe","💎",12000,"+60% item value for 5 opens",()=>bn('val',5,1.6)),
+S("Cursed Ledger","📉",700,"−40% item value for 5 opens",()=>bn('val',5,.6)),
+S("Free Voucher","🎟️",800,"Resets the Free Crate cooldown",()=>{cdt=0;sv('cb_cd',0)}),S("Pity Charm","🧿",3000,"Your next open is guaranteed Epic+",()=>{pity=14}),
+S("Treasure Map","🗺️",6000,"Digs up a random Epic or Legendary item",()=>give(rnd(4,5))),
+S("Lucky Dip","🎰",2000,"Win between 0 and 6,000 coins",()=>{const w=Math.floor(Math.random()*6001);coins+=w;toast('Lucky Dip paid '+w+' 🪙')}),
+S("Coin Flip","🪙",1000,"50%: win 2,500 coins. 50%: nothing",()=>{if(Math.random()<.5){coins+=2500;toast('Heads! +2,500 🪙')}else toast('Tails. Nothing.')}),
+S("Rubber Duck","🦆",5,"Quack.",()=>toast('QUACK! 🦆')),S("Bag of Nothing","🛍️",100,"It's empty. You paid for it.",()=>toast('You received... nothing.'))];
+const BN={luck:'🍀 Luck',var:'✨ Variants',lim:'🧲 Limited drops',val:'🔍 Value',sell:'🤝 Sell price',spd:'⚡ Opening time'};
+function bf(){$('buffs').textContent=Object.keys(BN).filter(k=>BF[k]&&(BF[k].n>0||BF[k].t>Date.now())).map(k=>{const b=BF[k];return `${BN[k]} ×${b.m} (${b.n>0?b.n+' opens':Math.ceil((b.t-Date.now())/1000)+'s'})`}).join('  ·  ')}
+function restock(){SH={t:Date.now()+3e5,i:[...POOL.keys()].sort(()=>Math.random()-.5).slice(0,6),x:[]};sv('cb_shop',SH)}
+function shop(){if(Date.now()>SH.t||!SH.i.length)restock();$('m1t').textContent='🛒 Exclusive Shop';
+ $('m1g').innerHTML=`<div style="grid-column:1/-1;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;align-items:center"><span id="rt" class="gold"></span><button class="gb" id="rs">Restock now (🪙 500)</button></div>`+SH.i.map(k=>{const p=POOL[k],o=SH.x.includes(k);return `<div class="si ${o?'dim':''}"><div class="em">${p.e}</div><b>${p.n}</b><small>${p.d}</small><button class="gb" data-k="${k}" ${o||coins<p.p?'disabled':''}>${o?'SOLD OUT':'🪙 '+p.p.toLocaleString()}</button></div>`}).join('');
+ $('m1g').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const k=+b.dataset.k,p=POOL[k];if(coins<p.p||SH.x.includes(k))return;coins-=p.p;SH.x.push(k);sv('cb_shop',SH);p.f();sv('cb_bf',BF);stats();upd();bf();shop()});
+ $('rs').onclick=()=>{if(coins<500)return toast('Need 500 coins');coins-=500;restock();stats();upd();shop()};$('m1').classList.add('on')}
+$('bShop').onclick=shop;
+setInterval(()=>{bf();const r=$('rt');if(r&&$('m1').classList.contains('on')){const t=Math.max(0,Math.ceil((SH.t-Date.now())/1000));r.textContent=`Restocks in ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(t<=0&&$('m1t').textContent.includes('Shop'))shop()}},1000);bf();
 stats();
 </script></body></html>
