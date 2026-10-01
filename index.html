@@ -53,6 +53,24 @@ h1{font-family:Impact,Orbitron,sans-serif;text-align:center;font-size:clamp(2rem
 @keyframes spinS{to{transform:rotate(360deg)}}@keyframes hue{50%{filter:hue-rotate(180deg) saturate(2.2)}}
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#4f46e5,#c026d3);padding:.7rem 1.3rem;border-radius:12px;z-index:300;font-weight:700;box-shadow:0 8px 30px #0008}
 .crate:hover{box-shadow:0 0 30px #c026d366}
+
+.shw{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;background:radial-gradient(circle,color-mix(in srgb,var(--c) 22%,transparent),transparent 60%)}
+.shw::after{content:'';position:absolute;left:50%;top:50%;width:70vmin;height:70vmin;margin:-35vmin 0 0 -35vmin;background:radial-gradient(circle,var(--c),transparent 68%);filter:blur(36px);opacity:.85;animation:pg 1.2s infinite alternate}
+.shine{mix-blend-mode:screen;filter:blur(1.5px) brightness(1.4)}
+#crow,#cards,#ovb{position:relative;z-index:1}
+#cards{grid-template-columns:repeat(auto-fit,170px);justify-content:center;max-width:1000px;gap:1.1rem}
+.fc{width:170px;height:250px}.fb .em{font-size:3.2rem}.fb b{font-size:.95rem;margin:.3rem 0}
+.fc:not(.f):hover{transform:translateY(-8px) scale(1.05);transition:.2s}
+.fc,.it{position:relative;isolation:isolate}
+.r6::before,.r7::before,.r8::before,.rb::before{content:'';position:absolute;inset:-6px;border-radius:18px;z-index:-1;filter:blur(11px);opacity:.9}
+.r6::before{background:radial-gradient(circle,#f97316,#dc2626 60%,transparent);animation:fl 1.1s infinite alternate}
+.r7::before{background:conic-gradient(from var(--a),#fff,#fde68a,#fff,#fcd34d,#fff);animation:spinA 4s linear infinite}
+.r8::before{background:conic-gradient(from var(--a),#ec4899,#22d3ee,#a855f7,#ec4899);animation:spinA 2.2s linear infinite}
+.rb::before{background:conic-gradient(from var(--a),#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);animation:spinA 2.4s linear infinite;filter:blur(14px)}
+@keyframes fl{to{opacity:.5;transform:scale(1.07)}}
+.rb .fb::after,.it.rb::after{content:'';position:absolute;inset:0;border-radius:11px;pointer-events:none;background:linear-gradient(110deg,transparent 30%,#ffffff66 50%,transparent 70%);background-size:250% 100%;animation:sw 2.2s linear infinite}
+.rb .fb,.it.rb{border-color:#fff!important}
+@keyframes sw{from{background-position:150% 0}to{background-position:-50% 0}}
 </style></head><body>
 <h1>CRATEBOUND</h1>
 <div class="bar"><div class="pill">🪙 <b id="coins">0</b></div><div class="pill">Wealth <b id="wealth">0</b></div><div class="pill">Items <b id="cnt">0</b></div>
@@ -100,9 +118,9 @@ function stats(){$('coins').textContent=coins.toLocaleString();$('wealth').textC
 CR.forEach(c=>{const d=document.createElement('div');d.className='crate';d.innerHTML=`<div class="e">${c.e}</div><b>${c.n}</b><small>${c.d}</small><div class="price">🪙 ${c.p}</div><button class="btn">Inspect</button>`;
  d.querySelector('button').onclick=e=>{e.stopPropagation();inspect(c)};d.onclick=()=>{if(busy)return;sel=c;if(c.cd){qty=1;$("qv").textContent=1}document.querySelectorAll('.crate').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');upd()};$('crates').appendChild(d)});
 function upd(){const b=$("openBtn");$("bBail").style.display=(coins<100&&!inv.length&&Date.now()>bail)?"":"none";$("bBoost").textContent=`🍀 Luck potion (250)${boost?" ×"+boost:""}`;if(!sel)return;const cost=sel.p*qty,w=sel.cd?cdt-Date.now():0;b.disabled=busy||coins<cost||w>0;b.textContent=w>0?`FREE IN ${Math.ceil(w/1000)}s`:coins<cost?`NEED 🪙 ${cost}`:`OPEN ${qty>1?qty+"× ":""}${sel.n.toUpperCase()}${cost?` (🪙 ${cost})`:" (FREE)"}`}
-$('qm').onclick=()=>{if(qty>1){qty--;$('qv').textContent=qty;upd()}};$('qp').onclick=()=>{if(qty<5&&!(sel&&sel.cd)){qty++;$('qv').textContent=qty;upd()}};
+$('qm').onclick=()=>{if(qty>1){qty--;$('qv').textContent=qty;upd()}};$('qp').onclick=()=>{if(qty<10&&!(sel&&sel.cd)){qty++;$('qv').textContent=qty;upd()}};
 document.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>$(b.dataset.x).classList.remove('on'));
-function card(i,o={}){const r=R[i.r];return `<div class="it ${o.vc||''}" style="border-color:${r[1]}"><div class="em">${i.e}</div><div><b>${i.n}${o.sn?` #${o.sn}`:''}</b><span style="color:${r[1]};font-size:.75rem;font-weight:700">${o.v?o.v+' ':''}${r[0]}</span>${o.val!=null?`<div class="gold">${o.val.toLocaleString()} 🪙</div>`:''}${i.t&&!o.sn?`<div class="lim">LIMITED · ${Math.max(0,rem(i))}/${i.t} left</div>`:''}${o.sn?`<div class="lim">Serial ${o.sn}/${i.t}</div>`:''}</div></div>`}
+function card(i,o={}){const r=R[i.r];return `<div class="it ${o.vc||''} r${i.r}${i.r===9?' rb':''}" style="border-color:${r[1]}"><div class="em">${i.e}</div><div><b>${i.n}${o.sn?` #${o.sn}`:''}</b><span style="color:${r[1]};font-size:.75rem;font-weight:700">${o.v?o.v+' ':''}${r[0]}</span>${o.val!=null?`<div class="gold">${o.val.toLocaleString()} 🪙</div>`:''}${i.t&&!o.sn?`<div class="lim">LIMITED · ${Math.max(0,rem(i))}/${i.t} left</div>`:''}${o.sn?`<div class="lim">Serial ${o.sn}/${i.t}</div>`:''}</div></div>`}
 function inspect(c){$('m1t').textContent=c.n+' — Drops';$('m1g').innerHTML=[...c.it].sort((a,b)=>a.r-b.r).map(i=>card(i,{val:null})).join('');$('m1').classList.add('on')}
 $('bInv').onclick=()=>{$('m1t').innerHTML=`Inventory <button class="btn" id="sAll">Sell all ≤ Rare</button>`;const g=$('m1g');g.innerHTML='';
  if(!inv.length)g.innerHTML='<p style="color:var(--mu)">Nothing yet.</p>';
@@ -120,9 +138,9 @@ $('openBtn').onclick=async()=>{if(!sel||busy||coins<sel.p*qty)return;if(sel.cd){
  for(let k=0;k<qty;k++){let r=pickRarity(sel),it=pickItem(sel,r),sn=null;if(it.t){sn=await claim(it);if(!sn){it=sel.it.find(i=>i.r===r&&!i.t)||it;sn=null}}
   const rr=Math.random();let vn='',vm=1;for(const v of VAR)if(rr<v[2]){vn=v[0];vm=v[1];break}
   if(!sel.cd)pity=r>=4?0:pity+1;res.push({i:it,r,sn,vr:vn,v:value(it,vm,sn)})}
- opens+=qty;sv("cb_opens",opens);if(boost>0){boost=Math.max(0,boost-qty);sv("cb_boost",boost)}const mx=Math.max(...res.map(x=>x.r));$('crow').innerHTML=res.map(()=>`<span class="oc shake" style="font-size:${qty>3?4:6}rem">${sel.e}</span>`).join('');$('cards').style.display='none';$('ovb').style.display='none';$('ov').classList.add('on');
+ opens+=qty;sv("cb_opens",opens);if(boost>0){boost=Math.max(0,boost-qty);sv("cb_boost",boost)}const mx=Math.max(...res.map(x=>x.r));$('crow').innerHTML=res.map(()=>`<span class="oc shake" style="font-size:${qty>6?2.8:qty>3?4:6}rem">${sel.e}</span>`).join('');$('cards').style.display='none';$('ovb').style.display='none';$('ov').classList.add('on');
  await sl(800);await shine(mx);
- $('crow').innerHTML='';$('cards').style.display='grid';$('cards').innerHTML=res.map((x,n)=>`<div class="fc v-${x.vr}" data-n="${n}"><div class="fi"><div class="fa" style="--c:${R[x.r][1]}">❓</div><div class="fb" style="--c:${R[x.r][1]};border-color:${R[x.r][1]};box-shadow:0 0 ${x.r*7}px ${R[x.r][1]}"><div class="em">${x.i.e}</div><b>${x.i.n}${x.sn?' #'+x.sn:''}</b><span style="color:${R[x.r][1]}">${x.vr?x.vr+' ':''}${R[x.r][0]}</span><div class="gold">${x.v.toLocaleString()} 🪙</div>${x.sn?`<div class="lim">Serial ${x.sn}/${x.i.t}</div>`:''}</div></div></div>`).join('');
+ $('crow').innerHTML='';$('cards').style.display='grid';$('cards').innerHTML=res.map((x,n)=>`<div class="fc v-${x.vr} r${x.r}${x.r===9?' rb':''}" data-n="${n}"><div class="fi"><div class="fa" style="--c:${R[x.r][1]}">❓</div><div class="fb" style="--c:${R[x.r][1]};border-color:${R[x.r][1]};box-shadow:0 0 ${x.r*7}px ${R[x.r][1]}"><div class="em">${x.i.e}</div><b>${x.i.n}${x.sn?' #'+x.sn:''}</b><span style="color:${R[x.r][1]}">${x.vr?x.vr+' ':''}${R[x.r][0]}</span><div class="gold">${x.v.toLocaleString()} 🪙</div>${x.sn?`<div class="lim">Serial ${x.sn}/${x.i.t}</div>`:''}</div></div></div>`).join('');
  $('ovb').style.display='flex';
  const flip=el=>{if(el.classList.contains('f'))return;el.classList.add('f');const x=res[el.dataset.n];tone(300+x.r*90,.3);setTimeout(()=>fx(x.r,el),320)};
  document.querySelectorAll('.fc').forEach(el=>el.onclick=()=>flip(el));
@@ -145,7 +163,7 @@ setInterval(upd,1000);upd();
 let forceR=null,armed=0;
 function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
 function arm(e){if(armed===e.id){armed=0;return true}armed=e.id;toast(`Click again to sell ${e.n} for ${sell(e)} 🪙`);return false}
-async function shine(mx){const c=R[mx][1],w=document.createElement('div'),s=document.createElement('div');w.className='shw';s.className='shine';s.style.setProperty('--c',c);w.appendChild(s);document.body.appendChild(w);requestAnimationFrame(()=>s.style.opacity=.9);
+async function shine(mx){const c=R[mx][1],w=document.createElement('div'),s=document.createElement('div');w.className='shw';s.className='shine';w.style.setProperty('--c',c);w.appendChild(s);$('ov').insertBefore(w,$('ov').firstChild);document.querySelectorAll('.oc').forEach(o=>o.style.filter=`drop-shadow(0 0 32px ${c}) drop-shadow(0 0 10px ${c})`);requestAnimationFrame(()=>s.style.opacity=.9);
  for(let k=0;k<=mx;k++){tone(200*Math.pow(1.1,k*2),.3,'triangle');await sl(150)}flash(c,.5);tone(110,.7,'sawtooth',.12);if(mx>=5)tone(880,1,'sine',.1);await sl(800+mx*130);s.style.opacity=0;setTimeout(()=>w.remove(),700)}
 function burst(el,c,n,d){const b=el.getBoundingClientRect(),x=b.left+b.width/2,y=b.top+b.height/2;for(let i=0;i<n;i++){const p=document.createElement('i'),a=Math.random()*6.28,k=d*(.4+Math.random()),z=4+Math.random()*6;p.style.cssText=`position:fixed;left:${x}px;top:${y}px;width:${z}px;height:${z}px;border-radius:50%;background:${c};box-shadow:0 0 10px ${c};z-index:130;pointer-events:none`;document.body.appendChild(p);p.animate([{transform:'translate(0,0)',opacity:1},{transform:`translate(${Math.cos(a)*k}px,${Math.sin(a)*k}px) scale(.2)`,opacity:0}],{duration:700+Math.random()*700,easing:'cubic-bezier(.1,.8,.3,1)'}).onfinish=()=>p.remove()}}
 function ring(el,c,sc){const b=el.getBoundingClientRect(),r=document.createElement('div');r.style.cssText=`position:fixed;left:${b.left+b.width/2-50}px;top:${b.top+b.height/2-50}px;width:100px;height:100px;border:5px solid ${c};border-radius:50%;box-shadow:0 0 30px ${c};z-index:130;pointer-events:none`;document.body.appendChild(r);r.animate([{transform:'scale(.2)',opacity:1},{transform:`scale(${sc})`,opacity:0}],{duration:900,easing:'ease-out'}).onfinish=()=>r.remove()}
@@ -164,5 +182,12 @@ $('bDbg').onclick=()=>{$('m1t').textContent='🛠 DEBUG LAB';const all=CR.flatMa
  $('d3').onclick=()=>{pity=14;stats();toast('Pity set')};$('d4').onclick=()=>{localStock={};sv('cb_lstock',{});toast('Local stock refilled')};
  $('d5').onclick=e=>{if(!e.target.dataset.a){e.target.dataset.a=1;e.target.textContent='Click again to wipe';return}localStorage.clear();location.reload()};
  $('m1').classList.add('on')};
+function pillar(el,c){const b=el.getBoundingClientRect(),p=document.createElement('div');p.style.cssText=`position:fixed;left:${b.left+b.width/2-30}px;top:0;width:60px;height:${b.top+b.height/2}px;background:linear-gradient(to top,${c},transparent);filter:blur(8px);z-index:129;pointer-events:none;transform-origin:bottom`;document.body.appendChild(p);p.animate([{transform:'scaleX(.1)',opacity:1},{transform:'scaleX(1.8)',opacity:.9,offset:.3},{transform:'scaleX(.1)',opacity:0}],{duration:1200}).onfinish=()=>p.remove()}
+function rbBurst(el,n){for(let i=0;i<n;i++)burst(el,`hsl(${Math.random()*360} 100% 60%)`,1,380)}
+const _fx=fx;fx=function(r,el){_fx(r,el);
+ if(r===6){pillar(el,'#f97316');for(let i=0;i<4;i++)setTimeout(()=>burst(el,'#fbbf24',10,160),i*180)}
+ if(r===7){pillar(el,'#fde68a');ring(el,'#fde68a',16);setTimeout(()=>{ring(el,'#fff',20);burst(el,'#fff',40,260)},250)}
+ if(r===8){rbBurst(el,60);[0,200,400].forEach(t=>setTimeout(()=>ring(el,`hsl(${t} 100% 60%)`,15),t));pillar(el,'#ec4899')}
+ if(r===9){rbBurst(el,120);pillar(el,'#fff');[0,150,300,450,600].forEach(t=>setTimeout(()=>{ring(el,`hsl(${t/2} 100% 60%)`,18);flash(`hsl(${t} 100% 70%)`,.5)},t))}};
 stats();
 </script></body></html>
