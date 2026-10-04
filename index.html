@@ -283,12 +283,13 @@ class Particles {
   }
 }
 
-const G = 1450;
-const GROUND_Y = 560;
-const ARENA_W = 1600;   // longer field
-const ARENA_H = 640;    // taller too
-const GOAL_H = 170;
-const GOAL_W = 60;
+const G = 1280;          // slightly lower gravity = better aerials
+const GROUND_Y = 620;
+const ARENA_W = 2000;    // much longer field
+const ARENA_H = 720;     // taller ceiling for aerials
+const GOAL_H = 190;
+const GOAL_W = 70;
+const CROSSBAR_H = 14;   // thickness of the top bar / backboard lip
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -321,8 +322,11 @@ class Car {
     this.jumpBuffer = 0; this.canDouble = false;
   }
   update(dt, input) {
-    const ACCEL = 950, MAX_SPEED = 480, AIR_ACCEL = 620, FRICTION = 6.5, BOOST_POWER = 1250;
-    const TILT_SPEED = 5.5;
+    // Tuned for real aerial / air-dribble feel
+    const ACCEL = 1050, MAX_SPEED = 560, AIR_ACCEL = 780, FRICTION = 5.5, BOOST_POWER = 1650;
+    const TILT_SPEED = 7.2;
+    const JUMP_POWER = -720;      // strong first jump
+    const DOUBLE_JUMP = -580;     // strong double jump
 
     this.throttle = 0; this.boosting = false; this.jumpWanted = false; this.tilt = 0;
     if (input.left) { this.throttle = -1; this.facing = -1; }
@@ -332,34 +336,35 @@ class Car {
     if (input.tiltLeft) this.tilt = -1;
     if (input.tiltRight) this.tilt = 1;
 
-    // Ground driving
+    // Ground / air driving
     const accel = this.onGround ? ACCEL : AIR_ACCEL;
     this.vx += this.throttle * accel * dt;
 
-    // Boost – follows car nose when tilted in air
+    // Boost – strong and follows nose when tilted (air dribble friendly)
     if (this.boosting && this.boost > 0) {
       const boostAng = this.onGround ? 0 : this.angle;
       const bx = Math.cos(boostAng) * this.facing;
       const by = Math.sin(boostAng);
       this.vx += bx * BOOST_POWER * dt;
-      this.vy += by * BOOST_POWER * 0.85 * dt;
-      if (!this.onGround) this.vy -= 180 * dt; // slight extra lift
-      this.boost = Math.max(0, this.boost - 30 * dt);
+      this.vy += by * BOOST_POWER * dt;          // full power in tilt direction
+      if (!this.onGround) this.vy -= 320 * dt;   // solid upward component for aerials
+      this.boost = Math.max(0, this.boost - 26 * dt); // drains a bit slower
       if (window.P) {
-        const px = this.x - this.facing * (this.w / 2 + 6) * Math.cos(this.angle);
-        const py = this.y - this.facing * (this.w / 2 + 6) * Math.sin(this.angle);
+        const px = this.x - this.facing * (this.w / 2 + 8) * Math.cos(this.angle);
+        const py = this.y + (this.w / 2 + 8) * Math.sin(-this.angle * this.facing);
         window.P.trail(px, py, this.facing > 0 ? this.angle : this.angle + Math.PI,
           this.team === 'orange' ? '#ff6b00' : '#00b4ff');
       }
     } else if (this.onGround) {
-      this.boost = Math.min(this.maxBoost, this.boost + 7 * dt);
+      this.boost = Math.min(this.maxBoost, this.boost + 9 * dt);
     }
 
-    // Friction
+    // Friction / drag
     if (this.onGround && Math.abs(this.throttle) < 0.1 && !this.boosting) {
       this.vx *= Math.max(0, 1 - FRICTION * dt);
     } else {
-      this.vx *= Math.max(0, 1 - 1.4 * dt);
+      this.vx *= Math.max(0, 1 - 1.15 * dt);
+      if (!this.onGround) this.vy *= Math.max(0, 1 - 0.4 * dt); // light air drag
     }
 
     const spd = Math.hypot(this.vx, this.vy);
@@ -368,35 +373,39 @@ class Car {
       this.vy = (this.vy / spd) * MAX_SPEED;
     }
 
-    // Jump / double jump
+    // Jump / double jump (much stronger)
     if (this.jumpWanted) {
       if (this.onGround) {
-        this.vy = -560; this.onGround = false; this.canDouble = true; this.jumpBuffer = 0.18;
+        this.vy = JUMP_POWER;
+        this.onGround = false;
+        this.canDouble = true;
+        this.jumpBuffer = 0.22;
         AudioSys.jump();
       } else if (this.canDouble && this.jumpBuffer <= 0) {
-        // Dodge-style double jump in facing + tilt direction
-        this.vy = -420;
-        this.vx += this.facing * 160;
-        this.angVel = this.tilt * 14 + this.facing * 2;
+        // Powerful dodge / double jump
+        this.vy = DOUBLE_JUMP;
+        this.vx += this.facing * 220;
+        if (this.tilt !== 0) {
+          this.angVel = this.tilt * 18;
+          this.vy += this.tilt * this.facing * 80;
+        }
         this.canDouble = false;
         AudioSys.jump();
       }
     }
     if (this.jumpBuffer > 0) this.jumpBuffer -= dt;
 
-    // Tilt / aerial control (Q / E)
+    // Tilt – responsive aerial control
     if (!this.onGround) {
-      this.angVel += this.tilt * TILT_SPEED * dt * 10;
-      this.angVel *= 0.92; // damping
+      this.angVel += this.tilt * TILT_SPEED * dt * 12;
+      this.angVel *= 0.90;
       this.angle += this.angVel * dt;
-      // soft limit
-      if (this.angle > 1.4) { this.angle = 1.4; this.angVel *= 0.3; }
-      if (this.angle < -1.4) { this.angle = -1.4; this.angVel *= 0.3; }
+      if (this.angle > 1.55) { this.angle = 1.55; this.angVel *= 0.2; }
+      if (this.angle < -1.55) { this.angle = -1.55; this.angVel *= 0.2; }
     } else {
-      // snap angle back to 0 on ground
-      this.angle *= 0.7;
+      this.angle *= 0.65;
       this.angVel = 0;
-      if (Math.abs(this.angle) < 0.05) this.angle = 0;
+      if (Math.abs(this.angle) < 0.04) this.angle = 0;
     }
 
     if (!this.onGround) this.vy += G * dt;
@@ -404,19 +413,24 @@ class Car {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
-    // Ground
+    // Ground collision
     const halfH = (this.h / 2) * Math.cos(this.angle) + (this.w / 2) * Math.abs(Math.sin(this.angle));
     if (this.y + halfH >= GROUND_Y) {
       this.y = GROUND_Y - halfH;
       this.vy = 0;
       this.onGround = true;
       this.canDouble = false;
-      this.angle *= 0.5;
+      this.angle *= 0.4;
     } else this.onGround = false;
 
-    if (this.y - this.h / 2 < 25) { this.y = 25 + this.h / 2; this.vy = Math.abs(this.vy) * 0.25; }
-    if (this.x - this.w / 2 < 12) { this.x = 12 + this.w / 2; this.vx = Math.abs(this.vx) * 0.35; }
-    if (this.x + this.w / 2 > ARENA_W - 12) { this.x = ARENA_W - 12 - this.w / 2; this.vx = -Math.abs(this.vx) * 0.35; }
+    // Ceiling
+    if (this.y - this.h / 2 < 30) {
+      this.y = 30 + this.h / 2;
+      this.vy = Math.abs(this.vy) * 0.3;
+    }
+    // Side walls (cars can't leave)
+    if (this.x - this.w / 2 < 14) { this.x = 14 + this.w / 2; this.vx = Math.abs(this.vx) * 0.3; }
+    if (this.x + this.w / 2 > ARENA_W - 14) { this.x = ARENA_W - 14 - this.w / 2; this.vx = -Math.abs(this.vx) * 0.3; }
   }
   draw(ctx) {
     ctx.save();
@@ -509,44 +523,77 @@ class Car {
 
 class Ball {
   constructor() {
-    this.r = 28; this.mass = 2.8;   // bigger RL-style ball
-    this.x = ARENA_W / 2; this.y = GROUND_Y - 160;
+    this.r = 30; this.mass = 2.6;   // bigger RL-style ball
+    this.x = ARENA_W / 2; this.y = GROUND_Y - 200;
     this.vx = 0; this.vy = 0; this.spin = 0; this.trail = [];
   }
   reset() {
-    this.x = ARENA_W / 2; this.y = GROUND_Y - 180;
+    this.x = ARENA_W / 2; this.y = GROUND_Y - 220;
     this.vx = 0; this.vy = 0; this.spin = 0; this.trail = [];
   }
   update(dt) {
-    this.vy += G * 0.82 * dt;
-    // very low air drag so it keeps rolling / flying
-    this.vx *= 0.9992;
-    this.vy *= 0.9992;
+    this.vy += G * 0.78 * dt;
+    // almost no air drag – ball stays lively
+    this.vx *= 0.9995;
+    this.vy *= 0.9995;
     this.x += this.vx * dt;
     this.y += this.vy * dt;
-    this.spin += this.vx * 0.012 * dt;
+    this.spin += this.vx * 0.011 * dt;
 
+    // Ground – high bounce + long roll
     if (this.y + this.r > GROUND_Y) {
       this.y = GROUND_Y - this.r;
-      this.vy = -Math.abs(this.vy) * 0.78;   // bouncier
-      this.vx *= 0.985;                     // almost no ground friction – long rolls
-      if (Math.abs(this.vy) < 35) this.vy = 0;
+      this.vy = -Math.abs(this.vy) * 0.88;   // very bouncy
+      this.vx *= 0.990;
+      if (Math.abs(this.vy) < 30) this.vy = 0;
     }
-    if (this.y - this.r < 20) {
-      this.y = 20 + this.r;
-      this.vy = Math.abs(this.vy) * 0.65;
-    }
-
-    const gt = GROUND_Y - GOAL_H;
-    if (this.x - this.r < 0) {
-      if (this.y <= gt) { this.x = this.r; this.vx = Math.abs(this.vx) * 0.75; }
-    }
-    if (this.x + this.r > ARENA_W) {
-      if (this.y <= gt) { this.x = ARENA_W - this.r; this.vx = -Math.abs(this.vx) * 0.75; }
+    // Ceiling
+    if (this.y - this.r < 25) {
+      this.y = 25 + this.r;
+      this.vy = Math.abs(this.vy) * 0.72;
     }
 
-    this.trail.push({ x: this.x, y: this.y, life: 0.4 });
-    if (this.trail.length > 20) this.trail.shift();
+    // Side walls + goal mouths with CROSSBAR / backboard
+    const goalTop = GROUND_Y - GOAL_H;
+    const crossTop = goalTop - CROSSBAR_H;
+
+    // Left side
+    if (this.x - this.r < GOAL_W) {
+      if (this.y + this.r > crossTop && this.y - this.r < goalTop + 8) {
+        // hit the crossbar / top of goal
+        if (this.vy > 0 && this.y < goalTop) {
+          this.y = crossTop - this.r;
+          this.vy = -Math.abs(this.vy) * 0.7;
+        } else if (this.x - this.r < 0 && this.y < goalTop) {
+          // still above crossbar area – normal wall
+          this.x = this.r;
+          this.vx = Math.abs(this.vx) * 0.75;
+        }
+        // else: inside goal mouth → scoring handled elsewhere
+      } else if (this.y <= goalTop && this.x - this.r < 0) {
+        this.x = this.r;
+        this.vx = Math.abs(this.vx) * 0.75;
+      }
+    }
+
+    // Right side
+    if (this.x + this.r > ARENA_W - GOAL_W) {
+      if (this.y + this.r > crossTop && this.y - this.r < goalTop + 8) {
+        if (this.vy > 0 && this.y < goalTop) {
+          this.y = crossTop - this.r;
+          this.vy = -Math.abs(this.vy) * 0.7;
+        } else if (this.x + this.r > ARENA_W && this.y < goalTop) {
+          this.x = ARENA_W - this.r;
+          this.vx = -Math.abs(this.vx) * 0.75;
+        }
+      } else if (this.y <= goalTop && this.x + this.r > ARENA_W) {
+        this.x = ARENA_W - this.r;
+        this.vx = -Math.abs(this.vx) * 0.75;
+      }
+    }
+
+    this.trail.push({ x: this.x, y: this.y, life: 0.45 });
+    if (this.trail.length > 22) this.trail.shift();
     for (const t of this.trail) t.life -= dt;
     this.trail = this.trail.filter(t => t.life > 0);
   }
@@ -637,13 +684,16 @@ function collideCarBall(car, ball) {
   const vn = rvx * nx + rvy * ny;
   if (vn > 0) return true;
 
-  const e = 0.75;
-  const j = -(1 + e) * vn / (1 / 12 + 1 / ball.mass);
-  const punch = 1.35;
+  const e = 0.82;
+  const j = -(1 + e) * vn / (1 / 11 + 1 / ball.mass);
+  const punch = 1.55; // stronger hit for aerials & dribbles
   ball.vx += (j * punch * nx) / ball.mass;
   ball.vy += (j * punch * ny) / ball.mass;
-  ball.vx += car.vx * 0.25;
-  ball.vy += car.vy * 0.15;
+  // transfer more of the car's velocity (key for air dribbles)
+  ball.vx += car.vx * 0.38;
+  ball.vy += car.vy * 0.32;
+  // slight upward pop when hitting from below
+  if (ny < -0.3) ball.vy -= 40;
   return true;
 }
 
@@ -747,20 +797,22 @@ const AI = {
 
   function makePads() {
     pads = [
-      new BoostPad(ARENA_W * 0.22, GROUND_Y - 8, false),
+      new BoostPad(ARENA_W * 0.2, GROUND_Y - 8, false),
       new BoostPad(ARENA_W * 0.5, GROUND_Y - 8, true),
-      new BoostPad(ARENA_W * 0.78, GROUND_Y - 8, false),
-      new BoostPad(ARENA_W * 0.12, GROUND_Y - 100, false),
-      new BoostPad(ARENA_W * 0.88, GROUND_Y - 100, false),
-      new BoostPad(ARENA_W * 0.35, GROUND_Y - 180, false),
-      new BoostPad(ARENA_W * 0.65, GROUND_Y - 180, false),
-      new BoostPad(ARENA_W * 0.5, GROUND_Y - 260, true)
+      new BoostPad(ARENA_W * 0.8, GROUND_Y - 8, false),
+      new BoostPad(ARENA_W * 0.1, GROUND_Y - 110, false),
+      new BoostPad(ARENA_W * 0.9, GROUND_Y - 110, false),
+      new BoostPad(ARENA_W * 0.3, GROUND_Y - 200, false),
+      new BoostPad(ARENA_W * 0.7, GROUND_Y - 200, false),
+      new BoostPad(ARENA_W * 0.5, GROUND_Y - 290, true),
+      new BoostPad(ARENA_W * 0.4, GROUND_Y - 380, false),
+      new BoostPad(ARENA_W * 0.6, GROUND_Y - 380, false)
     ];
   }
 
   function resetKickoff() {
-    car1.reset(280); car2.reset(ARENA_W - 280); ball.reset();
-    car1.boost = 33; car2.boost = 33;
+    car1.reset(320); car2.reset(ARENA_W - 320); ball.reset();
+    car1.boost = 40; car2.boost = 40;
   }
 
   function start(m) {
@@ -772,8 +824,8 @@ const AI = {
     pauseM.classList.add('hidden');
     goalBan.classList.add('hidden');
 
-    car1 = new Car(280, 'orange');
-    car2 = new Car(ARENA_W - 280, 'blue');
+    car1 = new Car(320, 'orange');
+    car2 = new Car(ARENA_W - 320, 'blue');
     ball = new Ball();
     makePads();
     resetKickoff();
@@ -787,8 +839,9 @@ const AI = {
 
   function checkGoal() {
     const gt = GROUND_Y - GOAL_H;
-    if (ball.x + ball.r > ARENA_W - 5 && ball.y > gt && ball.y < GROUND_Y) return 'orange';
-    if (ball.x - ball.r < 5 && ball.y > gt && ball.y < GROUND_Y) return 'blue';
+    // Must be fully inside the goal mouth (below crossbar)
+    if (ball.x + ball.r > ARENA_W - 8 && ball.y - ball.r > gt && ball.y + ball.r < GROUND_Y + 5) return 'orange';
+    if (ball.x - ball.r < 8 && ball.y - ball.r > gt && ball.y + ball.r < GROUND_Y + 5) return 'blue';
     return null;
   }
 
@@ -832,29 +885,55 @@ const AI = {
     ctx.beginPath(); ctx.arc(ARENA_W / 2, GROUND_Y - 40, 70, Math.PI, 0); ctx.stroke();
 
     const gt = GROUND_Y - GOAL_H;
-    ctx.fillStyle = 'rgba(255,100,0,0.1)';
+    const crossY = gt - CROSSBAR_H;
+
+    // LEFT GOAL (orange) + backboard / crossbar
+    ctx.fillStyle = 'rgba(255,100,0,0.12)';
     ctx.fillRect(0, gt, GOAL_W, GOAL_H);
-    ctx.strokeStyle = '#ff6b00'; ctx.lineWidth = 3;
-    ctx.shadowBlur = 12; ctx.shadowColor = '#ff6b00';
-    ctx.strokeRect(0, gt, GOAL_W, GOAL_H); ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(255,100,0,0.2)'; ctx.lineWidth = 1;
-    for (let i = 1; i < 5; i++) {
-      ctx.beginPath(); ctx.moveTo(0, gt + (GOAL_H / 5) * i); ctx.lineTo(GOAL_W, gt + (GOAL_H / 5) * i); ctx.stroke();
+    // net lines
+    ctx.strokeStyle = 'rgba(255,120,0,0.22)'; ctx.lineWidth = 1;
+    for (let i = 1; i < 6; i++) {
+      ctx.beginPath(); ctx.moveTo(0, gt + (GOAL_H / 6) * i); ctx.lineTo(GOAL_W, gt + (GOAL_H / 6) * i); ctx.stroke();
     }
+    for (let i = 1; i < 4; i++) {
+      ctx.beginPath(); ctx.moveTo((GOAL_W / 4) * i, gt); ctx.lineTo((GOAL_W / 4) * i, GROUND_Y); ctx.stroke();
+    }
+    // goal frame
+    ctx.strokeStyle = '#ff6b00'; ctx.lineWidth = 4;
+    ctx.shadowBlur = 14; ctx.shadowColor = '#ff6b00';
+    ctx.strokeRect(0, gt, GOAL_W, GOAL_H);
+    // CROSSBAR / top board
+    ctx.fillStyle = '#ff6b00';
+    ctx.fillRect(0, crossY, GOAL_W + 6, CROSSBAR_H);
+    ctx.shadowBlur = 0;
+    // backboard wall above goal
+    ctx.fillStyle = 'rgba(30,40,60,0.75)';
+    ctx.fillRect(0, 0, 12, crossY);
+    ctx.strokeStyle = 'rgba(255,100,0,0.35)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(12, crossY); ctx.stroke();
 
-    ctx.fillStyle = 'rgba(0,180,255,0.1)';
+    // RIGHT GOAL (blue) + backboard / crossbar
+    ctx.fillStyle = 'rgba(0,180,255,0.12)';
     ctx.fillRect(ARENA_W - GOAL_W, gt, GOAL_W, GOAL_H);
-    ctx.strokeStyle = '#00b4ff'; ctx.lineWidth = 3;
-    ctx.shadowBlur = 12; ctx.shadowColor = '#00b4ff';
-    ctx.strokeRect(ARENA_W - GOAL_W, gt, GOAL_W, GOAL_H); ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(0,180,255,0.2)'; ctx.lineWidth = 1;
-    for (let i = 1; i < 5; i++) {
-      ctx.beginPath(); ctx.moveTo(ARENA_W - GOAL_W, gt + (GOAL_H / 5) * i); ctx.lineTo(ARENA_W, gt + (GOAL_H / 5) * i); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,180,255,0.22)'; ctx.lineWidth = 1;
+    for (let i = 1; i < 6; i++) {
+      ctx.beginPath(); ctx.moveTo(ARENA_W - GOAL_W, gt + (GOAL_H / 6) * i); ctx.lineTo(ARENA_W, gt + (GOAL_H / 6) * i); ctx.stroke();
     }
-
-    ctx.fillStyle = 'rgba(20,30,50,0.6)';
-    ctx.fillRect(0, 0, 8, gt);
-    ctx.fillRect(ARENA_W - 8, 0, 8, gt);
+    for (let i = 1; i < 4; i++) {
+      ctx.beginPath(); ctx.moveTo(ARENA_W - GOAL_W + (GOAL_W / 4) * i, gt); ctx.lineTo(ARENA_W - GOAL_W + (GOAL_W / 4) * i, GROUND_Y); ctx.stroke();
+    }
+    ctx.strokeStyle = '#00b4ff'; ctx.lineWidth = 4;
+    ctx.shadowBlur = 14; ctx.shadowColor = '#00b4ff';
+    ctx.strokeRect(ARENA_W - GOAL_W, gt, GOAL_W, GOAL_H);
+    // CROSSBAR
+    ctx.fillStyle = '#00b4ff';
+    ctx.fillRect(ARENA_W - GOAL_W - 6, crossY, GOAL_W + 6, CROSSBAR_H);
+    ctx.shadowBlur = 0;
+    // backboard wall above goal
+    ctx.fillStyle = 'rgba(30,40,60,0.75)';
+    ctx.fillRect(ARENA_W - 12, 0, 12, crossY);
+    ctx.strokeStyle = 'rgba(0,180,255,0.35)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(ARENA_W - 12, 0); ctx.lineTo(ARENA_W - 12, crossY); ctx.stroke();
   }
 
   function update(dt) {
