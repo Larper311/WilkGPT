@@ -299,7 +299,7 @@ function roundRect(ctx, x, y, w, h, r) {
 class Car {
   constructor(x, team) {
     this.team = team;
-    this.w = 48; this.h = 26;
+    this.w = 58; this.h = 32;
     this.x = x; this.y = GROUND_Y - this.h / 2;
     this.vx = 0; this.vy = 0;
     this.facing = team === 'orange' ? 1 : -1;
@@ -385,12 +385,16 @@ class Car {
       g.addColorStop(0, '#0055ff'); g.addColorStop(0.5, '#00b4ff'); g.addColorStop(1, '#00e8ff');
     }
     ctx.fillStyle = g;
-    roundRect(ctx, -this.w / 2, -this.h / 2, this.w, this.h, 6); ctx.fill();
+    roundRect(ctx, -this.w / 2, -this.h / 2, this.w, this.h, 7); ctx.fill();
+    // bright outline so car is never invisible
+    ctx.strokeStyle = this.team === 'orange' ? '#ffcc66' : '#66e0ff';
+    ctx.lineWidth = 3;
+    roundRect(ctx, -this.w / 2, -this.h / 2, this.w, this.h, 7); ctx.stroke();
     ctx.fillStyle = 'rgba(15,20,30,0.9)';
-    roundRect(ctx, -4, -10, 18, 14, 3); ctx.fill();
-    ctx.fillStyle = '#222';
-    ctx.beginPath(); ctx.arc(-14, this.h / 2 - 2, 6, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(12, this.h / 2 - 2, 6, 0, Math.PI * 2); ctx.fill();
+    roundRect(ctx, -4, -11, 20, 16, 3); ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(-16, this.h / 2 - 2, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(14, this.h / 2 - 2, 7, 0, Math.PI * 2); ctx.fill();
     if (this.boosting && this.boost > 0) {
       const flick = 0.6 + Math.random() * 0.5;
       ctx.shadowBlur = 22;
@@ -407,7 +411,7 @@ class Car {
 
 class Ball {
   constructor() {
-    this.r = 18; this.mass = 3;
+    this.r = 22; this.mass = 3;
     this.x = ARENA_W / 2; this.y = GROUND_Y - 120;
     this.vx = 0; this.vy = 0; this.spin = 0; this.trail = [];
   }
@@ -790,9 +794,10 @@ const AI = {
 
     drawArena();
     for (const p of pads) p.draw(ctx);
-    if (mode !== 'freeplay') car2.draw(ctx);
-    car1.draw(ctx);
-    ball.draw(ctx);
+    // Always draw both cars + ball (even in freeplay car2 stays parked)
+    if (car2) car2.draw(ctx);
+    if (car1) car1.draw(ctx);
+    if (ball) ball.draw(ctx);
     P.draw(ctx);
 
     const v = ctx.createRadialGradient(ARENA_W / 2, ARENA_H / 2, ARENA_H * 0.25, ARENA_W / 2, ARENA_H / 2, ARENA_W * 0.65);
