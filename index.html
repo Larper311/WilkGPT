@@ -58,11 +58,16 @@
     .boost-bar.orange .boost-fill { background: linear-gradient(90deg, #ff4500, var(--orange-glow)); box-shadow: 0 0 12px var(--orange); }
     .boost-bar.blue .boost-fill { background: linear-gradient(90deg, #0088ff, var(--blue-glow)); box-shadow: 0 0 12px var(--blue); }
     .overlay {
-      position: absolute; inset: 0; background: rgba(4,6,12,0.9);
+      position: absolute; inset: 0; background: rgba(4,6,12,0.92);
       display: flex; align-items: center; justify-content: center; z-index: 50;
-      backdrop-filter: blur(8px); transition: opacity 0.25s ease;
+      backdrop-filter: blur(10px); transition: opacity 0.2s ease;
     }
-    .overlay.hidden { opacity: 0; pointer-events: none; }
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none !important;
+      visibility: hidden;
+      display: none;
+    }
     .menu-content { text-align: center; max-width: 500px; padding: 20px; }
     .title {
       font-family: 'Orbitron', sans-serif; font-size: clamp(38px, 7.5vw, 64px); font-weight: 900; line-height: 0.95;
@@ -322,11 +327,11 @@ class Car {
     this.jumpBuffer = 0; this.canDouble = false;
   }
   update(dt, input) {
-    // Tuned for real aerial / air-dribble feel
-    const ACCEL = 1050, MAX_SPEED = 560, AIR_ACCEL = 780, FRICTION = 5.5, BOOST_POWER = 1650;
-    const TILT_SPEED = 7.2;
-    const JUMP_POWER = -720;      // strong first jump
-    const DOUBLE_JUMP = -580;     // strong double jump
+    // More realistic / controlled speeds
+    const ACCEL = 720, MAX_SPEED = 380, AIR_ACCEL = 520, FRICTION = 7.5, BOOST_POWER = 980;
+    const TILT_SPEED = 8.5;
+    const JUMP_POWER = -640;
+    const DOUBLE_JUMP = -520;
 
     this.throttle = 0; this.boosting = false; this.jumpWanted = false; this.tilt = 0;
     if (input.left) { this.throttle = -1; this.facing = -1; }
@@ -348,7 +353,7 @@ class Car {
       this.vx += bx * BOOST_POWER * dt;
       this.vy += by * BOOST_POWER * dt;          // full power in tilt direction
       if (!this.onGround) this.vy -= 320 * dt;   // solid upward component for aerials
-      this.boost = Math.max(0, this.boost - 26 * dt); // drains a bit slower
+      this.boost = Math.max(0, this.boost - 22 * dt);
       if (window.P) {
         const px = this.x - this.facing * (this.w / 2 + 8) * Math.cos(this.angle);
         const py = this.y + (this.w / 2 + 8) * Math.sin(-this.angle * this.facing);
@@ -356,7 +361,7 @@ class Car {
           this.team === 'orange' ? '#ff6b00' : '#00b4ff');
       }
     } else if (this.onGround) {
-      this.boost = Math.min(this.maxBoost, this.boost + 9 * dt);
+      this.boost = Math.min(this.maxBoost, this.boost + 11 * dt);
     }
 
     // Friction / drag
@@ -395,17 +400,22 @@ class Car {
     }
     if (this.jumpBuffer > 0) this.jumpBuffer -= dt;
 
-    // Tilt – responsive aerial control
+    // Tilt – unlimited free rotation in the air
     if (!this.onGround) {
-      this.angVel += this.tilt * TILT_SPEED * dt * 12;
-      this.angVel *= 0.90;
+      this.angVel += this.tilt * TILT_SPEED * dt * 14;
+      this.angVel *= 0.91;
       this.angle += this.angVel * dt;
-      if (this.angle > 1.55) { this.angle = 1.55; this.angVel *= 0.2; }
-      if (this.angle < -1.55) { this.angle = -1.55; this.angVel *= 0.2; }
+      // wrap angle so it can spin freely forever
+      if (this.angle > Math.PI * 2) this.angle -= Math.PI * 2;
+      if (this.angle < -Math.PI * 2) this.angle += Math.PI * 2;
     } else {
-      this.angle *= 0.65;
+      // gently upright on ground
+      let a = this.angle % (Math.PI * 2);
+      if (a > Math.PI) a -= Math.PI * 2;
+      if (a < -Math.PI) a += Math.PI * 2;
+      this.angle = a * 0.7;
       this.angVel = 0;
-      if (Math.abs(this.angle) < 0.04) this.angle = 0;
+      if (Math.abs(this.angle) < 0.05) this.angle = 0;
     }
 
     if (!this.onGround) this.vy += G * dt;
@@ -818,7 +828,12 @@ const AI = {
   function start(m) {
     mode = m; scoreO = 0; scoreB = 0;
     timeLeft = m === 'freeplay' ? 99999 : 300;
-    state = 'playing';
+    mouseBoost = false; mouseJump = false;
+    // clear all keys so nothing is stuck
+    for (const p of ['p1', 'p2']) {
+      for (const k of Object.keys(keys[p])) keys[p][k] = false;
+    }
+
     menu.classList.add('hidden');
     endM.classList.add('hidden');
     pauseM.classList.add('hidden');
@@ -834,6 +849,7 @@ const AI = {
       m === '1v1' ? '1v1 LOCAL' : m === 'ai' ? 'VS AI' : 'FREE PLAY';
     elSO.textContent = '0'; elSB.textContent = '0';
 
+    state = 'playing';
     AudioSys.init(); AudioSys.resume(); AudioSys.whistle();
   }
 
@@ -866,23 +882,40 @@ const AI = {
   }
 
   function drawArena() {
+    // deep stadium sky
     const bg = ctx.createLinearGradient(0, 0, 0, ARENA_H);
-    bg.addColorStop(0, '#0a1220'); bg.addColorStop(0.6, '#0c1528'); bg.addColorStop(1, '#0a1018');
+    bg.addColorStop(0, '#060b18'); bg.addColorStop(0.45, '#0a1428'); bg.addColorStop(1, '#080e1a');
     ctx.fillStyle = bg; ctx.fillRect(0, 0, ARENA_W, ARENA_H);
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
-    for (let i = 0; i < 8; i++) {
-      const y = 40 + i * 55;
+    // subtle stadium light beams
+    ctx.fillStyle = 'rgba(100,160,255,0.025)';
+    ctx.beginPath(); ctx.moveTo(ARENA_W * 0.2, 0); ctx.lineTo(ARENA_W * 0.35, GROUND_Y); ctx.lineTo(ARENA_W * 0.15, GROUND_Y); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(ARENA_W * 0.8, 0); ctx.lineTo(ARENA_W * 0.85, GROUND_Y); ctx.lineTo(ARENA_W * 0.65, GROUND_Y); ctx.closePath(); ctx.fill();
+
+    // horizontal structural lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.035)'; ctx.lineWidth = 1;
+    for (let i = 0; i < 10; i++) {
+      const y = 30 + i * 55;
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(ARENA_W, y); ctx.stroke();
     }
 
-    ctx.fillStyle = '#0e1624';
+    // ground
+    const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, ARENA_H);
+    groundGrad.addColorStop(0, '#0c1522'); groundGrad.addColorStop(1, '#080e16');
+    ctx.fillStyle = groundGrad;
     ctx.fillRect(0, GROUND_Y, ARENA_W, ARENA_H - GROUND_Y);
-    ctx.strokeStyle = 'rgba(0,200,255,0.15)'; ctx.lineWidth = 2;
+    // neon ground line
+    ctx.strokeStyle = 'rgba(0,220,255,0.25)'; ctx.lineWidth = 2.5;
+    ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(0,200,255,0.4)';
     ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(ARENA_W, GROUND_Y); ctx.stroke();
+    ctx.shadowBlur = 0;
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(ARENA_W / 2, GROUND_Y - 40, 70, Math.PI, 0); ctx.stroke();
+    // center circle
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(ARENA_W / 2, GROUND_Y - 50, 90, Math.PI, 0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(ARENA_W / 2, GROUND_Y - 50, 8, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill();
+    // center line
+    ctx.beginPath(); ctx.moveTo(ARENA_W / 2, 40); ctx.lineTo(ARENA_W / 2, GROUND_Y); ctx.stroke();
 
     const gt = GROUND_Y - GOAL_H;
     const crossY = gt - CROSSBAR_H;
@@ -1058,7 +1091,9 @@ const AI = {
   });
 
   // Mouse controls for Player 1: Left = Boost, Right = Jump
+  // Only active while actually playing – never when menus are open
   window.addEventListener('mousedown', e => {
+    if (state !== 'playing') return;
     if (e.button === 0) { mouseBoost = true; e.preventDefault(); }
     if (e.button === 2) { mouseJump = true; e.preventDefault(); }
   });
@@ -1066,16 +1101,38 @@ const AI = {
     if (e.button === 0) mouseBoost = false;
     if (e.button === 2) mouseJump = false;
   });
-  window.addEventListener('contextmenu', e => e.preventDefault()); // stop right-click menu
+  window.addEventListener('contextmenu', e => e.preventDefault());
+  // Reset mouse state if window loses focus
+  window.addEventListener('blur', () => { mouseBoost = false; mouseJump = false; });
 
-  $('btn-1v1').onclick = () => start('1v1');
-  $('btn-vs-ai').onclick = () => start('ai');
-  $('btn-freeplay').onclick = () => start('freeplay');
-  $('btn-resume').onclick = () => { state = 'playing'; pauseM.classList.add('hidden'); };
-  $('btn-restart').onclick = () => { pauseM.classList.add('hidden'); start(mode); };
-  $('btn-menu').onclick = () => { pauseM.classList.add('hidden'); endM.classList.add('hidden'); state = 'menu'; menu.classList.remove('hidden'); };
-  $('btn-play-again').onclick = () => start(mode);
-  $('btn-to-menu').onclick = () => { endM.classList.add('hidden'); state = 'menu'; menu.classList.remove('hidden'); };
+  function safeStart(m) {
+    try {
+      // force-hide every overlay first
+      menu.classList.add('hidden');
+      pauseM.classList.add('hidden');
+      endM.classList.add('hidden');
+      goalBan.classList.add('hidden');
+      start(m);
+    } catch (err) {
+      console.error('Start failed:', err);
+    }
+  }
+
+  $('btn-1v1').onclick = (e) => { e.stopPropagation(); safeStart('1v1'); };
+  $('btn-vs-ai').onclick = (e) => { e.stopPropagation(); safeStart('ai'); };
+  $('btn-freeplay').onclick = (e) => { e.stopPropagation(); safeStart('freeplay'); };
+  $('btn-resume').onclick = (e) => { e.stopPropagation(); state = 'playing'; pauseM.classList.add('hidden'); };
+  $('btn-restart').onclick = (e) => { e.stopPropagation(); pauseM.classList.add('hidden'); safeStart(mode); };
+  $('btn-menu').onclick = (e) => {
+    e.stopPropagation();
+    pauseM.classList.add('hidden'); endM.classList.add('hidden');
+    state = 'menu'; menu.classList.remove('hidden');
+  };
+  $('btn-play-again').onclick = (e) => { e.stopPropagation(); safeStart(mode); };
+  $('btn-to-menu').onclick = (e) => {
+    e.stopPropagation();
+    endM.classList.add('hidden'); state = 'menu'; menu.classList.remove('hidden');
+  };
 
   window.addEventListener('resize', resize);
   resize();
