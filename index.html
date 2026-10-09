@@ -2,16 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tank Prototype — Arras-style</title>
+<title>Tank Prototype — Arras-style v3</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #555; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; }
   canvas { display: block; }
-
   /* ---------- HUD ---------- */
   #hud-top {
     position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-    width: 340px; text-align: center; color: #fff; user-select: none; z-index: 5;
+    width: 360px; text-align: center; color: #fff; user-select: none; z-index: 5;
   }
   #levelbar-wrap {
     height: 22px; background: rgba(0,0,0,.45); border: 2px solid #222;
@@ -23,12 +22,13 @@
     text-shadow: 1px 1px 0 #000;
   }
   #score { margin-top: 4px; font-size: 15px; font-weight: bold; text-shadow: 1px 1px 0 #000; }
-
+  #class-label {
+    margin-top: 2px; font-size: 12px; color: #ffd34d; text-shadow: 1px 1px 0 #000;
+  }
   #controls-hint {
     position: fixed; bottom: 12px; left: 12px; color: rgba(255,255,255,.75);
     font-size: 12px; text-shadow: 1px 1px 0 #000; user-select: none; z-index: 5;
   }
-
   /* ---------- Upgrade panel ---------- */
   #upgrades {
     position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
@@ -43,30 +43,27 @@
   .upbtn b { display: block; font-size: 11px; }
   .upbtn .pips { letter-spacing: 2px; color: #8abc3f; }
   .upbtn .key { color: #ffd34d; font-weight: bold; }
-
   #points {
     position: fixed; bottom: 78px; left: 50%; transform: translateX(-50%);
     color: #ffd34d; font-weight: bold; font-size: 14px; text-shadow: 1px 1px 0 #000;
     display: none; user-select: none; z-index: 5; animation: bob 1s infinite ease-in-out;
   }
   @keyframes bob { 0%,100%{ transform: translateX(-50%) translateY(0);} 50%{ transform: translateX(-50%) translateY(-4px);} }
-
   /* ---------- Overlays ---------- */
   .overlay {
     position: fixed; inset: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 14px;
-    background: rgba(15,18,24,.72); color: #fff; text-align: center; z-index: 10;
+    background: rgba(15,18,24,.78); color: #fff; text-align: center; z-index: 10;
   }
-  .overlay h1 { font-size: 44px; letter-spacing: 2px; animation: glowpulse 2.2s infinite ease-in-out; }
+  .overlay h1 { font-size: 42px; letter-spacing: 2px; animation: glowpulse 2.2s infinite ease-in-out; }
   @keyframes glowpulse {
     0%,100% { text-shadow: 0 0 14px rgba(0,224,255,.8); }
     50%     { text-shadow: 0 0 34px rgba(0,224,255,1), 0 0 70px rgba(0,224,255,.55); }
   }
   .overlay p { font-size: 16px; color: #ccc; line-height: 1.6; }
   .hidden { display: none !important; }
-
-  /* ---------- Class select ---------- */
-  #class-cards { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; max-width: 820px; }
+  /* ---------- Class / Branch select ---------- */
+  #class-cards, #branch-cards { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; max-width: 920px; }
   .card {
     width: 178px; background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.16);
     border-radius: 12px; padding: 12px; cursor: pointer; color: #fff;
@@ -81,62 +78,58 @@
   .card h3 { margin: 10px 0 5px; font-size: 17px; }
   .card .num { color: #ffd34d; font-size: 11px; letter-spacing: 1px; }
   .card p { font-size: 12px; color: #bbb; line-height: 1.45; min-height: 52px; }
+  #branch-overlay h1 { animation: none; text-shadow: 0 0 20px rgba(255,211,77,.9); color: #ffd34d; }
 </style>
-<base target="_blank">
 </head>
 <body>
-
 <div id="hud-top">
   <div id="levelbar-wrap"><div id="levelbar"></div><div id="leveltext">Level 1</div></div>
   <div id="score">Score: 0</div>
+  <div id="class-label"></div>
 </div>
-
 <div id="points">Upgrade points: 0</div>
 <div id="upgrades"></div>
-<div id="controls-hint">WASD move · Mouse aim · Hold click (or E = autofire) · 1–7 upgrades</div>
-
+<div id="controls-hint">WASD move · Mouse aim · Hold click (or E = autofire) · 1–7 upgrades · Branch at Lv 15</div>
 <div class="overlay" id="class-overlay">
-  <h1>TANK PROTOTYPE</h1>
+  <h1>TANK PROTOTYPE v3</h1>
   <p>Choose your class &nbsp;—&nbsp; press <b>1–4</b> or click</p>
   <div id="class-cards"></div>
-  <p style="font-size:13px;color:#888">Destroy shapes and enemy tanks to level up. Spend points on stats.</p>
+  <p style="font-size:13px;color:#888">Destroy shapes & enemy tanks. Reach Level 15 to unlock a class branch.</p>
 </div>
-
+<div class="overlay hidden" id="branch-overlay">
+  <h1>CLASS UPGRADE</h1>
+  <p>Choose your evolution path</p>
+  <div id="branch-cards"></div>
+</div>
 <div class="overlay hidden" id="death-overlay">
   <h1 style="animation:none;text-shadow:0 0 20px rgba(241,78,84,.9)">You were destroyed</h1>
   <p id="death-stats"></p>
   <p>Press <b>Enter</b> to choose a new class</p>
 </div>
-
 <canvas id="game"></canvas>
-
 <script>
 'use strict';
 /* =====================================================================
-   ARRAS-STYLE TANK PROTOTYPE v2 — classes, missiles & juice
+   ARRAS-STYLE TANK PROTOTYPE v3
+   — Class branching, smarter NPCs, new shapes, missile balance, juice
    ===================================================================== */
 
-/* ---------------- Tank (class) definitions ----------------
-   barrels: angle = direction relative to tank facing (radians)
-            length / width = barrel size
-            offset = perpendicular shift (for multi-barrel)
-   modifiers:
-     reloadMult     multiply reload time (higher = slower)
-     bulletDmgMult  multiply bullet damage
-     bulletSizeMult multiply bullet size
-     missile        fires a missile instead of a bullet        */
+/* ---------------- Tank (class) definitions ---------------- */
 const TANKS = {
+  /* ---- Tier 1 ---- */
   basic: {
     name: 'Basic Tank', radius: 26, color: '#00b2e1',
     desc: 'Balanced single-barrel tank. The classic all-rounder.',
     modifiers: {},
-    barrels: [ { angle: 0, length: 40, width: 18, offset: 0 } ]
+    barrels: [ { angle: 0, length: 40, width: 18, offset: 0 } ],
+    branches: ['sniper', 'machine']
   },
   pounder: {
     name: 'Pounder', radius: 29, color: '#ff8c42',
     desc: 'Massive cannon. Much slower reload, but huge, devastating bullets.',
     modifiers: { reloadMult: 2.1, bulletDmgMult: 2.5, bulletSizeMult: 1.8 },
-    barrels: [ { angle: 0, length: 50, width: 30, offset: 0 } ]
+    barrels: [ { angle: 0, length: 50, width: 30, offset: 0 } ],
+    branches: ['superPounder', 'destroyer']
   },
   twin: {
     name: 'Twin', radius: 26, color: '#8abc3f',
@@ -145,38 +138,112 @@ const TANKS = {
     barrels: [
       { angle: 0, length: 40, width: 14, offset: -11 },
       { angle: 0, length: 40, width: 14, offset:  11 }
-    ]
+    ],
+    branches: ['machineTwin', 'triplet']
   },
   missile: {
     name: 'Missile', radius: 26, color: '#bf7ff5',
-    desc: 'Launches piloted missiles. Their engine-gun sprays bullets behind them, then they explode into a ring of bullets.',
-    modifiers: { missile: true },
-    barrels: [ { angle: 0, length: 52, width: 24, offset: 0 } ]
+    desc: 'Launches piloted missiles. Engine sprays bullets, then explodes into a ring.',
+    modifiers: { missile: true, reloadMult: 3.4 },   // raised cooldown — fairer
+    barrels: [ { angle: 0, length: 52, width: 24, offset: 0 } ],
+    branches: ['lockOn', 'swarm']
+  },
+
+  /* ---- Tier 2 branches ---- */
+  sniper: {
+    name: 'Sniper', radius: 25, color: '#3ecfcf',
+    desc: 'Long-range precision. Fast, thin bullets that travel farther and hit harder.',
+    modifiers: { reloadMult: 1.7, bulletDmgMult: 1.6, bulletSizeMult: 0.75, bulletSpdMult: 1.55, bulletLifeMult: 1.8 },
+    barrels: [ { angle: 0, length: 62, width: 12, offset: 0 } ],
+    branches: []
+  },
+  machine: {
+    name: 'Machine Gun', radius: 27, color: '#5ad45a',
+    desc: 'Rapid-fire spray. High rate of fire with natural spread — volume over precision.',
+    modifiers: { reloadMult: 0.38, bulletDmgMult: 0.55, bulletSizeMult: 0.7, spread: 0.28 },
+    barrels: [ { angle: 0, length: 36, width: 22, offset: 0 } ],
+    branches: []
+  },
+  superPounder: {
+    name: 'Super Pounder', radius: 32, color: '#ff6b1a',
+    desc: 'Even bigger cannon. Catastrophic damage, glacial reload. One shot can end fights.',
+    modifiers: { reloadMult: 3.4, bulletDmgMult: 4.2, bulletSizeMult: 2.4 },
+    barrels: [ { angle: 0, length: 58, width: 38, offset: 0 } ],
+    branches: []
+  },
+  destroyer: {
+    name: 'Destroyer', radius: 31, color: '#e05a2b',
+    desc: 'Ultra-heavy shell. Slightly faster than Super Pounder, still melts anything it touches.',
+    modifiers: { reloadMult: 2.8, bulletDmgMult: 3.6, bulletSizeMult: 2.1 },
+    barrels: [ { angle: 0, length: 55, width: 34, offset: 0 } ],
+    branches: []
+  },
+  machineTwin: {
+    name: 'Machine Twin', radius: 27, color: '#9be24b',
+    desc: 'Widened dual barrels with mini-gun style random spray. High volume, chaotic pattern.',
+    modifiers: { reloadMult: 0.42, bulletDmgMult: 0.6, bulletSizeMult: 0.65, spread: 0.32 },
+    barrels: [
+      { angle: 0, length: 38, width: 12, offset: -16 },
+      { angle: 0, length: 38, width: 12, offset:  16 }
+    ],
+    branches: []
+  },
+  triplet: {
+    name: 'Triplet', radius: 26, color: '#7dcf3a',
+    desc: 'Three independent barrels. Steady triple stream of death.',
+    modifiers: { reloadMult: 1.05, bulletDmgMult: 0.9 },
+    barrels: [
+      { angle: 0, length: 42, width: 12, offset: -16 },
+      { angle: 0, length: 46, width: 14, offset:   0 },
+      { angle: 0, length: 42, width: 12, offset:  16 }
+    ],
+    branches: []
+  },
+  lockOn: {
+    name: 'Lock-On Missile', radius: 27, color: '#d48cff',
+    desc: 'Missiles gently curve toward nearby targets. Soft aim-assist, not perfect tracking.',
+    modifiers: { missile: true, lockOn: true, reloadMult: 3.6 },
+    barrels: [ { angle: 0, length: 54, width: 26, offset: 0 } ],
+    branches: []
+  },
+  swarm: {
+    name: 'Swarm Launcher', radius: 28, color: '#a66bff',
+    desc: 'Fires a spread of smaller missiles that explode into dense bullet rings.',
+    modifiers: { missile: true, swarm: true, reloadMult: 4.0 },
+    barrels: [ { angle: 0, length: 48, width: 28, offset: 0 } ],
+    branches: []
   }
 };
-const CLASS_KEYS = Object.keys(TANKS);
 
-/* ---------------- Shape (polygon) definitions ---------------- */
+const CLASS_KEYS = ['basic', 'pounder', 'twin', 'missile']; // starting classes only
+const BRANCH_LEVEL = 15; // level at which class branch unlocks
+
+/* ---------------- Shape definitions ---------------- */
 const SHAPE_TYPES = {
-  square:   { sides: 4, radius: 26, hp: 30,  xp: 10,  score: 10,  color: '#ffe763', bodyDmg: 8  },
-  triangle: { sides: 3, radius: 24, hp: 70,  xp: 25,  score: 25,  color: '#fc7677', bodyDmg: 12 },
-  pentagon: { sides: 5, radius: 34, hp: 220, xp: 130, score: 130, color: '#768cfc', bodyDmg: 20 }
+  square:    { sides: 4, radius: 26, hp: 30,  xp: 10,  score: 10,  color: '#ffe763', bodyDmg: 8  },
+  triangle:  { sides: 3, radius: 24, hp: 70,  xp: 25,  score: 25,  color: '#fc7677', bodyDmg: 12 },
+  pentagon:  { sides: 5, radius: 34, hp: 220, xp: 130, score: 130, color: '#768cfc', bodyDmg: 20 },
+  hexagon:   { sides: 6, radius: 40, hp: 480, xp: 320, score: 320, color: '#c77dff', bodyDmg: 28 },
+  crasher:   { sides: 3, radius: 14, hp: 18,  xp: 8,   score: 8,   color: '#ff4d6d', bodyDmg: 22, crasher: true },
+  alphaPent: { sides: 5, radius: 58, hp: 1400,xp: 900, score: 900, color: '#4a6cf7', bodyDmg: 45 }
 };
-const SHAPE_COUNTS = { square: 60, triangle: 32, pentagon: 12 };
+const SHAPE_COUNTS = {
+  square: 55, triangle: 28, pentagon: 10, hexagon: 4, crasher: 18, alphaPent: 1
+};
 
 /* ---------------- Canvas / world ---------------- */
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
 addEventListener('resize', resize); resize();
-
-const WORLD = { w: 4200, h: 4200 };
+const WORLD = { w: 4800, h: 4800 };
 const GRID = 48;
 
 /* ---------------- Game state ---------------- */
-let gameState = 'menu';           // 'menu' | 'playing' | 'dead'
+let gameState = 'menu'; // 'menu' | 'playing' | 'dead' | 'branch'
 let player = null;
-let shake = 0;                    // screen shake magnitude
+let shake = 0;
+let branchOffered = false;
 
 /* ---------------- Stat system ---------------- */
 const STAT_DEFS = [
@@ -191,16 +258,16 @@ const STAT_DEFS = [
 const MAX_STAT = 8;
 
 /* ---------------- Entity + FX arrays ---------------- */
-let bullets = [];     // {x,y,vx,vy,radius,dmg,owner,life,color}
-let missiles = [];    // {x,y,angle,speed,life,owner,radius,emitCd,flameCd}
-let shapes  = [];     // {x,y,type,def,hp,maxHp,rot,spin,hurtFlash,spawnT}
+let bullets = [];
+let missiles = [];
+let shapes  = [];
 let enemies = [];
-let particles = [];   // {x,y,vx,vy,life,maxLife,color,size}
-let explosions = [];  // {x,y,maxR,life,maxLife}
-let flashes = [];     // {x,y,angle,life,maxLife}
-let floatTexts = [];  // {x,y,vy,life,maxLife,text,color,size}
+let particles = [];
+let explosions = [];
+let flashes = [];
+let floatTexts = [];
 
-/* ---------------- Tiny synthesized sound (no assets needed) ---------------- */
+/* ---------------- Audio ---------------- */
 const AudioFX = {
   ctx: null, enabled: true,
   init() {
@@ -243,28 +310,27 @@ const AudioFX = {
   hit()     { this.tone(140, 0.05, 'triangle', 0.018, 70); },
   levelup() { this.tone(440, 0.1, 'sine', 0.045, 660);
               setTimeout(() => this.tone(660, 0.13, 'sine', 0.045, 880), 95); },
+  branch()  { this.tone(520, 0.12, 'sine', 0.05, 780);
+              setTimeout(() => this.tone(780, 0.15, 'sine', 0.05, 1040), 110); },
   die()     { this.noise(0.5, 0.14); this.tone(200, 0.5, 'sawtooth', 0.06, 40); }
 };
 
 /* ---------------- Helpers ---------------- */
 function makeStats() { const s = {}; STAT_DEFS.forEach(d => s[d.key] = 0); return s; }
 function mods(t) { return TANKS[t.typeKey].modifiers; }
-
 function maxHpOf(t)     { return 100 + t.stats.maxHp * 22; }
 function regenOf(t)     { return 0.4 + t.stats.regen * 0.55; }
 function bodyDmgOf(t)   { return 10 + t.stats.bodyDmg * 5; }
 function bulletDmgOf(t) { return (9 + t.stats.bulletDmg * 5.5) * (mods(t).bulletDmgMult || 1); }
 function bulletSpdOf(t) { return (380 + t.stats.bulletSpd * 34) * (mods(t).bulletSpdMult || 1); }
-function reloadOf(t)    { return Math.max(120, 550 * Math.pow(0.87, t.stats.reload) * (mods(t).reloadMult || 1)); }
+function reloadOf(t)    { return Math.max(90, 550 * Math.pow(0.87, t.stats.reload) * (mods(t).reloadMult || 1)); }
 function moveSpdOf(t)   { return 170 + t.stats.moveSpd * 14; }
 function bulletRadiusOf(t) { return (8 + t.stats.bulletDmg * 0.5) * (mods(t).bulletSizeMult || 1); }
+function bulletLifeOf(t) { return 1.6 * (mods(t).bulletLifeMult || 1); }
 function xpToNext(level) { return Math.round(14 * Math.pow(level, 1.7)); }
-
 function xpForLevel(t, lvl) {
-  // total xp required to reach lvl (for enemy setup)
   let total = 0; for (let l = 1; l < lvl; l++) total += xpToNext(l); return total;
 }
-
 function addXp(t, amount) {
   t.xp += amount; t.score += amount;
   while (t.xp >= xpToNext(t.level)) {
@@ -276,13 +342,16 @@ function addXp(t, amount) {
       floatTexts.push({ x: t.x, y: t.y - t.radius - 24, vy: -45, life: 1.1, maxLife: 1.1,
                         text: 'LEVEL UP!', color: '#ffd34d', size: 20 });
       explosions.push({ x: t.x, y: t.y, maxR: 60, life: 0.35, maxLife: 0.35, color: '#ffd34d' });
+      // offer branch at threshold
+      if (t.level >= BRANCH_LEVEL && !branchOffered && TANKS[t.typeKey].branches.length) {
+        offerBranch();
+      }
     }
   }
 }
 
 /* ---------------- FX spawners ---------------- */
-function addShake(amount) { shake = Math.min(22, shake + amount); }
-
+function addShake(amount) { shake = Math.min(24, shake + amount); }
 function spawnParticles(x, y, count, colors, speedMin, speedMax, sizeMin, sizeMax, lifeMin, lifeMax) {
   for (let i = 0; i < count; i++) {
     const a = Math.random() * Math.PI * 2;
@@ -296,38 +365,112 @@ function spawnParticles(x, y, count, colors, speedMin, speedMax, sizeMin, sizeMa
       size: sizeMin + Math.random() * (sizeMax - sizeMin)
     });
   }
-  if (particles.length > 600) particles.splice(0, particles.length - 600);
+  if (particles.length > 700) particles.splice(0, particles.length - 700);
 }
-
 function floatText(x, y, text, color, size) {
   floatTexts.push({ x, y, vy: -50, life: 0.9, maxLife: 0.9, text, color, size: size || 14 });
 }
 
+/* ---------------- Personalities for smarter NPCs ---------------- */
+const PERSONALITIES = {
+  aggressive: {
+    name: 'Aggressive',
+    preferDist: 180,
+    approach: 1.15,
+    retreat: -0.3,
+    fireRange: 620,
+    wanderChance: 0.15,
+    statBias: ['bulletDmg', 'reload', 'moveSpd', 'bulletSpd']
+  },
+  cautious: {
+    name: 'Cautious',
+    preferDist: 420,
+    approach: 0.55,
+    retreat: -1.1,
+    fireRange: 700,
+    wanderChance: 0.35,
+    statBias: ['maxHp', 'regen', 'bulletSpd', 'reload']
+  },
+  flanker: {
+    name: 'Flanker',
+    preferDist: 280,
+    approach: 0.9,
+    retreat: -0.7,
+    fireRange: 580,
+    wanderChance: 0.25,
+    circle: true,
+    statBias: ['moveSpd', 'reload', 'bulletDmg', 'bulletSpd']
+  },
+  tank: {
+    name: 'Tank',
+    preferDist: 140,
+    approach: 1.3,
+    retreat: 0.1,
+    fireRange: 480,
+    wanderChance: 0.1,
+    statBias: ['maxHp', 'bodyDmg', 'regen', 'moveSpd']
+  },
+  sniper: {
+    name: 'Sniper',
+    preferDist: 520,
+    approach: 0.4,
+    retreat: -1.3,
+    fireRange: 780,
+    wanderChance: 0.4,
+    statBias: ['bulletSpd', 'bulletDmg', 'reload', 'maxHp']
+  },
+  berserker: {
+    name: 'Berserker',
+    preferDist: 90,
+    approach: 1.5,
+    retreat: 0.4,
+    fireRange: 400,
+    wanderChance: 0.05,
+    statBias: ['bodyDmg', 'maxHp', 'moveSpd', 'regen']
+  }
+};
+const PERSONALITY_KEYS = Object.keys(PERSONALITIES);
+
 /* ---------------- Entities ---------------- */
-function createTank(x, y, typeKey, isPlayer) {
+function createTank(x, y, typeKey, isPlayer, personalityKey) {
   const def = TANKS[typeKey];
-  return {
+  const t = {
     x, y, angle: Math.random() * Math.PI * 2, typeKey, isPlayer,
     radius: def.radius, color: def.color,
     stats: makeStats(),
     hp: 100, level: 1, xp: 0, score: 0, upgradePoints: 0,
     fireCd: 0, recoil: 0, dead: false,
     hitCd: 0, flash: 0,
-    aiCd: 0, aiAngle: Math.random() * Math.PI * 2
+    aiCd: 0, aiAngle: Math.random() * Math.PI * 2,
+    personality: personalityKey || null,
+    circleDir: Math.random() < 0.5 ? 1 : -1,
+    targetLock: 0
   };
+  return t;
 }
 
 function spawnShape(forceType) {
   const keys = Object.keys(SHAPE_TYPES);
-  const type = forceType || keys[Math.floor(Math.random() * keys.length)];
+  let type = forceType;
+  if (!type) {
+    // weighted random — fewer rares
+    const roll = Math.random();
+    if (roll < 0.42) type = 'square';
+    else if (roll < 0.68) type = 'triangle';
+    else if (roll < 0.82) type = 'crasher';
+    else if (roll < 0.93) type = 'pentagon';
+    else if (roll < 0.985) type = 'hexagon';
+    else type = 'alphaPent';
+  }
   const def = SHAPE_TYPES[type];
   shapes.push({
-    x: 60 + Math.random() * (WORLD.w - 120),
-    y: 60 + Math.random() * (WORLD.h - 120),
+    x: 80 + Math.random() * (WORLD.w - 160),
+    y: 80 + Math.random() * (WORLD.h - 160),
     type, def, hp: def.hp, maxHp: def.hp,
     rot: Math.random() * Math.PI * 2,
-    spin: (type === 'pentagon' ? 0.25 : 0.08) * (Math.random() < 0.5 ? -1 : 1),
-    hurtFlash: 0, spawnT: 0
+    spin: (type === 'pentagon' || type === 'hexagon' || type === 'alphaPent' ? 0.22 : 0.09) * (Math.random() < 0.5 ? -1 : 1),
+    hurtFlash: 0, spawnT: 0,
+    vx: 0, vy: 0
   });
 }
 
@@ -335,31 +478,51 @@ function spawnEnemy() {
   let x, y, tries = 0;
   do {
     x = Math.random() * WORLD.w; y = Math.random() * WORLD.h; tries++;
-  } while (player && Math.hypot(x - player.x, y - player.y) < 700 && tries < 20);
+  } while (player && Math.hypot(x - player.x, y - player.y) < 850 && tries < 25);
 
-  const typeKey = CLASS_KEYS[Math.floor(Math.random() * CLASS_KEYS.length)];
-  const e = createTank(x, y, typeKey, false);
-  e.color = ['#f14e54', '#e05c5c', '#d14e9c'][Math.floor(Math.random() * 3)];
-  e.level = 8 + Math.floor(Math.random() * 20);
+  // pick class — higher chance of branched classes at higher average levels
+  let typeKey;
+  const roll = Math.random();
+  if (roll < 0.45) typeKey = CLASS_KEYS[Math.floor(Math.random() * CLASS_KEYS.length)];
+  else {
+    // pick a random branched tank
+    const all = Object.keys(TANKS).filter(k => !CLASS_KEYS.includes(k));
+    typeKey = all[Math.floor(Math.random() * all.length)];
+  }
+
+  const personality = PERSONALITY_KEYS[Math.floor(Math.random() * PERSONALITY_KEYS.length)];
+  const e = createTank(x, y, typeKey, false, personality);
+  e.color = ['#f14e54', '#e05c5c', '#d14e9c', '#ff6b6b', '#c44569'][Math.floor(Math.random() * 5)];
+  e.level = 10 + Math.floor(Math.random() * 22);
   e.xp = xpForLevel(e, e.level);
+
+  // allocate stats with personality bias
   let pts = e.level - 1;
-  while (pts-- > 0) e.stats[STAT_DEFS[Math.floor(Math.random() * STAT_DEFS.length)].key]++;
+  const bias = PERSONALITIES[personality].statBias;
+  while (pts-- > 0) {
+    const key = Math.random() < 0.65
+      ? bias[Math.floor(Math.random() * bias.length)]
+      : STAT_DEFS[Math.floor(Math.random() * STAT_DEFS.length)].key;
+    if (e.stats[key] < MAX_STAT) e.stats[key]++;
+    else pts++; // retry
+  }
   e.hp = maxHpOf(e);
+  e.radius = TANKS[typeKey].radius;
   enemies.push(e);
 }
 
 function initWorld() {
   bullets = []; missiles = []; shapes = []; enemies = [];
   particles = []; explosions = []; flashes = []; floatTexts = [];
+  branchOffered = false;
   for (const [t, n] of Object.entries(SHAPE_COUNTS)) for (let i = 0; i < n; i++) spawnShape(t);
-  for (let i = 0; i < 8; i++) spawnEnemy();
+  for (let i = 0; i < 11; i++) spawnEnemy();
 }
 
-/* ---------------- Class select ---------------- */
+/* ---------------- Class / Branch select ---------------- */
 function drawTankIcon(cv, typeKey) {
   const c = cv.getContext('2d');
   const def = TANKS[typeKey];
-  // background + grid lines
   c.fillStyle = '#b9b9b9'; c.fillRect(0, 0, cv.width, cv.height);
   c.strokeStyle = 'rgba(0,0,0,0.12)'; c.lineWidth = 1;
   for (let g = 0; g <= cv.width; g += 18) {
@@ -397,30 +560,85 @@ function chooseClass(key) {
   player = createTank(WORLD.w / 2, WORLD.h / 2, key, true);
   gameState = 'playing';
   shake = 0;
+  branchOffered = false;
   document.getElementById('class-overlay').classList.add('hidden');
   document.getElementById('death-overlay').classList.add('hidden');
+  document.getElementById('branch-overlay').classList.add('hidden');
   buildUpgradeUI();
+  updateClassLabel();
   explosions.push({ x: player.x, y: player.y, maxR: 70, life: 0.4, maxLife: 0.4, color: player.color });
   spawnParticles(player.x, player.y, 18, [player.color, '#ffffff'], 60, 200, 2, 5, 0.3, 0.7);
   AudioFX.levelup();
+}
+
+function offerBranch() {
+  if (branchOffered || !player) return;
+  const branches = TANKS[player.typeKey].branches;
+  if (!branches || !branches.length) return;
+  branchOffered = true;
+  gameState = 'branch';
+  const box = document.getElementById('branch-cards');
+  box.innerHTML = '';
+  branches.forEach((key, i) => {
+    const def = TANKS[key];
+    const card = document.createElement('div');
+    card.className = 'card';
+    const cv = document.createElement('canvas');
+    cv.width = 160; cv.height = 160;
+    drawTankIcon(cv, key);
+    const num = document.createElement('div'); num.className = 'num'; num.textContent = 'PRESS ' + (i + 1);
+    const title = document.createElement('h3'); title.textContent = def.name;
+    const desc = document.createElement('p'); desc.textContent = def.desc;
+    card.append(cv, num, title, desc);
+    card.onclick = () => applyBranch(key);
+    box.appendChild(card);
+  });
+  document.getElementById('branch-overlay').classList.remove('hidden');
+  AudioFX.branch();
+}
+
+function applyBranch(key) {
+  if (!player) return;
+  const oldColor = player.color;
+  const def = TANKS[key];
+  player.typeKey = key;
+  player.radius = def.radius;
+  player.color = def.color;
+  // keep stats, heal a bit
+  player.hp = Math.min(maxHpOf(player), player.hp + 40);
+  gameState = 'playing';
+  document.getElementById('branch-overlay').classList.add('hidden');
+  updateClassLabel();
+  explosions.push({ x: player.x, y: player.y, maxR: 90, life: 0.5, maxLife: 0.5, color: player.color });
+  spawnParticles(player.x, player.y, 28, [player.color, oldColor, '#ffffff'], 80, 260, 2, 6, 0.4, 0.9);
+  floatText(player.x, player.y - 40, def.name.toUpperCase() + '!', '#ffd34d', 22);
+  AudioFX.branch();
+}
+
+function updateClassLabel() {
+  const el = document.getElementById('class-label');
+  if (player) el.textContent = TANKS[player.typeKey].name;
+  else el.textContent = '';
 }
 
 /* ---------------- Input ---------------- */
 const keys = {};
 const mouse = { x: 0, y: 0, down: false };
 let autoFire = false;
-
 addEventListener('keydown', e => {
   AudioFX.init();
   keys[e.key.toLowerCase()] = true;
   if (e.key.toLowerCase() === 'e') autoFire = !autoFire;
 
-  // class select shortcuts
   if (gameState === 'menu') {
     const n = parseInt(e.key);
     if (n >= 1 && n <= CLASS_KEYS.length) { chooseClass(CLASS_KEYS[n - 1]); return; }
   }
-  // death screen
+  if (gameState === 'branch' && player) {
+    const n = parseInt(e.key);
+    const branches = TANKS[player.typeKey].branches;
+    if (n >= 1 && n <= branches.length) { applyBranch(branches[n - 1]); return; }
+  }
   if (e.key === 'Enter' && gameState === 'dead') {
     gameState = 'menu';
     document.getElementById('death-overlay').classList.add('hidden');
@@ -482,47 +700,73 @@ function barrelTip(t, b) {
 function fire(t) {
   const def = TANKS[t.typeKey];
   const m = def.modifiers;
-  for (const b of def.barrels) {
-    const a = t.angle + b.angle;
-    const tip = barrelTip(t, b);
-    if (m.missile) {
+  const spread = m.spread || 0;
+
+  if (m.swarm) {
+    // fire 3 small missiles in a fan
+    for (let s = -1; s <= 1; s++) {
+      const a = t.angle + s * 0.22;
+      const tip = barrelTip(t, def.barrels[0]);
+      missiles.push({
+        x: tip.x, y: tip.y, angle: a,
+        speed: bulletSpdOf(t) * 0.72,
+        life: 2.1, owner: t, radius: 9, emitCd: 0, flameCd: 0,
+        lockOn: false, swarmling: true
+      });
+    }
+  } else if (m.missile) {
+    for (const b of def.barrels) {
+      const a = t.angle + b.angle;
+      const tip = barrelTip(t, b);
       missiles.push({
         x: tip.x, y: tip.y, angle: a,
         speed: bulletSpdOf(t) * 0.8,
-        life: 2.6, owner: t, radius: 13, emitCd: 0, flameCd: 0
+        life: 2.8, owner: t, radius: 13, emitCd: 0, flameCd: 0,
+        lockOn: !!m.lockOn
       });
-    } else {
+    }
+  } else {
+    for (const b of def.barrels) {
+      let a = t.angle + b.angle;
+      if (spread) a += (Math.random() - 0.5) * spread;
+      const tip = barrelTip(t, b);
       bullets.push({
         x: tip.x, y: tip.y,
         vx: Math.cos(a) * bulletSpdOf(t), vy: Math.sin(a) * bulletSpdOf(t),
         radius: bulletRadiusOf(t),
-        dmg: bulletDmgOf(t), owner: t, life: 1.6,
+        dmg: bulletDmgOf(t), owner: t, life: bulletLifeOf(t),
         color: t.isPlayer ? '#00e0ff' : '#ffd34d'
       });
     }
-    flashes.push({ x: tip.x, y: tip.y, angle: a, life: 0.07, maxLife: 0.07 });
+  }
+
+  // muzzle FX
+  for (const b of def.barrels) {
+    const tip = barrelTip(t, b);
+    flashes.push({ x: tip.x, y: tip.y, angle: t.angle + b.angle, life: 0.07, maxLife: 0.07 });
     spawnParticles(tip.x, tip.y, 3, ['#fff2ae', '#ffd34d'], 60, 180, 1.5, 3, 0.1, 0.25);
   }
   t.fireCd = reloadOf(t);
   t.recoil = 8;
-  if (t.isPlayer || (player && Math.hypot(t.x - player.x, t.y - player.y) < 900)) AudioFX.shoot();
+  if (t.isPlayer || (player && Math.hypot(t.x - player.x, t.y - player.y) < 950)) AudioFX.shoot();
 }
 
 function explodeMissile(ms) {
   const owner = ms.owner;
-  const n = 14;
+  const n = ms.swarmling ? 9 : 14;
+  const baseSpd = ms.swarmling ? 280 : 330;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 + Math.random() * 0.12;
     bullets.push({
       x: ms.x, y: ms.y,
-      vx: Math.cos(a) * 330, vy: Math.sin(a) * 330,
-      radius: 6 + owner.stats.bulletDmg * 0.3,
-      dmg: bulletDmgOf(owner) * 0.7, owner, life: 1.1,
+      vx: Math.cos(a) * baseSpd, vy: Math.sin(a) * baseSpd,
+      radius: (ms.swarmling ? 5 : 6) + owner.stats.bulletDmg * 0.25,
+      dmg: bulletDmgOf(owner) * (ms.swarmling ? 0.55 : 0.7), owner, life: 1.0,
       color: owner.isPlayer ? '#00e0ff' : '#ffd34d'
     });
   }
-  explosions.push({ x: ms.x, y: ms.y, maxR: 95, life: 0.4, maxLife: 0.4, color: '#ff9a3d' });
-  spawnParticles(ms.x, ms.y, 20, ['#ff9a3d', '#ffd34d', '#ff5c2e', '#ffffff'], 100, 280, 2, 6, 0.4, 0.9);
+  explosions.push({ x: ms.x, y: ms.y, maxR: ms.swarmling ? 55 : 95, life: 0.4, maxLife: 0.4, color: '#ff9a3d' });
+  spawnParticles(ms.x, ms.y, ms.swarmling ? 12 : 20, ['#ff9a3d', '#ffd34d', '#ff5c2e', '#ffffff'], 100, 280, 2, 6, 0.4, 0.9);
   if (player && !player.dead) {
     const d = Math.hypot(ms.x - player.x, ms.y - player.y);
     if (d < 520) addShake((1 - d / 520) * 12);
@@ -536,23 +780,24 @@ function damageTank(t, dmg) {
   t.flash = 0.15;
   if (t.hp <= 0) {
     t.dead = true;
-    // death FX
-    explosions.push({ x: t.x, y: t.y, maxR: t.radius * 3, life: 0.45, maxLife: 0.45, color: t.color });
-    spawnParticles(t.x, t.y, 26, [t.color, '#ffffff', '#666666'], 80, 300, 2, 6, 0.4, 1);
+    explosions.push({ x: t.x, y: t.y, maxR: t.radius * 3.2, life: 0.5, maxLife: 0.5, color: t.color });
+    spawnParticles(t.x, t.y, 30, [t.color, '#ffffff', '#666666'], 80, 320, 2, 7, 0.4, 1.1);
     if (t.isPlayer) {
       gameState = 'dead';
       addShake(18);
       AudioFX.die();
-      document.getElementById('death-stats').textContent = `Level ${t.level} · Score ${t.score}`;
+      document.getElementById('death-stats').textContent =
+        `Level ${t.level} · ${TANKS[t.typeKey].name} · Score ${t.score}`;
       document.getElementById('death-overlay').classList.remove('hidden');
     } else {
       if (player && !player.dead) {
-        addXp(player, 250);
-        floatText(t.x, t.y, '+250', '#ffd34d', 18);
+        const xpGain = 220 + t.level * 18;
+        addXp(player, xpGain);
+        floatText(t.x, t.y, '+' + xpGain, '#ffd34d', 18);
       }
       const idx = enemies.indexOf(t);
       if (idx >= 0) enemies.splice(idx, 1);
-      setTimeout(() => { if (gameState !== 'menu') spawnEnemy(); }, 2000);
+      setTimeout(() => { if (gameState !== 'menu') spawnEnemy(); }, 1800);
     }
   }
 }
@@ -561,12 +806,17 @@ function damageShape(s, dmg, idx) {
   s.hp -= dmg; s.hurtFlash = 0.1;
   if (s.hp <= 0) {
     shapes.splice(idx, 1);
-    spawnParticles(s.x, s.y, 12, [s.def.color, '#ffffff'], 60, 190, 2, 5, 0.3, 0.7);
+    const big = s.type === 'hexagon' || s.type === 'alphaPent';
+    spawnParticles(s.x, s.y, big ? 22 : 12, [s.def.color, '#ffffff'], 60, 220, 2, 6, 0.3, 0.8);
+    if (big) {
+      explosions.push({ x: s.x, y: s.y, maxR: s.def.radius * 2.2, life: 0.45, maxLife: 0.45, color: s.def.color });
+      addShake(6);
+    }
     if (player && !player.dead) {
       addXp(player, s.def.xp);
-      floatText(s.x, s.y, '+' + s.def.xp, '#ffe763', 13);
+      floatText(s.x, s.y, '+' + s.def.xp, '#ffe763', big ? 16 : 13);
     }
-    setTimeout(() => spawnShape(s.type), 3000);
+    setTimeout(() => spawnShape(s.type), s.type === 'alphaPent' ? 12000 : 2800);
   }
 }
 
@@ -584,7 +834,6 @@ function update(dt) {
   const spd = moveSpdOf(player);
   player.x = Math.max(player.radius, Math.min(WORLD.w - player.radius, player.x + dx / len * spd * dt));
   player.y = Math.max(player.radius, Math.min(WORLD.h - player.radius, player.y + dy / len * spd * dt));
-
   player.angle = Math.atan2(mouse.y - canvas.height / 2, mouse.x - canvas.width / 2);
   player.fireCd -= dt * 1000;
   if ((mouse.down || autoFire) && player.fireCd <= 0) fire(player);
@@ -593,25 +842,51 @@ function update(dt) {
   player.hp = Math.min(maxHpOf(player), player.hp + regenOf(player) * dt);
   player.hitCd -= dt;
 
-  /* --- enemy AI --- */
+  /* --- smarter enemy AI with personalities --- */
   for (const e of enemies) {
+    if (e.dead) continue;
     const distP = Math.hypot(player.x - e.x, player.y - e.y);
-    if (distP < 560 && !player.dead) {
-      e.angle = Math.atan2(player.y - e.y, player.x - e.x) + (Math.random() - 0.5) * 0.12;
-      const want = 260;
-      const dir = distP > want ? 1 : -0.6;
-      const espd = moveSpdOf(e) * 0.82;
+    const pers = PERSONALITIES[e.personality] || PERSONALITIES.aggressive;
+
+    if (distP < pers.fireRange && !player.dead) {
+      // aim with slight prediction + noise
+      const lead = 0.12 + Math.random() * 0.08;
+      const predX = player.x + (keys['d'] ? 1 : keys['a'] ? -1 : 0) * moveSpdOf(player) * lead;
+      const predY = player.y + (keys['s'] ? 1 : keys['w'] ? -1 : 0) * moveSpdOf(player) * lead;
+      e.angle = Math.atan2(predY - e.y, predX - e.x) + (Math.random() - 0.5) * 0.08;
+
+      // distance control
+      const want = pers.preferDist;
+      let dir = distP > want ? pers.approach : pers.retreat;
+      // flankers circle
+      if (pers.circle) {
+        const side = Math.atan2(player.y - e.y, player.x - e.x) + Math.PI / 2 * e.circleDir;
+        e.x += Math.cos(side) * moveSpdOf(e) * 0.7 * dt;
+        e.y += Math.sin(side) * moveSpdOf(e) * 0.7 * dt;
+        dir *= 0.55;
+      }
+      const espd = moveSpdOf(e) * 0.88;
       e.x += Math.cos(e.angle) * espd * dir * dt;
       e.y += Math.sin(e.angle) * espd * dir * dt;
+
       e.fireCd -= dt * 1000;
-      if (e.fireCd <= 0) fire(e);
+      // fire more smartly — not every frame
+      if (e.fireCd <= 0 && distP < pers.fireRange * 0.95) {
+        // occasional pause to feel human
+        if (Math.random() > 0.12) fire(e);
+        else e.fireCd = 180 + Math.random() * 220;
+      }
     } else {
+      // wander
       e.aiCd -= dt;
-      if (e.aiCd <= 0) { e.aiAngle = Math.random() * Math.PI * 2; e.aiCd = 2 + Math.random() * 3; }
+      if (e.aiCd <= 0) {
+        e.aiAngle = Math.random() * Math.PI * 2;
+        e.aiCd = 1.6 + Math.random() * 3.2;
+      }
       e.angle = e.aiAngle;
-      e.x += Math.cos(e.aiAngle) * moveSpdOf(e) * 0.4 * dt;
-      e.y += Math.sin(e.aiAngle) * moveSpdOf(e) * 0.4 * dt;
-      e.fireCd = Math.max(e.fireCd, 300);
+      e.x += Math.cos(e.aiAngle) * moveSpdOf(e) * 0.38 * dt;
+      e.y += Math.sin(e.aiAngle) * moveSpdOf(e) * 0.38 * dt;
+      e.fireCd = Math.max(e.fireCd, 250);
     }
     e.recoil = Math.max(0, e.recoil - dt * 45);
     e.flash = Math.max(0, e.flash - dt);
@@ -621,14 +896,35 @@ function update(dt) {
     e.y = Math.max(e.radius, Math.min(WORLD.h - e.radius, e.y));
   }
 
-  /* --- missiles --- */
+  /* --- missiles (with soft lock-on) --- */
   for (let i = missiles.length - 1; i >= 0; i--) {
     const ms = missiles[i];
     ms.life -= dt;
+
+    // soft lock-on assist
+    if (ms.lockOn) {
+      const targets = ms.owner.isPlayer ? enemies : (player && !player.dead ? [player] : []);
+      let best = null, bestD = 520;
+      for (const t of targets) {
+        if (t.dead) continue;
+        const d = Math.hypot(ms.x - t.x, ms.y - t.y);
+        if (d < bestD) { bestD = d; best = t; }
+      }
+      if (best) {
+        const desired = Math.atan2(best.y - ms.y, best.x - ms.x);
+        let diff = desired - ms.angle;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        // gentle turn rate — assist, not perfect lock
+        const turnRate = 1.55; // rad/s
+        ms.angle += Math.sign(diff) * Math.min(Math.abs(diff), turnRate * dt);
+      }
+    }
+
     ms.x += Math.cos(ms.angle) * ms.speed * dt;
     ms.y += Math.sin(ms.angle) * ms.speed * dt;
 
-    // engine flame particles
+    // engine flame
     ms.flameCd -= dt;
     if (ms.flameCd <= 0) {
       ms.flameCd = 0.03;
@@ -644,42 +940,41 @@ function update(dt) {
       });
     }
 
-    // engine gun: sprays bullets backward
+    // engine gun spray
     ms.emitCd -= dt * 1000;
     if (ms.emitCd <= 0) {
-      ms.emitCd = 95;
+      ms.emitCd = ms.swarmling ? 110 : 95;
       const spread = (Math.random() - 0.5) * 0.5;
       const a = ms.angle + Math.PI + spread;
       bullets.push({
-        x: ms.x - Math.cos(ms.angle) * ms.radius, y: ms.y - Math.sin(ms.angle) * ms.radius,
+        x: ms.x - Math.cos(ms.angle) * ms.radius,
+        y: ms.y - Math.sin(ms.angle) * ms.radius,
         vx: Math.cos(a) * 240, vy: Math.sin(a) * 240,
-        radius: 5, dmg: bulletDmgOf(ms.owner) * 0.35, owner: ms.owner, life: 1.1,
-        color: '#ff9a3d'
+        radius: ms.swarmling ? 4 : 5,
+        dmg: bulletDmgOf(ms.owner) * (ms.swarmling ? 0.28 : 0.35),
+        owner: ms.owner, life: 1.0, color: '#ff9a3d'
       });
     }
 
     let boom = ms.life <= 0 ||
                ms.x < 10 || ms.x > WORLD.w - 10 || ms.y < 10 || ms.y > WORLD.h - 10;
 
-    // contact with opposing tanks
     if (!boom) {
       const targets = ms.owner.isPlayer ? enemies : [player];
       for (const t of targets) {
-        if (!t.dead && Math.hypot(ms.x - t.x, ms.y - t.y) < ms.radius + t.radius) {
-          damageTank(t, bulletDmgOf(ms.owner) * 1.2); boom = true; break;
+        if (t && !t.dead && Math.hypot(ms.x - t.x, ms.y - t.y) < ms.radius + t.radius) {
+          damageTank(t, bulletDmgOf(ms.owner) * 1.15); boom = true; break;
         }
       }
     }
-    // contact with shapes
     if (!boom) {
       for (let j = shapes.length - 1; j >= 0; j--) {
         const s = shapes[j];
         if (Math.hypot(ms.x - s.x, ms.y - s.y) < ms.radius + s.def.radius) {
-          damageShape(s, bulletDmgOf(ms.owner) * 1.2, j); boom = true; break;
+          damageShape(s, bulletDmgOf(ms.owner) * 1.15, j); boom = true; break;
         }
       }
     }
-
     if (boom) { explodeMissile(ms); missiles.splice(i, 1); }
   }
 
@@ -688,7 +983,6 @@ function update(dt) {
     const b = bullets[i];
     b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
     if (b.life <= 0 || b.x < 0 || b.x > WORLD.w || b.y < 0 || b.y > WORLD.h) { bullets.splice(i, 1); continue; }
-
     let hit = false;
     for (let j = shapes.length - 1; j >= 0; j--) {
       const s = shapes[j];
@@ -697,10 +991,9 @@ function update(dt) {
       }
     }
     if (hit) { bullets.splice(i, 1); continue; }
-
     const targets = b.owner.isPlayer ? enemies : [player];
     for (const t of targets) {
-      if (!t.dead && Math.hypot(b.x - t.x, b.y - t.y) < b.radius + t.radius) {
+      if (t && !t.dead && Math.hypot(b.x - t.x, b.y - t.y) < b.radius + t.radius) {
         damageTank(t, b.dmg);
         spawnParticles(b.x, b.y, 4, ['#ffffff', b.color], 40, 140, 1, 3, 0.1, 0.3);
         if (t.isPlayer) { addShake(2.5); AudioFX.hit(); }
@@ -710,22 +1003,40 @@ function update(dt) {
     if (hit) bullets.splice(i, 1);
   }
 
-  /* --- body contact damage --- */
+  /* --- body contact --- */
   function contact(t, other, dt) {
+    if (!t || !other || t.dead || other.dead) return;
     if (Math.hypot(t.x - other.x, t.y - other.y) < t.radius + other.radius) {
       if (t.hitCd <= 0) { damageTank(other, bodyDmgOf(t)); t.hitCd = 0.4; }
       const a = Math.atan2(t.y - other.y, t.x - other.x);
-      t.x += Math.cos(a) * 40 * dt; t.y += Math.sin(a) * 40 * dt;
+      t.x += Math.cos(a) * 45 * dt; t.y += Math.sin(a) * 45 * dt;
     }
   }
   for (const e of enemies) { contact(player, e, dt); contact(e, player, dt); }
+
+  /* --- shape contact + crasher AI --- */
   for (let j = shapes.length - 1; j >= 0; j--) {
     const s = shapes[j];
-    if (Math.hypot(player.x - s.x, player.y - s.y) < player.radius + s.def.radius) {
+    // crashers chase player
+    if (s.def.crasher && player && !player.dead) {
+      const d = Math.hypot(player.x - s.x, player.y - s.y);
+      if (d < 700) {
+        const a = Math.atan2(player.y - s.y, player.x - s.x);
+        s.vx = Math.cos(a) * 210;
+        s.vy = Math.sin(a) * 210;
+      } else {
+        s.vx *= 0.9; s.vy *= 0.9;
+      }
+      s.x += s.vx * dt; s.y += s.vy * dt;
+      s.x = Math.max(s.def.radius, Math.min(WORLD.w - s.def.radius, s.x));
+      s.y = Math.max(s.def.radius, Math.min(WORLD.h - s.def.radius, s.y));
+    }
+
+    if (player && !player.dead && Math.hypot(player.x - s.x, player.y - s.y) < player.radius + s.def.radius) {
       if (player.hitCd <= 0) { damageTank(player, s.def.bodyDmg); player.hitCd = 0.4; }
     }
     for (const e of enemies) {
-      if (Math.hypot(e.x - s.x, e.y - s.y) < e.radius + s.def.radius) {
+      if (!e.dead && Math.hypot(e.x - s.x, e.y - s.y) < e.radius + s.def.radius) {
         if (e.hitCd <= 0) { damageTank(e, s.def.bodyDmg); e.hitCd = 0.4; }
       }
     }
@@ -736,14 +1047,12 @@ function update(dt) {
     s.spawnT = Math.min(1, s.spawnT + dt * 2.5);
     s.rot += s.spin * dt;
   }
-
   refreshUpgradeUI();
 }
 
-/* ---------------- FX update (runs even when dead/menu) ---------------- */
+/* ---------------- FX update ---------------- */
 function updateFx(dt) {
   shake = Math.max(0, shake - dt * 26);
-
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.x += p.vx * dt; p.y += p.vy * dt;
@@ -764,19 +1073,14 @@ function updateFx(dt) {
     f.y += f.vy * dt; f.life -= dt;
     if (f.life <= 0) floatTexts.splice(i, 1);
   }
-  for (const s of shapes) {
-    s.spawnT = Math.min(1, s.spawnT + dt * 2.5);
-    s.rot += s.spin * dt;
-    s.hurtFlash = Math.max(0, s.hurtFlash - dt);
-  }
 }
 
 /* ---------------- Drawing ---------------- */
 function drawGrid(camX, camY) {
-  // subtle gradient background
-  const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 100, canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)*0.75);
-  grad.addColorStop(0, '#c4c4c4');
-  grad.addColorStop(1, '#a8a8a8');
+  const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 80,
+    canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)*0.8);
+  grad.addColorStop(0, '#c8c8c8');
+  grad.addColorStop(1, '#a3a3a3');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -788,7 +1092,7 @@ function drawGrid(camX, camY) {
   for (let x = startX; x < camX + canvas.width; x += GRID) { ctx.moveTo(x, camY); ctx.lineTo(x, camY + canvas.height); }
   for (let y = startY; y < camY + canvas.height; y += GRID) { ctx.moveTo(camX, y); ctx.lineTo(camX + canvas.width, y); }
   ctx.stroke();
-  // major lines
+
   ctx.strokeStyle = 'rgba(0,0,0,0.14)';
   ctx.beginPath();
   for (let x = Math.floor(camX / (GRID*5)) * GRID*5; x < camX + canvas.width; x += GRID*5) { ctx.moveTo(x, camY); ctx.lineTo(x, camY + canvas.height); }
@@ -801,8 +1105,8 @@ function drawGrid(camX, camY) {
 
 function drawShape(s, camX, camY) {
   const x = s.x - camX, y = s.y - camY;
-  if (x < -80 || y < -80 || x > canvas.width + 80 || y > canvas.height + 80) return;
-  const scale = 0.2 + 0.8 * s.spawnT;   // spawn-in pop
+  if (x < -100 || y < -100 || x > canvas.width + 100 || y > canvas.height + 100) return;
+  const scale = 0.2 + 0.8 * s.spawnT;
   ctx.save();
   ctx.translate(x, y); ctx.rotate(s.rot); ctx.scale(scale, scale);
   ctx.beginPath();
@@ -814,12 +1118,21 @@ function drawShape(s, camX, camY) {
   ctx.closePath();
   ctx.fillStyle = s.hurtFlash > 0 ? '#ffffff' : s.def.color;
   ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-  ctx.lineWidth = 4;
+  ctx.lineWidth = s.type === 'alphaPent' ? 6 : 4;
   ctx.fill(); ctx.stroke();
+  // subtle glow for rare shapes
+  if (s.type === 'hexagon' || s.type === 'alphaPent') {
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = s.def.color;
+    ctx.lineWidth = 10;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
   ctx.restore();
   if (s.hp < s.maxHp && s.spawnT >= 1) {
-    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x - 20, y - s.def.radius - 12, 40, 5);
-    ctx.fillStyle = '#8abc3f'; ctx.fillRect(x - 20, y - s.def.radius - 12, 40 * (s.hp / s.maxHp), 5);
+    const barW = s.type === 'alphaPent' ? 70 : 40;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x - barW/2, y - s.def.radius - 14, barW, 5);
+    ctx.fillStyle = '#8abc3f'; ctx.fillRect(x - barW/2, y - s.def.radius - 14, barW * (s.hp / s.maxHp), 5);
   }
 }
 
@@ -827,9 +1140,8 @@ function drawTank(t, camX, camY, c, showInfo) {
   c = c || ctx;
   if (showInfo === undefined) showInfo = true;
   const x = t.x - camX, y = t.y - camY;
-  if (x < -90 || y < -90 || x > canvas.width + 90 || y > canvas.height + 90) return;
+  if (x < -100 || y < -100 || x > canvas.width + 100 || y > canvas.height + 100) return;
   const def = TANKS[t.typeKey];
-
   for (const b of def.barrels) {
     c.save();
     c.translate(x, y); c.rotate(t.angle + b.angle);
@@ -843,34 +1155,38 @@ function drawTank(t, camX, camY, c, showInfo) {
     c.fill(); c.stroke();
     c.restore();
   }
-
   c.beginPath();
   c.arc(x, y, t.radius, 0, Math.PI * 2);
   c.fillStyle = t.color;
   c.strokeStyle = 'rgba(0,0,0,0.55)';
   c.lineWidth = 4;
   c.fill(); c.stroke();
-
   if (t.flash > 0) {
     c.beginPath();
     c.arc(x, y, t.radius, 0, Math.PI * 2);
     c.fillStyle = `rgba(255,60,60,${(t.flash / 0.15) * 0.45})`;
     c.fill();
   }
-
   if (showInfo) {
-    c.fillStyle = '#fff'; c.font = 'bold 13px Arial'; c.textAlign = 'center';
-    c.fillText(t.isPlayer ? 'You' : TANKS[t.typeKey].name + ' (Lv ' + t.level + ')', x, y - t.radius - 16);
-    c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(x - 26, y - t.radius - 12, 52, 6);
-    c.fillStyle = '#8abc3f'; c.fillRect(x - 26, y - t.radius - 12, 52 * Math.max(0, t.hp / maxHpOf(t)), 6);
+    c.fillStyle = '#fff'; c.font = 'bold 12px Arial'; c.textAlign = 'center';
+    const label = t.isPlayer ? 'You' : (TANKS[t.typeKey].name + ' · Lv' + t.level);
+    c.fillText(label, x, y - t.radius - 18);
+    // personality tag for enemies
+    if (!t.isPlayer && t.personality) {
+      c.fillStyle = 'rgba(255,255,255,0.55)';
+      c.font = '10px Arial';
+      c.fillText(PERSONALITIES[t.personality].name, x, y - t.radius - 6);
+    }
+    c.fillStyle = 'rgba(0,0,0,0.6)'; c.fillRect(x - 28, y - t.radius - 12, 56, 6);
+    c.fillStyle = '#8abc3f'; c.fillRect(x - 28, y - t.radius - 12, 56 * Math.max(0, t.hp / maxHpOf(t)), 6);
   }
 }
 
 function drawMissile(ms, camX, camY) {
   const x = ms.x - camX, y = ms.y - camY;
-  // engine gun at the back
   ctx.save();
   ctx.translate(x, y); ctx.rotate(ms.angle);
+  // engine gun
   ctx.fillStyle = '#999';
   ctx.strokeStyle = 'rgba(0,0,0,0.55)';
   ctx.lineWidth = 2.5;
@@ -883,7 +1199,15 @@ function drawMissile(ms, camX, camY) {
   ctx.strokeStyle = 'rgba(0,0,0,0.55)';
   ctx.lineWidth = 3;
   ctx.fill(); ctx.stroke();
-  // nose dot
+  // lock-on indicator ring
+  if (ms.lockOn) {
+    ctx.beginPath();
+    ctx.arc(x, y, ms.radius + 5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(212,140,255,0.55)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  // nose
   ctx.beginPath();
   ctx.arc(x + Math.cos(ms.angle) * 5, y + Math.sin(ms.angle) * 5, 4, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(255,255,255,0.75)';
@@ -891,18 +1215,21 @@ function drawMissile(ms, camX, camY) {
 }
 
 function drawMinimap() {
-  const size = 140, pad = 12;
+  const size = 150, pad = 12;
   const mx = canvas.width - size - pad, my = canvas.height - size - pad;
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.fillRect(mx, my, size, size);
   ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.strokeRect(mx, my, size, size);
   const sx = size / WORLD.w, sy = size / WORLD.h;
   for (const s of shapes) {
-    if (s.type === 'pentagon') { ctx.fillStyle = '#768cfc'; ctx.fillRect(mx + s.x * sx - 1, my + s.y * sy - 1, 3, 3); }
+    if (s.type === 'pentagon') { ctx.fillStyle = '#768cfc'; ctx.fillRect(mx + s.x * sx - 1.5, my + s.y * sy - 1.5, 3, 3); }
+    else if (s.type === 'hexagon') { ctx.fillStyle = '#c77dff'; ctx.fillRect(mx + s.x * sx - 2, my + s.y * sy - 2, 4, 4); }
+    else if (s.type === 'alphaPent') { ctx.fillStyle = '#4a6cf7'; ctx.fillRect(mx + s.x * sx - 3, my + s.y * sy - 3, 6, 6); }
+    else if (s.type === 'crasher') { ctx.fillStyle = '#ff4d6d'; ctx.fillRect(mx + s.x * sx - 1, my + s.y * sy - 1, 2, 2); }
   }
   for (const e of enemies) { ctx.fillStyle = '#f14e54'; ctx.fillRect(mx + e.x * sx - 1.5, my + e.y * sy - 1.5, 3, 3); }
   for (const ms of missiles) { ctx.fillStyle = '#ff9a3d'; ctx.fillRect(mx + ms.x * sx - 1.5, my + ms.y * sy - 1.5, 3, 3); }
-  if (player && !player.dead) { ctx.fillStyle = '#fff'; ctx.fillRect(mx + player.x * sx - 2, my + player.y * sy - 2, 4, 4); }
+  if (player && !player.dead) { ctx.fillStyle = '#fff'; ctx.fillRect(mx + player.x * sx - 2.5, my + player.y * sy - 2.5, 5, 5); }
 }
 
 function refreshHud() {
@@ -921,7 +1248,6 @@ function loop(now) {
   update(dt);
   updateFx(dt);
 
-  // camera (menu drifts slowly around the world)
   let camX, camY;
   if (player) {
     camX = player.x - canvas.width / 2;
@@ -937,17 +1263,14 @@ function loop(now) {
 
   drawGrid(camX, camY);
   for (const s of shapes) drawShape(s, camX, camY);
-
   for (const ms of missiles) drawMissile(ms, camX, camY);
-
   for (const b of bullets) {
     const x = b.x - camX, y = b.y - camY;
-    // trail
     for (let k = 1; k <= 3; k++) {
       ctx.beginPath();
       ctx.arc(x - b.vx * 0.022 * k, y - b.vy * 0.022 * k, b.radius * (1 - 0.22 * k), 0, Math.PI * 2);
-      ctx.fillStyle = b.color + '';
-      ctx.globalAlpha = 0.1;
+      ctx.fillStyle = b.color;
+      ctx.globalAlpha = 0.12;
       ctx.fill();
       ctx.globalAlpha = 1;
     }
@@ -957,11 +1280,9 @@ function loop(now) {
     ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 3;
     ctx.fill(); ctx.stroke();
   }
-
-  for (const e of enemies) drawTank(e, camX, camY);
+  for (const e of enemies) if (!e.dead) drawTank(e, camX, camY);
   if (player && !player.dead) drawTank(player, camX, camY);
 
-  // particles
   for (const p of particles) {
     ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
     ctx.fillStyle = p.color;
@@ -971,7 +1292,6 @@ function loop(now) {
   }
   ctx.globalAlpha = 1;
 
-  // explosion shockwaves
   for (const ex of explosions) {
     const prog = 1 - ex.life / ex.maxLife;
     const r = ex.maxR * (0.2 + 0.8 * prog);
@@ -981,13 +1301,12 @@ function loop(now) {
     ctx.globalAlpha = (1 - prog) * 0.9;
     ctx.lineWidth = 6 * (1 - prog) + 1;
     ctx.stroke();
-    ctx.globalAlpha = (1 - prog) * 0.25;
+    ctx.globalAlpha = (1 - prog) * 0.22;
     ctx.fillStyle = ex.color || '#ff9a3d';
     ctx.fill();
     ctx.globalAlpha = 1;
   }
 
-  // muzzle flashes
   for (const f of flashes) {
     const prog = 1 - f.life / f.maxLife;
     ctx.save();
@@ -1003,7 +1322,6 @@ function loop(now) {
     ctx.globalAlpha = 1;
   }
 
-  // floating texts
   for (const f of floatTexts) {
     ctx.globalAlpha = Math.max(0, f.life / f.maxLife);
     ctx.fillStyle = f.color;
