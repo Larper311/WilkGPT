@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tank Prototype — Arras-style v5</title>
+<title>Tank Prototype — Arras-style v6</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #555; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; }
   canvas { display: block; }
   #hud-top {
     position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
-    width: 380px; text-align: center; color: #fff; user-select: none; z-index: 5;
+    width: 400px; text-align: center; color: #fff; user-select: none; z-index: 5;
   }
   #levelbar-wrap {
     height: 22px; background: rgba(0,0,0,.45); border: 2px solid #222;
@@ -25,7 +25,7 @@
   #drone-label { margin-top: 1px; font-size: 11px; color: #a8e6cf; text-shadow: 1px 1px 0 #000; display: none; }
   #controls-hint {
     position: fixed; bottom: 12px; left: 12px; color: rgba(255,255,255,.75);
-    font-size: 11px; text-shadow: 1px 1px 0 #000; user-select: none; z-index: 5; max-width: 440px; line-height: 1.4;
+    font-size: 11px; text-shadow: 1px 1px 0 #000; user-select: none; z-index: 5; max-width: 460px; line-height: 1.4;
   }
   #debug-hint {
     position: fixed; top: 12px; right: 12px; color: rgba(255,200,80,.85);
@@ -53,18 +53,18 @@
   .overlay {
     position: fixed; inset: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 14px;
-    background: rgba(15,18,24,.8); color: #fff; text-align: center; z-index: 10;
+    background: rgba(15,18,24,.82); color: #fff; text-align: center; z-index: 10;
   }
-  .overlay h1 { font-size: 40px; letter-spacing: 2px; animation: glowpulse 2.2s infinite ease-in-out; }
+  .overlay h1 { font-size: 38px; letter-spacing: 2px; animation: glowpulse 2.2s infinite ease-in-out; }
   @keyframes glowpulse {
     0%,100% { text-shadow: 0 0 14px rgba(0,224,255,.8); }
     50%     { text-shadow: 0 0 34px rgba(0,224,255,1), 0 0 70px rgba(0,224,255,.55); }
   }
   .overlay p { font-size: 15px; color: #ccc; line-height: 1.55; }
   .hidden { display: none !important; }
-  #class-cards, #branch-cards { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; max-width: 980px; }
+  #class-cards, #branch-cards { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; max-width: 1000px; }
   .card {
-    width: 168px; background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.16);
+    width: 162px; background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.16);
     border-radius: 12px; padding: 10px; cursor: pointer; color: #fff;
     transition: transform .13s, border-color .13s, background .13s, box-shadow .13s;
   }
@@ -74,9 +74,9 @@
     box-shadow: 0 8px 28px rgba(0,224,255,.35);
   }
   .card canvas { width: 100%; border-radius: 8px; background: #b9b9b9; }
-  .card h3 { margin: 8px 0 4px; font-size: 15px; }
+  .card h3 { margin: 8px 0 4px; font-size: 14px; }
   .card .num { color: #ffd34d; font-size: 10px; letter-spacing: 1px; }
-  .card p { font-size: 11px; color: #bbb; line-height: 1.4; min-height: 48px; }
+  .card p { font-size: 11px; color: #bbb; line-height: 1.35; min-height: 46px; }
   #branch-overlay h1 { animation: none; text-shadow: 0 0 20px rgba(255,211,77,.9); color: #ffd34d; }
 </style>
 </head>
@@ -90,160 +90,207 @@
 <div id="points">Upgrade points: 0</div>
 <div id="upgrades"></div>
 <div id="controls-hint">
-  WASD move · Mouse aim · Hold click / E autofire · 1–7 upgrades · Branch at Lv 15<br>
-  Debug: L +5 levels · U +5 points · H heal · K clear nearby · R teleport
+  WASD · Mouse aim · Click / E autofire · 1–7 upgrades · Branch Lv15 &amp; Lv35<br>
+  Debug: L +5 lv · U +5 pts · H heal · K clear · R teleport
 </div>
 <div id="debug-hint">DEBUG ON</div>
 <div class="overlay" id="class-overlay">
-  <h1>TANK PROTOTYPE v5</h1>
+  <h1>TANK PROTOTYPE v6</h1>
   <p>Choose your class — press <b>1–5</b> or click</p>
   <div id="class-cards"></div>
-  <p style="font-size:12px;color:#888">Orbiting nests · smart lookout crashers · smooth drones · human-like bots · polished combat</p>
+  <p style="font-size:12px;color:#888">Recoil · Spinner missiles · Quadriplet · Auto-drones for NPCs · Deadlier nests &amp; bots</p>
 </div>
 <div class="overlay hidden" id="branch-overlay">
   <h1>CLASS UPGRADE</h1>
-  <p>Choose your evolution path</p>
+  <p id="branch-sub">Choose your evolution</p>
   <div id="branch-cards"></div>
 </div>
 <div class="overlay hidden" id="death-overlay">
   <h1 style="animation:none;text-shadow:0 0 20px rgba(241,78,84,.9)">You were destroyed</h1>
   <p id="death-stats"></p>
-  <p>Press <b>Enter</b> for a new class (safe random spawn)</p>
+  <p>Press <b>Enter</b> for a new class (safe spawn)</p>
 </div>
 <canvas id="game"></canvas>
 <script>
 'use strict';
 /* =====================================================================
-   ARRAS-STYLE TANK PROTOTYPE v5
-   — Orbiting nests + lookouts, smooth drones, human bots, combat polish
+   ARRAS-STYLE TANK PROTOTYPE v6
+   Recoil, Spinner/AutoMissile, Quadriplet, NPC auto-drones, balance, polish
    ===================================================================== */
 
 const TANKS = {
+  /* Tier 1 */
   basic: {
     name: 'Basic Tank', radius: 26, color: '#00b2e1',
     desc: 'Balanced single-barrel. The classic all-rounder.',
     modifiers: {},
     barrels: [ { angle: 0, length: 40, width: 18, offset: 0 } ],
-    branches: ['sniper', 'machine']
+    branches: ['sniper', 'machine'],
+    branchLevel: 15
   },
   pounder: {
     name: 'Pounder', radius: 29, color: '#ff8c42',
-    desc: 'Massive cannon. Slow reload, huge devastating bullets.',
-    modifiers: { reloadMult: 2.1, bulletDmgMult: 2.5, bulletSizeMult: 1.8 },
+    desc: 'Massive cannon. Slow reload, heavy bullets.',
+    modifiers: { reloadMult: 2.3, bulletDmgMult: 2.2, bulletSizeMult: 1.7, recoilMult: 2.4 },
     barrels: [ { angle: 0, length: 50, width: 30, offset: 0 } ],
-    branches: ['superPounder', 'destroyer']
+    branches: ['superPounder', 'destroyer'],
+    branchLevel: 15
   },
   twin: {
     name: 'Twin', radius: 26, color: '#8abc3f',
-    desc: 'Two barrels side by side. Twice the bullets.',
-    modifiers: {},
+    desc: 'Two barrels side by side.',
+    modifiers: { recoilMult: 1.3 },
     barrels: [
       { angle: 0, length: 40, width: 14, offset: -11 },
       { angle: 0, length: 40, width: 14, offset:  11 }
     ],
-    branches: ['machineTwin', 'triplet']
+    branches: ['machineTwin', 'triplet'],
+    branchLevel: 15
   },
   missile: {
     name: 'Missile', radius: 26, color: '#bf7ff5',
-    desc: 'Launches missiles. Engine sprays, then explodes into a ring.',
-    modifiers: { missile: true, reloadMult: 3.4 },
+    desc: 'Launches missiles. Engine spray + ring explosion.',
+    modifiers: { missile: true, reloadMult: 3.6, recoilMult: 1.8 },
     barrels: [ { angle: 0, length: 52, width: 24, offset: 0 } ],
-    branches: ['lockOn', 'swarm']
+    branches: ['lockOn', 'swarm', 'spinner'],
+    branchLevel: 15
   },
   beehive: {
     name: 'Bee Hive', radius: 28, color: '#f0c040',
-    desc: 'Commands triangle drones that follow your cursor. They die & slowly respawn.',
-    modifiers: { drones: true, maxDrones: 8, droneSize: 11 },
+    desc: 'Triangle drones follow cursor. Die & slowly respawn.',
+    modifiers: { drones: true, maxDrones: 7, droneSize: 10.5, recoilMult: 0.6 },
     barrels: [ { angle: 0, length: 28, width: 32, offset: 0, triangle: true } ],
-    branches: ['droner']
+    branches: ['droner'],
+    branchLevel: 15
   },
+
+  /* Tier 2 */
   sniper: {
     name: 'Sniper', radius: 25, color: '#3ecfcf',
-    desc: 'Long-range precision. Fast thin bullets, longer life.',
-    modifiers: { reloadMult: 1.7, bulletDmgMult: 1.6, bulletSizeMult: 0.75, bulletSpdMult: 1.55, bulletLifeMult: 1.8 },
+    desc: 'Long-range precision. Fast thin bullets.',
+    modifiers: { reloadMult: 1.85, bulletDmgMult: 1.45, bulletSizeMult: 0.72, bulletSpdMult: 1.45, bulletLifeMult: 1.7, recoilMult: 1.5 },
     barrels: [ { angle: 0, length: 62, width: 12, offset: 0 } ],
-    branches: []
+    branches: [],
+    branchLevel: 0
   },
   machine: {
     name: 'Machine Gun', radius: 27, color: '#5ad45a',
-    desc: 'Rapid-fire spray with natural spread.',
-    modifiers: { reloadMult: 0.38, bulletDmgMult: 0.55, bulletSizeMult: 0.7, spread: 0.28 },
+    desc: 'Rapid spray with natural spread.',
+    modifiers: { reloadMult: 0.42, bulletDmgMult: 0.5, bulletSizeMult: 0.68, spread: 0.26, recoilMult: 0.7 },
     barrels: [ { angle: 0, length: 36, width: 22, offset: 0 } ],
-    branches: []
+    branches: [],
+    branchLevel: 0
   },
   superPounder: {
     name: 'Super Pounder', radius: 32, color: '#ff6b1a',
-    desc: 'Catastrophic damage, glacial reload.',
-    modifiers: { reloadMult: 3.4, bulletDmgMult: 4.2, bulletSizeMult: 2.4 },
+    desc: 'Huge damage, very slow reload. Strong recoil.',
+    modifiers: { reloadMult: 3.6, bulletDmgMult: 3.6, bulletSizeMult: 2.2, recoilMult: 3.5 },
     barrels: [ { angle: 0, length: 58, width: 38, offset: 0 } ],
-    branches: []
+    branches: [],
+    branchLevel: 0
   },
   destroyer: {
     name: 'Destroyer', radius: 31, color: '#e05a2b',
-    desc: 'Ultra-heavy shell. Melts anything it touches.',
-    modifiers: { reloadMult: 2.8, bulletDmgMult: 3.6, bulletSizeMult: 2.1 },
+    desc: 'Heavy shell. Still hits hard.',
+    modifiers: { reloadMult: 3.0, bulletDmgMult: 3.1, bulletSizeMult: 1.95, recoilMult: 3.0 },
     barrels: [ { angle: 0, length: 55, width: 34, offset: 0 } ],
-    branches: []
+    branches: [],
+    branchLevel: 0
   },
   machineTwin: {
     name: 'Machine Twin', radius: 27, color: '#9be24b',
-    desc: 'Widened dual barrels + mini-gun random spray.',
-    modifiers: { reloadMult: 0.42, bulletDmgMult: 0.6, bulletSizeMult: 0.65, spread: 0.32 },
+    desc: 'Widened dual barrels + mini-gun spray.',
+    modifiers: { reloadMult: 0.48, bulletDmgMult: 0.52, bulletSizeMult: 0.62, spread: 0.3, recoilMult: 0.9 },
     barrels: [
       { angle: 0, length: 38, width: 12, offset: -16 },
       { angle: 0, length: 38, width: 12, offset:  16 }
     ],
-    branches: []
+    branches: [],
+    branchLevel: 0
   },
   triplet: {
     name: 'Triplet', radius: 26, color: '#7dcf3a',
-    desc: 'Three independent barrels. Steady triple stream.',
-    modifiers: { reloadMult: 1.05, bulletDmgMult: 0.9 },
+    desc: 'Three barrels. Steady triple stream.',
+    modifiers: { reloadMult: 1.1, bulletDmgMult: 0.82, recoilMult: 1.5 },
     barrels: [
       { angle: 0, length: 42, width: 12, offset: -16 },
       { angle: 0, length: 46, width: 14, offset:   0 },
       { angle: 0, length: 42, width: 12, offset:  16 }
     ],
-    branches: []
+    branches: ['quadriplet'],
+    branchLevel: 35
   },
   lockOn: {
     name: 'Lock-On Missile', radius: 27, color: '#d48cff',
-    desc: 'Missiles gently curve toward nearby targets. Soft assist only.',
-    modifiers: { missile: true, lockOn: true, reloadMult: 3.6 },
+    desc: 'Soft aim-assist missiles. Still need aim skill.',
+    modifiers: { missile: true, lockOn: true, reloadMult: 3.8, recoilMult: 1.9 },
     barrels: [ { angle: 0, length: 54, width: 26, offset: 0 } ],
-    branches: []
+    branches: [],
+    branchLevel: 0
   },
   swarm: {
     name: 'Swarm Launcher', radius: 28, color: '#a66bff',
-    desc: 'Fan of smaller missiles that explode into dense rings.',
-    modifiers: { missile: true, swarm: true, reloadMult: 4.0 },
+    desc: 'Fan of smaller missiles with ring explosions.',
+    modifiers: { missile: true, swarm: true, reloadMult: 4.2, recoilMult: 2.0 },
     barrels: [ { angle: 0, length: 48, width: 28, offset: 0 } ],
-    branches: []
+    branches: [],
+    branchLevel: 0
+  },
+  spinner: {
+    name: 'Spinner', radius: 27, color: '#c77dff',
+    desc: 'Forward missile with a spinning gun. No explosion burst.',
+    modifiers: { missile: true, spinner: true, reloadMult: 3.5, recoilMult: 1.7 },
+    barrels: [ { angle: 0, length: 50, width: 22, offset: 0 } ],
+    branches: ['autoMissile'],
+    branchLevel: 35
+  },
+  autoMissile: {
+    name: 'Auto Missile', radius: 28, color: '#e0a0ff',
+    desc: 'Forward missile + mini-gun that locks onto nearby threats. No explosion.',
+    modifiers: { missile: true, autoGun: true, reloadMult: 3.7, recoilMult: 1.8 },
+    barrels: [ { angle: 0, length: 52, width: 24, offset: 0 } ],
+    branches: [],
+    branchLevel: 0
   },
   droner: {
     name: 'Droner', radius: 30, color: '#e8b923',
-    desc: 'Dual drone launchers. More, smaller, faster drones with less HP each.',
-    modifiers: { drones: true, maxDrones: 14, droneSize: 8.5, dualDroneGuns: true },
+    desc: 'Dual launchers. More, smaller, faster drones.',
+    modifiers: { drones: true, maxDrones: 12, droneSize: 8.2, dualDroneGuns: true, recoilMult: 0.7 },
     barrels: [
       { angle: -0.55, length: 26, width: 26, offset: -18, triangle: true },
       { angle:  0.55, length: 26, width: 26, offset:  18, triangle: true }
     ],
-    branches: []
+    branches: [],
+    branchLevel: 0
+  },
+  quadriplet: {
+    name: 'Quadriplet', radius: 27, color: '#6abf2f',
+    desc: 'Four barrels. Dense continuous fire.',
+    modifiers: { reloadMult: 1.15, bulletDmgMult: 0.72, recoilMult: 1.7 },
+    barrels: [
+      { angle: 0, length: 40, width: 11, offset: -20 },
+      { angle: 0, length: 44, width: 12, offset: -7 },
+      { angle: 0, length: 44, width: 12, offset:  7 },
+      { angle: 0, length: 40, width: 11, offset:  20 }
+    ],
+    branches: [],
+    branchLevel: 0
   }
 };
 
 const CLASS_KEYS = ['basic', 'pounder', 'twin', 'missile', 'beehive'];
-const BRANCH_LEVEL = 15;
+const BRANCH_LEVEL_1 = 15;
+const BRANCH_LEVEL_2 = 35;
 
 const SHAPE_TYPES = {
-  square:    { sides: 4, radius: 26, hp: 30,  xp: 10,  color: '#ffe763', bodyDmg: 8  },
-  triangle:  { sides: 3, radius: 24, hp: 70,  xp: 25,  color: '#fc7677', bodyDmg: 12 },
-  pentagon:  { sides: 5, radius: 34, hp: 220, xp: 130, color: '#768cfc', bodyDmg: 20 },
-  hexagon:   { sides: 6, radius: 40, hp: 480, xp: 320, color: '#c77dff', bodyDmg: 28 },
-  crasher:   { sides: 3, radius: 13, hp: 16,  xp: 6,   color: '#ff4d6d', bodyDmg: 18, crasher: true },
-  alphaPent: { sides: 5, radius: 58, hp: 1400,xp: 900, color: '#4a6cf7', bodyDmg: 45 }
+  square:    { sides: 4, radius: 26, hp: 28,  xp: 9,   color: '#ffe763', bodyDmg: 7  },
+  triangle:  { sides: 3, radius: 24, hp: 65,  xp: 22,  color: '#fc7677', bodyDmg: 11 },
+  pentagon:  { sides: 5, radius: 34, hp: 200, xp: 115, color: '#768cfc', bodyDmg: 18 },
+  hexagon:   { sides: 6, radius: 40, hp: 440, xp: 290, color: '#c77dff', bodyDmg: 25 },
+  crasher:   { sides: 3, radius: 13, hp: 15,  xp: 5,   color: '#ff4d6d', bodyDmg: 16, crasher: true },
+  alphaPent: { sides: 5, radius: 58, hp: 1300,xp: 850, color: '#4a6cf7', bodyDmg: 40 }
 };
-const SHAPE_COUNTS = { square: 48, triangle: 22, pentagon: 8, hexagon: 4, crasher: 6, alphaPent: 1 };
+const SHAPE_COUNTS = { square: 46, triangle: 20, pentagon: 8, hexagon: 3, crasher: 5, alphaPent: 1 };
 
 const NPC_COLORS = [
   '#f14e54','#e05c5c','#d14e9c','#ff6b6b','#c44569',
@@ -262,6 +309,7 @@ let gameState = 'menu';
 let player = null;
 let shake = 0;
 let branchOffered = false;
+let branch2Offered = false;
 
 const STAT_DEFS = [
   { key: 'regen',      name: 'Health Regen' },
@@ -323,32 +371,32 @@ const AudioFX = {
     src.connect(f); f.connect(g); g.connect(this.ctx.destination);
     src.start(t);
   },
-  shoot()   { this.tone(200 + Math.random() * 60, 0.07, 'square', 0.018, 90); },
-  boom()    { this.noise(0.32, 0.09); this.tone(90, 0.28, 'sawtooth', 0.04, 30); },
-  hit()     { this.tone(140, 0.05, 'triangle', 0.014, 70); },
-  levelup() { this.tone(440, 0.1, 'sine', 0.038, 660); setTimeout(() => this.tone(660, 0.12, 'sine', 0.038, 880), 90); },
-  branch()  { this.tone(520, 0.12, 'sine', 0.04, 780); setTimeout(() => this.tone(780, 0.14, 'sine', 0.04, 1040), 105); },
-  die()     { this.noise(0.45, 0.11); this.tone(200, 0.45, 'sawtooth', 0.05, 40); },
-  drone()   { this.tone(320 + Math.random()*40, 0.04, 'triangle', 0.01, 180); }
+  shoot()   { this.tone(200 + Math.random() * 60, 0.06, 'square', 0.016, 90); },
+  boom()    { this.noise(0.3, 0.08); this.tone(90, 0.25, 'sawtooth', 0.035, 30); },
+  hit()     { this.tone(140, 0.04, 'triangle', 0.012, 70); },
+  levelup() { this.tone(440, 0.09, 'sine', 0.035, 660); setTimeout(() => this.tone(660, 0.11, 'sine', 0.035, 880), 85); },
+  branch()  { this.tone(520, 0.11, 'sine', 0.038, 780); setTimeout(() => this.tone(780, 0.13, 'sine', 0.038, 1040), 100); },
+  die()     { this.noise(0.4, 0.1); this.tone(200, 0.4, 'sawtooth', 0.045, 40); },
+  drone()   { this.tone(320 + Math.random()*40, 0.035, 'triangle', 0.009, 180); }
 };
 
 /* ---------------- Helpers ---------------- */
 function makeStats() { const s = {}; STAT_DEFS.forEach(d => s[d.key] = 0); return s; }
 function mods(t) { return TANKS[t.typeKey].modifiers; }
-function maxHpOf(t)     { return 100 + t.stats.maxHp * 22; }
-function regenOf(t)     { return 0.4 + t.stats.regen * 0.55; }
-function bodyDmgOf(t)   { return 10 + t.stats.bodyDmg * 5; }
-function bulletDmgOf(t) { return (9 + t.stats.bulletDmg * 5.5) * (mods(t).bulletDmgMult || 1); }
-function bulletSpdOf(t) { return (380 + t.stats.bulletSpd * 34) * (mods(t).bulletSpdMult || 1); }
-function reloadOf(t)    { return Math.max(80, 550 * Math.pow(0.87, t.stats.reload) * (mods(t).reloadMult || 1)); }
-function moveSpdOf(t)   { return 170 + t.stats.moveSpd * 14; }
-function bulletRadiusOf(t) { return (8 + t.stats.bulletDmg * 0.5) * (mods(t).bulletSizeMult || 1); }
-function bulletLifeOf(t) { return 1.6 * (mods(t).bulletLifeMult || 1); }
-function droneDmgOf(t)  { return (7 + t.stats.bulletDmg * 4.2); }
-function droneSpdOf(t)  { return (200 + t.stats.bulletSpd * 26); }
-function droneHpOf(t)   { return (28 + t.stats.maxHp * 6 + t.stats.bodyDmg * 3); }
-function droneRespawnOf(t) { return Math.max(0.55, 3.0 * Math.pow(0.88, t.stats.reload)); }
-function xpToNext(level) { return Math.round(14 * Math.pow(level, 1.7)); }
+function maxHpOf(t)     { return 100 + t.stats.maxHp * 20; }
+function regenOf(t)     { return 0.35 + t.stats.regen * 0.48; }
+function bodyDmgOf(t)   { return 9 + t.stats.bodyDmg * 4.5; }
+function bulletDmgOf(t) { return (8 + t.stats.bulletDmg * 4.8) * (mods(t).bulletDmgMult || 1); }
+function bulletSpdOf(t) { return (340 + t.stats.bulletSpd * 28) * (mods(t).bulletSpdMult || 1); }
+function reloadOf(t)    { return Math.max(90, 580 * Math.pow(0.88, t.stats.reload) * (mods(t).reloadMult || 1)); }
+function moveSpdOf(t)   { return 155 + t.stats.moveSpd * 12; } // nerfed base speed
+function bulletRadiusOf(t) { return (7.5 + t.stats.bulletDmg * 0.45) * (mods(t).bulletSizeMult || 1); }
+function bulletLifeOf(t) { return 1.5 * (mods(t).bulletLifeMult || 1); }
+function droneDmgOf(t)  { return (6 + t.stats.bulletDmg * 3.6); }
+function droneSpdOf(t)  { return (175 + t.stats.bulletSpd * 22); }
+function droneHpOf(t)   { return (24 + t.stats.maxHp * 5 + t.stats.bodyDmg * 2.5); }
+function droneRespawnOf(t) { return Math.max(0.7, 3.4 * Math.pow(0.89, t.stats.reload)); }
+function xpToNext(level) { return Math.round(15 * Math.pow(level, 1.72)); }
 function xpForLevel(lvl) {
   let total = 0; for (let l = 1; l < lvl; l++) total += xpToNext(l); return total;
 }
@@ -362,12 +410,21 @@ function addXp(t, amount) {
       AudioFX.levelup();
       floatTexts.push({ x: t.x, y: t.y - t.radius - 24, vy: -45, life: 1.1, maxLife: 1.1,
                         text: 'LEVEL UP!', color: '#ffd34d', size: 20 });
-      explosions.push({ x: t.x, y: t.y, maxR: 60, life: 0.35, maxLife: 0.35, color: '#ffd34d' });
-      if (t.level >= BRANCH_LEVEL && !branchOffered && TANKS[t.typeKey].branches.length) offerBranch();
+      explosions.push({ x: t.x, y: t.y, maxR: 55, life: 0.32, maxLife: 0.32, color: '#ffd34d' });
+      checkBranch(t);
     }
   }
 }
-function addShake(amount) { shake = Math.min(24, shake + amount); }
+function checkBranch(t) {
+  const def = TANKS[t.typeKey];
+  if (!def.branches || !def.branches.length) return;
+  const need = def.branchLevel || BRANCH_LEVEL_1;
+  if (t.level >= need) {
+    if (need <= BRANCH_LEVEL_1 && !branchOffered) offerBranch();
+    else if (need >= BRANCH_LEVEL_2 && !branch2Offered && branchOffered) offerBranch(true);
+  }
+}
+function addShake(amount) { shake = Math.min(22, shake + amount); }
 function spawnParticles(x, y, count, colors, speedMin, speedMax, sizeMin, sizeMax, lifeMin, lifeMax) {
   for (let i = 0; i < count; i++) {
     const a = Math.random() * Math.PI * 2;
@@ -380,10 +437,10 @@ function spawnParticles(x, y, count, colors, speedMin, speedMax, sizeMin, sizeMa
       size: sizeMin + Math.random() * (sizeMax - sizeMin)
     });
   }
-  if (particles.length > 900) particles.splice(0, particles.length - 900);
+  if (particles.length > 850) particles.splice(0, particles.length - 850);
 }
 function floatText(x, y, text, color, size) {
-  floatTexts.push({ x, y, vy: -50, life: 0.9, maxLife: 0.9, text, color, size: size || 14 });
+  floatTexts.push({ x, y, vy: -48, life: 0.85, maxLife: 0.85, text, color, size: size || 14 });
 }
 function angleDiff(a, b) {
   let d = b - a;
@@ -395,7 +452,7 @@ function lerpAngle(a, b, t) {
   return a + angleDiff(a, b) * t;
 }
 
-/* ---------------- Solid separation ---------------- */
+/* ---------------- Separation ---------------- */
 function separate(a, b, ra, rb) {
   const dx = a.x - b.x, dy = a.y - b.y;
   const dist = Math.hypot(dx, dy) || 0.001;
@@ -403,10 +460,10 @@ function separate(a, b, ra, rb) {
   if (dist < minD) {
     const overlap = minD - dist;
     const nx = dx / dist, ny = dy / dist;
-    a.x += nx * overlap * 0.52;
-    a.y += ny * overlap * 0.52;
-    b.x -= nx * overlap * 0.52;
-    b.y -= ny * overlap * 0.52;
+    a.x += nx * overlap * 0.5;
+    a.y += ny * overlap * 0.5;
+    b.x -= nx * overlap * 0.5;
+    b.y -= ny * overlap * 0.5;
     return true;
   }
   return false;
@@ -424,14 +481,14 @@ function separateStatic(a, sx, sy, ra, rb) {
   return false;
 }
 
-/* ---------------- Personalities ---------------- */
+/* ---------------- Personalities (more aggressive) ---------------- */
 const PERSONALITIES = {
-  aggressive: { name: 'Aggressive', preferDist: 175, approach: 1.15, retreat: -0.3, fireRange: 580, circle: false, dodge: 0.7,  statBias: ['bulletDmg','reload','moveSpd','bulletSpd'] },
-  cautious:   { name: 'Cautious',   preferDist: 420, approach: 0.45, retreat: -1.2, fireRange: 700, circle: false, dodge: 1.1,  statBias: ['maxHp','regen','bulletSpd','reload'] },
-  flanker:    { name: 'Flanker',    preferDist: 265, approach: 0.8,  retreat: -0.75,fireRange: 540, circle: true,  dodge: 0.95, statBias: ['moveSpd','reload','bulletDmg','bulletSpd'] },
-  tank:       { name: 'Tank',       preferDist: 125, approach: 1.3,  retreat: 0.1,  fireRange: 450, circle: false, dodge: 0.4,  statBias: ['maxHp','bodyDmg','regen','moveSpd'] },
-  sniper:     { name: 'Sniper',     preferDist: 530, approach: 0.3,  retreat: -1.4, fireRange: 780, circle: false, dodge: 1.2,  statBias: ['bulletSpd','bulletDmg','reload','maxHp'] },
-  berserker:  { name: 'Berserker',  preferDist: 85,  approach: 1.5,  retreat: 0.4,  fireRange: 370, circle: false, dodge: 0.35, statBias: ['bodyDmg','maxHp','moveSpd','regen'] }
+  aggressive: { name: 'Aggressive', preferDist: 160, approach: 1.25, retreat: -0.2, fireRange: 620, circle: false, dodge: 0.65, spdMult: 1.12, statBias: ['bulletDmg','reload','moveSpd','bulletSpd'] },
+  cautious:   { name: 'Cautious',   preferDist: 400, approach: 0.5,  retreat: -1.1, fireRange: 720, circle: false, dodge: 1.05, spdMult: 1.0,  statBias: ['maxHp','regen','bulletSpd','reload'] },
+  flanker:    { name: 'Flanker',    preferDist: 250, approach: 0.9,  retreat: -0.7, fireRange: 560, circle: true,  dodge: 0.9,  spdMult: 1.15, statBias: ['moveSpd','reload','bulletDmg','bulletSpd'] },
+  tank:       { name: 'Tank',       preferDist: 115, approach: 1.4,  retreat: 0.15, fireRange: 480, circle: false, dodge: 0.35, spdMult: 0.95, statBias: ['maxHp','bodyDmg','regen','moveSpd'] },
+  sniper:     { name: 'Sniper',     preferDist: 510, approach: 0.35, retreat: -1.3, fireRange: 800, circle: false, dodge: 1.15, spdMult: 1.0,  statBias: ['bulletSpd','bulletDmg','reload','maxHp'] },
+  berserker:  { name: 'Berserker',  preferDist: 75,  approach: 1.6,  retreat: 0.45, fireRange: 400, circle: false, dodge: 0.3,  spdMult: 1.2,  statBias: ['bodyDmg','maxHp','moveSpd','regen'] }
 };
 const PERSONALITY_KEYS = Object.keys(PERSONALITIES);
 
@@ -440,19 +497,20 @@ function createTank(x, y, typeKey, isPlayer, personalityKey) {
   const def = TANKS[typeKey];
   return {
     x, y, angle: Math.random() * Math.PI * 2, typeKey, isPlayer,
-    radius: def.radius, color: isPlayer ? def.color : NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)],
+    radius: def.radius,
+    color: isPlayer ? def.color : NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)],
     stats: makeStats(),
     hp: 100, level: 1, xp: 0, score: 0, upgradePoints: 0,
     fireCd: 0, recoil: 0, dead: false,
     hitCd: 0, flash: 0,
+    // velocity for recoil
+    vx: 0, vy: 0,
     aiCd: 0, aiAngle: Math.random() * Math.PI * 2,
     personality: personalityKey || null,
     circleDir: Math.random() < 0.5 ? 1 : -1,
     droneRespawnCd: 0,
-    // human-like AI state
     threatX: 0, threatY: 0, threatTimer: 0,
     dodgeDir: Math.random() < 0.5 ? 1 : -1,
-    targetLock: null,
     lastHp: 100
   };
 }
@@ -461,7 +519,7 @@ function spawnShape(forceType) {
   let type = forceType;
   if (!type) {
     const roll = Math.random();
-    if (roll < 0.42) type = 'square';
+    if (roll < 0.43) type = 'square';
     else if (roll < 0.68) type = 'triangle';
     else if (roll < 0.80) type = 'crasher';
     else if (roll < 0.91) type = 'pentagon';
@@ -478,12 +536,12 @@ function spawnShape(forceType) {
     hurtFlash: 0, spawnT: 0,
     vx: 0, vy: 0,
     nestId: null,
-    state: 'free', // free | orbit | chase | return | investigate
+    state: 'free',
     orbitAngle: Math.random() * Math.PI * 2,
     orbitRadius: 70 + Math.random() * 50,
     lookout: false,
     target: null,
-    personality: Math.random() // 0-1 individual variation
+    personality: Math.random()
   });
 }
 
@@ -496,30 +554,23 @@ function spawnNest() {
   } while (player && Math.hypot(x - player.x, y - player.y) < 1000 && tries < 25);
 
   const nest = {
-    x, y,
-    radius: 68,
-    hp: 1100, maxHp: 1100,
-    color: '#7a1525',
-    rot: 0,
-    spawnCd: 0,
-    maxCrashers: 16,
-    hurtFlash: 0,
-    pulse: 0
+    x, y, radius: 70, hp: 1200, maxHp: 1200,
+    color: '#7a1525', rot: 0, spawnCd: 0, maxCrashers: 16,
+    hurtFlash: 0, pulse: 0
   };
   nests.push(nest);
   const nestIdx = nests.length - 1;
-  // seed orbiting defenders + a few lookouts
-  for (let i = 0; i < 10; i++) spawnNestCrasher(nest, nestIdx, i < 3);
+  for (let i = 0; i < 11; i++) spawnNestCrasher(nest, nestIdx, i < 4);
 }
 
 function spawnNestCrasher(nest, nestIdx, isLookout) {
   const a = Math.random() * Math.PI * 2;
-  const d = 55 + Math.random() * 70;
+  const d = 60 + Math.random() * 75;
   const def = SHAPE_TYPES.crasher;
   shapes.push({
     x: nest.x + Math.cos(a) * d,
     y: nest.y + Math.sin(a) * d,
-    type: 'crasher', def, hp: def.hp + (isLookout ? 6 : 0), maxHp: def.hp + (isLookout ? 6 : 0),
+    type: 'crasher', def, hp: def.hp + (isLookout ? 8 : 0), maxHp: def.hp + (isLookout ? 8 : 0),
     rot: Math.random() * Math.PI * 2,
     spin: 0.2 * (Math.random() < 0.5 ? -1 : 1),
     hurtFlash: 0, spawnT: 1,
@@ -527,7 +578,7 @@ function spawnNestCrasher(nest, nestIdx, isLookout) {
     nestId: nestIdx,
     state: isLookout ? 'investigate' : 'orbit',
     orbitAngle: a,
-    orbitRadius: 60 + Math.random() * 55 + (isLookout ? 40 : 0),
+    orbitRadius: 65 + Math.random() * 60 + (isLookout ? 50 : 0),
     lookout: !!isLookout,
     target: null,
     personality: 0.3 + Math.random() * 0.7,
@@ -549,14 +600,14 @@ function spawnEnemy() {
 
   let typeKey;
   const roll = Math.random();
-  if (roll < 0.40) typeKey = CLASS_KEYS[Math.floor(Math.random() * CLASS_KEYS.length)];
+  if (roll < 0.38) typeKey = CLASS_KEYS[Math.floor(Math.random() * CLASS_KEYS.length)];
   else {
     const all = Object.keys(TANKS).filter(k => !CLASS_KEYS.includes(k));
     typeKey = all[Math.floor(Math.random() * all.length)];
   }
   const personality = PERSONALITY_KEYS[Math.floor(Math.random() * PERSONALITY_KEYS.length)];
   const e = createTank(x, y, typeKey, false, personality);
-  e.level = 10 + Math.floor(Math.random() * 22);
+  e.level = 11 + Math.floor(Math.random() * 24);
   e.xp = xpForLevel(e.level);
   let pts = e.level - 1;
   const bias = PERSONALITIES[personality].statBias;
@@ -568,6 +619,12 @@ function spawnEnemy() {
   e.lastHp = e.hp;
   e.radius = TANKS[typeKey].radius;
   enemies.push(e);
+
+  // seed drones for bee-hive style NPCs
+  if (mods(e).drones) {
+    const maxD = mods(e).maxDrones || 6;
+    for (let i = 0; i < Math.min(4, maxD); i++) spawnDrone(e, i);
+  }
 }
 
 function findSafeSpawn() {
@@ -585,10 +642,10 @@ function findSafeSpawn() {
 function initWorld() {
   bullets = []; missiles = []; drones = []; shapes = []; nests = []; enemies = [];
   particles = []; explosions = []; flashes = []; floatTexts = [];
-  branchOffered = false;
+  branchOffered = false; branch2Offered = false;
   for (const [t, n] of Object.entries(SHAPE_COUNTS)) for (let i = 0; i < n; i++) spawnShape(t);
   for (let i = 0; i < 3; i++) spawnNest();
-  for (let i = 0; i < 11; i++) spawnEnemy();
+  for (let i = 0; i < 12; i++) spawnEnemy();
 }
 
 /* ---------------- Class / Branch UI ---------------- */
@@ -604,7 +661,7 @@ function drawTankIcon(cv, typeKey) {
   const fake = {
     x: cv.width / 2 - 6, y: cv.height / 2, angle: 0,
     typeKey, radius: def.radius * 0.95, color: def.color,
-    recoil: 0, hp: 1, level: 1, isPlayer: true, stats: makeStats()
+    recoil: 0, hp: 1, level: 1, isPlayer: true, stats: makeStats(), vx: 0, vy: 0
   };
   drawTank(fake, 0, 0, c, false);
 }
@@ -617,7 +674,7 @@ function buildClassSelect() {
     const card = document.createElement('div');
     card.className = 'card';
     const cv = document.createElement('canvas');
-    cv.width = 150; cv.height = 150;
+    cv.width = 145; cv.height = 145;
     drawTankIcon(cv, key);
     const num = document.createElement('div'); num.className = 'num'; num.textContent = 'PRESS ' + (i + 1);
     const title = document.createElement('h3'); title.textContent = def.name;
@@ -633,39 +690,41 @@ function chooseClass(key) {
   player = createTank(pos.x, pos.y, key, true);
   gameState = 'playing';
   shake = 0;
-  branchOffered = false;
+  branchOffered = false; branch2Offered = false;
   drones = drones.filter(d => !d.owner || !d.owner.isPlayer);
   document.getElementById('class-overlay').classList.add('hidden');
   document.getElementById('death-overlay').classList.add('hidden');
   document.getElementById('branch-overlay').classList.add('hidden');
   buildUpgradeUI();
   updateClassLabel();
-  explosions.push({ x: player.x, y: player.y, maxR: 70, life: 0.4, maxLife: 0.4, color: player.color });
-  spawnParticles(player.x, player.y, 18, [player.color, '#ffffff'], 60, 200, 2, 5, 0.3, 0.7);
+  explosions.push({ x: player.x, y: player.y, maxR: 65, life: 0.38, maxLife: 0.38, color: player.color });
+  spawnParticles(player.x, player.y, 16, [player.color, '#ffffff'], 50, 180, 2, 5, 0.25, 0.6);
   AudioFX.levelup();
   if (mods(player).drones) {
-    for (let i = 0; i < Math.min(4, mods(player).maxDrones); i++) spawnDrone(player, i);
+    for (let i = 0; i < Math.min(3, mods(player).maxDrones); i++) spawnDrone(player, i);
   }
 }
 
-function offerBranch() {
-  if (branchOffered || !player) return;
-  const branches = TANKS[player.typeKey].branches;
-  if (!branches || !branches.length) return;
-  branchOffered = true;
+function offerBranch(isSecond) {
+  if (!player) return;
+  const def = TANKS[player.typeKey];
+  if (!def.branches || !def.branches.length) return;
+  if (isSecond) branch2Offered = true;
+  else branchOffered = true;
   gameState = 'branch';
+  document.getElementById('branch-sub').textContent = isSecond ? 'Tier 2 evolution' : 'Choose your evolution path';
   const box = document.getElementById('branch-cards');
   box.innerHTML = '';
-  branches.forEach((key, i) => {
-    const def = TANKS[key];
+  def.branches.forEach((key, i) => {
+    const bdef = TANKS[key];
     const card = document.createElement('div');
     card.className = 'card';
     const cv = document.createElement('canvas');
-    cv.width = 150; cv.height = 150;
+    cv.width = 145; cv.height = 145;
     drawTankIcon(cv, key);
     const num = document.createElement('div'); num.className = 'num'; num.textContent = 'PRESS ' + (i + 1);
-    const title = document.createElement('h3'); title.textContent = def.name;
-    const desc = document.createElement('p'); desc.textContent = def.desc;
+    const title = document.createElement('h3'); title.textContent = bdef.name;
+    const desc = document.createElement('p'); desc.textContent = bdef.desc;
     card.append(cv, num, title, desc);
     card.onclick = () => applyBranch(key);
     box.appendChild(card);
@@ -682,16 +741,16 @@ function applyBranch(key) {
   player.typeKey = key;
   player.radius = def.radius;
   player.color = def.color;
-  player.hp = Math.min(maxHpOf(player), player.hp + 50);
+  player.hp = Math.min(maxHpOf(player), player.hp + 45);
   gameState = 'playing';
   document.getElementById('branch-overlay').classList.add('hidden');
   updateClassLabel();
-  explosions.push({ x: player.x, y: player.y, maxR: 90, life: 0.5, maxLife: 0.5, color: player.color });
-  spawnParticles(player.x, player.y, 28, [player.color, oldColor, '#ffffff'], 80, 260, 2, 6, 0.4, 0.9);
-  floatText(player.x, player.y - 40, def.name.toUpperCase() + '!', '#ffd34d', 22);
+  explosions.push({ x: player.x, y: player.y, maxR: 85, life: 0.48, maxLife: 0.48, color: player.color });
+  spawnParticles(player.x, player.y, 26, [player.color, oldColor, '#ffffff'], 70, 240, 2, 6, 0.35, 0.85);
+  floatText(player.x, player.y - 40, def.name.toUpperCase() + '!', '#ffd34d', 20);
   AudioFX.branch();
   if (mods(player).drones) {
-    for (let i = 0; i < Math.min(5, mods(player).maxDrones); i++) spawnDrone(player, i);
+    for (let i = 0; i < Math.min(4, mods(player).maxDrones); i++) spawnDrone(player, i);
   }
 }
 
@@ -808,27 +867,22 @@ function spendPoint(key) {
   if (!player || gameState !== 'playing' || player.upgradePoints <= 0 || player.stats[key] >= MAX_STAT) return;
   player.upgradePoints--;
   player.stats[key]++;
-  if (key === 'maxHp') player.hp += 22;
+  if (key === 'maxHp') player.hp += 20;
   refreshUpgradeUI();
 }
 
-/* ---------------- Drones (smooth + spread) ---------------- */
+/* ---------------- Drones ---------------- */
 function spawnDrone(owner, slot) {
   const m = mods(owner);
-  const size = m.droneSize || 11;
+  const size = m.droneSize || 10.5;
   const ang = owner.angle + (Math.random() - 0.5) * 0.6;
-  const tipX = owner.x + Math.cos(owner.angle) * (owner.radius + 18);
-  const tipY = owner.y + Math.sin(owner.angle) * (owner.radius + 18);
+  const tipX = owner.x + Math.cos(owner.angle) * (owner.radius + 16);
+  const tipY = owner.y + Math.sin(owner.angle) * (owner.radius + 16);
   drones.push({
-    x: tipX, y: tipY,
-    vx: 0, vy: 0,
-    angle: ang,
-    radius: size,
-    hp: droneHpOf(owner), maxHp: droneHpOf(owner),
-    owner, dead: false,
-    color: owner.color,
-    baseSpeed: droneSpdOf(owner),
-    dmg: droneDmgOf(owner),
+    x: tipX, y: tipY, vx: 0, vy: 0, angle: ang,
+    radius: size, hp: droneHpOf(owner), maxHp: droneHpOf(owner),
+    owner, dead: false, color: owner.color,
+    baseSpeed: droneSpdOf(owner), dmg: droneDmgOf(owner),
     hitCd: 0, flash: 0,
     slot: slot != null ? slot : Math.floor(Math.random() * 20),
     orbitPhase: Math.random() * Math.PI * 2
@@ -836,7 +890,7 @@ function spawnDrone(owner, slot) {
   if (owner.isPlayer) AudioFX.drone();
 }
 
-/* ---------------- Combat ---------------- */
+/* ---------------- Combat + Recoil ---------------- */
 function barrelTip(t, b) {
   const ang = t.angle + (b.angle || 0);
   return {
@@ -845,26 +899,37 @@ function barrelTip(t, b) {
   };
 }
 
+function applyRecoil(t, strength) {
+  const m = mods(t);
+  const mult = (m.recoilMult || 1) * strength;
+  t.vx -= Math.cos(t.angle) * mult * 18;
+  t.vy -= Math.sin(t.angle) * mult * 18;
+  t.recoil = Math.min(12, t.recoil + mult * 3);
+}
+
 function fire(t) {
   const def = TANKS[t.typeKey];
   const m = def.modifiers;
   if (m.drones) {
-    t.fireCd = reloadOf(t) * 0.65;
-    t.recoil = 3;
+    t.fireCd = reloadOf(t) * 0.7;
+    applyRecoil(t, 0.4);
     return;
   }
   const spread = m.spread || 0;
   const ownerColor = t.color;
+  let projectileCount = 0;
 
   if (m.swarm) {
     for (let s = -1; s <= 1; s++) {
-      const a = t.angle + s * 0.22;
+      const a = t.angle + s * 0.2;
       const tip = barrelTip(t, def.barrels[0]);
       missiles.push({
         x: tip.x, y: tip.y, angle: a,
-        speed: bulletSpdOf(t) * 0.72, life: 2.1, owner: t, radius: 9,
-        emitCd: 0, flameCd: 0, lockOn: false, swarmling: true, color: ownerColor
+        speed: bulletSpdOf(t) * 0.7, life: 2.0, owner: t, radius: 8.5,
+        emitCd: 0, flameCd: 0, lockOn: false, swarmling: true, color: ownerColor,
+        spin: 0, spinGunCd: 0, autoGunCd: 0
       });
+      projectileCount++;
     }
   } else if (m.missile) {
     for (const b of def.barrels) {
@@ -872,9 +937,15 @@ function fire(t) {
       const tip = barrelTip(t, b);
       missiles.push({
         x: tip.x, y: tip.y, angle: a,
-        speed: bulletSpdOf(t) * 0.8, life: 2.8, owner: t, radius: 13,
-        emitCd: 0, flameCd: 0, lockOn: !!m.lockOn, color: ownerColor
+        speed: bulletSpdOf(t) * 0.78, life: 2.6, owner: t, radius: 12.5,
+        emitCd: 0, flameCd: 0,
+        lockOn: !!m.lockOn,
+        spinner: !!m.spinner,
+        autoGun: !!m.autoGun,
+        color: ownerColor,
+        spin: 0, spinGunCd: 0, autoGunCd: 0
       });
+      projectileCount++;
     }
   } else {
     for (const b of def.barrels) {
@@ -885,121 +956,128 @@ function fire(t) {
         x: tip.x, y: tip.y,
         vx: Math.cos(a) * bulletSpdOf(t), vy: Math.sin(a) * bulletSpdOf(t),
         radius: bulletRadiusOf(t), dmg: bulletDmgOf(t), owner: t, life: bulletLifeOf(t),
-        color: t.isPlayer ? '#00e0ff' : ownerColor,
-        fade: 1
+        color: t.isPlayer ? '#00e0ff' : ownerColor, fade: 1
       });
+      projectileCount++;
     }
   }
 
+  // recoil based on projectile count and class power
+  const recoilStr = 0.35 + projectileCount * 0.22 + (m.bulletDmgMult || 1) * 0.15;
+  applyRecoil(t, recoilStr);
+
   for (const b of def.barrels) {
     const tip = barrelTip(t, b);
-    flashes.push({ x: tip.x, y: tip.y, angle: t.angle + (b.angle || 0), life: 0.07, maxLife: 0.07 });
-    spawnParticles(tip.x, tip.y, 2, ['#fff2ae', '#ffd34d'], 50, 150, 1.2, 2.8, 0.08, 0.2);
+    flashes.push({ x: tip.x, y: tip.y, angle: t.angle + (b.angle || 0), life: 0.065, maxLife: 0.065 });
+    spawnParticles(tip.x, tip.y, 2, ['#fff2ae', '#ffd34d'], 40, 130, 1.1, 2.5, 0.07, 0.18);
   }
   t.fireCd = reloadOf(t);
-  t.recoil = 7;
   if (t.isPlayer || (player && Math.hypot(t.x - player.x, t.y - player.y) < 900)) AudioFX.shoot();
 }
 
 function explodeMissile(ms) {
+  // spinner / autoGun missiles do NOT explode into rings
+  if (ms.spinner || ms.autoGun) {
+    spawnParticles(ms.x, ms.y, 8, [ms.color || '#c77dff', '#ffffff'], 40, 140, 1.5, 3.5, 0.2, 0.5);
+    return;
+  }
   const owner = ms.owner;
-  const n = ms.swarmling ? 9 : 14;
-  const baseSpd = ms.swarmling ? 280 : 330;
+  const n = ms.swarmling ? 8 : 12;
+  const baseSpd = ms.swarmling ? 260 : 300;
   const col = ms.color || owner.color;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 + Math.random() * 0.1;
     bullets.push({
       x: ms.x, y: ms.y,
       vx: Math.cos(a) * baseSpd, vy: Math.sin(a) * baseSpd,
-      radius: (ms.swarmling ? 5 : 6) + owner.stats.bulletDmg * 0.22,
-      dmg: bulletDmgOf(owner) * (ms.swarmling ? 0.55 : 0.7), owner, life: 1.0,
+      radius: (ms.swarmling ? 4.5 : 5.5) + owner.stats.bulletDmg * 0.2,
+      dmg: bulletDmgOf(owner) * (ms.swarmling ? 0.5 : 0.62), owner, life: 0.95,
       color: col, fade: 1
     });
   }
-  explosions.push({ x: ms.x, y: ms.y, maxR: ms.swarmling ? 55 : 95, life: 0.4, maxLife: 0.4, color: col });
-  spawnParticles(ms.x, ms.y, ms.swarmling ? 12 : 20, [col, '#ffd34d', '#ffffff'], 90, 260, 2, 5.5, 0.35, 0.85);
+  explosions.push({ x: ms.x, y: ms.y, maxR: ms.swarmling ? 50 : 85, life: 0.35, maxLife: 0.35, color: col });
+  spawnParticles(ms.x, ms.y, ms.swarmling ? 10 : 16, [col, '#ffd34d', '#ffffff'], 80, 240, 1.8, 5, 0.3, 0.75);
   if (player && !player.dead) {
     const d = Math.hypot(ms.x - player.x, ms.y - player.y);
-    if (d < 500) addShake((1 - d / 500) * 11);
-    if (d < 900) AudioFX.boom();
+    if (d < 480) addShake((1 - d / 480) * 10);
+    if (d < 880) AudioFX.boom();
   }
 }
 
 function damageTank(t, dmg, fromX, fromY) {
   if (!t || t.dead) return;
   t.hp -= dmg;
-  t.flash = 0.15;
-  // record threat for AI dodge
+  t.flash = 0.14;
   if (!t.isPlayer && fromX != null) {
-    t.threatX = fromX; t.threatY = fromY; t.threatTimer = 0.55;
+    t.threatX = fromX; t.threatY = fromY; t.threatTimer = 0.5;
   }
   if (t.hp <= 0) {
     t.dead = true;
-    explosions.push({ x: t.x, y: t.y, maxR: t.radius * 3.1, life: 0.5, maxLife: 0.5, color: t.color });
-    spawnParticles(t.x, t.y, 28, [t.color, '#ffffff', '#666'], 70, 280, 2, 6.5, 0.4, 1.0);
+    explosions.push({ x: t.x, y: t.y, maxR: t.radius * 3, life: 0.45, maxLife: 0.45, color: t.color });
+    spawnParticles(t.x, t.y, 24, [t.color, '#ffffff', '#666'], 60, 250, 2, 6, 0.35, 0.9);
     for (let i = drones.length - 1; i >= 0; i--) if (drones[i].owner === t) drones.splice(i, 1);
     if (t.isPlayer) {
       gameState = 'dead';
-      addShake(17);
+      addShake(16);
       AudioFX.die();
       document.getElementById('death-stats').textContent =
         `Level ${t.level} · ${TANKS[t.typeKey].name} · Score ${t.score}`;
       document.getElementById('death-overlay').classList.remove('hidden');
     } else {
       if (player && !player.dead) {
-        const xpGain = 200 + t.level * 16;
+        const xpGain = 180 + t.level * 14;
         addXp(player, xpGain);
-        floatText(t.x, t.y, '+' + xpGain, '#ffd34d', 17);
+        floatText(t.x, t.y, '+' + xpGain, '#ffd34d', 16);
       }
       const idx = enemies.indexOf(t);
       if (idx >= 0) enemies.splice(idx, 1);
-      setTimeout(() => { if (gameState !== 'menu') spawnEnemy(); }, 1500);
+      setTimeout(() => { if (gameState !== 'menu') spawnEnemy(); }, 1400);
     }
   }
 }
 
 function damageShape(s, dmg, idx) {
   if (!s) return;
-  s.hp -= dmg; s.hurtFlash = 0.12;
+  s.hp -= dmg; s.hurtFlash = 0.1;
   if (s.hp <= 0) {
     const big = s.type === 'hexagon' || s.type === 'alphaPent';
     shapes.splice(idx, 1);
-    spawnParticles(s.x, s.y, big ? 20 : 9, [s.def.color, '#ffffff'], 50, 180, 1.8, 5, 0.25, 0.65);
+    spawnParticles(s.x, s.y, big ? 18 : 8, [s.def.color, '#ffffff'], 45, 160, 1.6, 4.5, 0.22, 0.55);
     if (big) {
-      explosions.push({ x: s.x, y: s.y, maxR: s.def.radius * 1.9, life: 0.4, maxLife: 0.4, color: s.def.color });
-      addShake(4);
+      explosions.push({ x: s.x, y: s.y, maxR: s.def.radius * 1.8, life: 0.35, maxLife: 0.35, color: s.def.color });
+      addShake(3.5);
     }
     if (player && !player.dead) {
       addXp(player, s.def.xp);
-      floatText(s.x, s.y, '+' + s.def.xp, '#ffe763', big ? 15 : 12);
+      floatText(s.x, s.y, '+' + s.def.xp, '#ffe763', big ? 14 : 11);
     }
     if (s.nestId == null) {
-      setTimeout(() => spawnShape(s.type), s.type === 'alphaPent' ? 14000 : (s.type === 'crasher' ? 4500 : 2500));
+      setTimeout(() => spawnShape(s.type), s.type === 'alphaPent' ? 15000 : (s.type === 'crasher' ? 4800 : 2600));
     }
   }
 }
 
 function damageNest(n, dmg) {
-  n.hp -= dmg; n.hurtFlash = 0.15;
+  n.hp -= dmg; n.hurtFlash = 0.14;
   if (n.hp <= 0) {
     const idx = nests.indexOf(n);
-    explosions.push({ x: n.x, y: n.y, maxR: 160, life: 0.75, maxLife: 0.75, color: '#ff4d6d' });
-    spawnParticles(n.x, n.y, 45, ['#ff4d6d', '#7a1525', '#ffffff', '#ff9a3d'], 90, 340, 2.5, 8, 0.5, 1.3);
-    addShake(15);
+    explosions.push({ x: n.x, y: n.y, maxR: 155, life: 0.7, maxLife: 0.7, color: '#ff4d6d' });
+    spawnParticles(n.x, n.y, 42, ['#ff4d6d', '#7a1525', '#ffffff', '#ff9a3d'], 80, 320, 2.5, 7.5, 0.45, 1.2);
+    addShake(14);
     AudioFX.boom();
     if (player && !player.dead) {
-      addXp(player, 1400);
-      floatText(n.x, n.y, '+1400 NEST', '#ffd34d', 22);
+      addXp(player, 1300);
+      floatText(n.x, n.y, '+1300 NEST', '#ffd34d', 20);
     }
     for (let i = shapes.length - 1; i >= 0; i--) {
       if (shapes[i].nestId === idx) {
-        spawnParticles(shapes[i].x, shapes[i].y, 5, ['#ff4d6d'], 30, 100, 1, 2.5, 0.15, 0.4);
+        spawnParticles(shapes[i].x, shapes[i].y, 4, ['#ff4d6d'], 25, 90, 1, 2.2, 0.12, 0.35);
         shapes.splice(i, 1);
       }
     }
     nests.splice(idx, 1);
     for (const s of shapes) if (s.nestId != null && s.nestId > idx) s.nestId--;
-    setTimeout(() => { if (gameState !== 'menu') spawnNest(); }, 22000);
+    setTimeout(() => { if (gameState !== 'menu') spawnNest(); }, 24000);
   }
 }
 
@@ -1012,7 +1090,7 @@ function update(dt) {
   mouse.worldX = mouse.x + camX;
   mouse.worldY = mouse.y + camY;
 
-  /* --- player --- */
+  /* --- player movement + recoil velocity --- */
   let dx = 0, dy = 0;
   if (keys['w'] || keys['arrowup']) dy -= 1;
   if (keys['s'] || keys['arrowdown']) dy += 1;
@@ -1020,12 +1098,18 @@ function update(dt) {
   if (keys['d'] || keys['arrowright']) dx += 1;
   const len = Math.hypot(dx, dy) || 1;
   const spd = moveSpdOf(player);
-  player.x = Math.max(player.radius, Math.min(WORLD.w - player.radius, player.x + dx / len * spd * dt));
-  player.y = Math.max(player.radius, Math.min(WORLD.h - player.radius, player.y + dy / len * spd * dt));
+  // apply input
+  player.vx += (dx / len) * spd * 3.8 * dt;
+  player.vy += (dy / len) * spd * 3.8 * dt;
+  // damping
+  player.vx *= Math.pow(0.04, dt);
+  player.vy *= Math.pow(0.04, dt);
+  player.x = Math.max(player.radius, Math.min(WORLD.w - player.radius, player.x + player.vx * dt));
+  player.y = Math.max(player.radius, Math.min(WORLD.h - player.radius, player.y + player.vy * dt));
   player.angle = Math.atan2(mouse.y - canvas.height / 2, mouse.x - canvas.width / 2);
   player.fireCd -= dt * 1000;
   if ((mouse.down || autoFire) && player.fireCd <= 0) fire(player);
-  player.recoil = Math.max(0, player.recoil - dt * 42);
+  player.recoil = Math.max(0, player.recoil - dt * 40);
   player.flash = Math.max(0, player.flash - dt);
   player.hp = Math.min(maxHpOf(player), player.hp + regenOf(player) * dt);
   player.hitCd -= dt;
@@ -1041,20 +1125,19 @@ function update(dt) {
     updateClassLabel();
   }
 
-  /* --- smarter human-like enemy AI --- */
+  /* --- smarter, faster enemy AI --- */
   for (const e of enemies) {
     if (e.dead) continue;
     const pers = PERSONALITIES[e.personality] || PERSONALITIES.aggressive;
+    const spdM = pers.spdMult || 1;
 
-    // detect damage → threat reaction
     if (e.hp < e.lastHp) {
-      e.threatTimer = 0.6;
+      e.threatTimer = 0.55;
       e.dodgeDir = Math.random() < 0.5 ? 1 : -1;
     }
     e.lastHp = e.hp;
     e.threatTimer = Math.max(0, e.threatTimer - dt);
 
-    // choose target (player or nearest other enemy)
     let target = null, bestD = 1e9;
     if (player && !player.dead) {
       const d = Math.hypot(player.x - e.x, player.y - e.y);
@@ -1063,132 +1146,170 @@ function update(dt) {
     for (const o of enemies) {
       if (o === e || o.dead) continue;
       const d = Math.hypot(o.x - e.x, o.y - e.y);
-      if (d < bestD && d < 620) { bestD = d; target = o; }
+      if (d < bestD && d < 650) { bestD = d; target = o; }
     }
 
+    // recoil damping for NPCs too
+    e.vx *= Math.pow(0.05, dt);
+    e.vy *= Math.pow(0.05, dt);
+
     if (target && bestD < pers.fireRange) {
-      // controlled prediction (not perfect)
-      const lead = 0.07 + Math.random() * 0.06;
+      const lead = 0.08 + Math.random() * 0.05;
       let predX = target.x, predY = target.y;
       if (target.isPlayer) {
-        const mx = (keys['d'] ? 1 : keys['a'] ? -1 : 0);
-        const my = (keys['s'] ? 1 : keys['w'] ? -1 : 0);
-        predX += mx * moveSpdOf(target) * lead;
-        predY += my * moveSpdOf(target) * lead;
+        predX += (keys['d'] ? 1 : keys['a'] ? -1 : 0) * moveSpdOf(target) * lead;
+        predY += (keys['s'] ? 1 : keys['w'] ? -1 : 0) * moveSpdOf(target) * lead;
       }
       const desiredAng = Math.atan2(predY - e.y, predX - e.x);
-      // smooth turn
-      e.angle = lerpAngle(e.angle, desiredAng + (Math.random() - 0.5) * 0.05, Math.min(1, 4.5 * dt));
+      e.angle = lerpAngle(e.angle, desiredAng + (Math.random() - 0.5) * 0.04, Math.min(1, 5 * dt));
 
-      // distance control + dodge when threatened
       const want = pers.preferDist;
       let dir = bestD > want ? pers.approach : pers.retreat;
-
-      // sideways dodge when under fire
       let sideX = 0, sideY = 0;
       if (e.threatTimer > 0) {
         const sideAng = e.angle + Math.PI / 2 * e.dodgeDir;
-        sideX = Math.cos(sideAng) * moveSpdOf(e) * pers.dodge * 0.85;
-        sideY = Math.sin(sideAng) * moveSpdOf(e) * pers.dodge * 0.85;
+        sideX = Math.cos(sideAng) * moveSpdOf(e) * pers.dodge * 0.9;
+        sideY = Math.sin(sideAng) * moveSpdOf(e) * pers.dodge * 0.9;
       }
-
       if (pers.circle) {
         const side = Math.atan2(target.y - e.y, target.x - e.x) + Math.PI / 2 * e.circleDir;
-        e.x += Math.cos(side) * moveSpdOf(e) * 0.6 * dt;
-        e.y += Math.sin(side) * moveSpdOf(e) * 0.6 * dt;
-        dir *= 0.45;
+        e.x += Math.cos(side) * moveSpdOf(e) * spdM * 0.65 * dt;
+        e.y += Math.sin(side) * moveSpdOf(e) * spdM * 0.65 * dt;
+        dir *= 0.4;
       }
+      if (e.hp / maxHpOf(e) < 0.25) dir = Math.min(dir, -0.95);
 
-      // low HP → stronger retreat
-      if (e.hp / maxHpOf(e) < 0.28) dir = Math.min(dir, -0.9);
-
-      const espd = moveSpdOf(e) * 0.9;
-      e.x += (Math.cos(e.angle) * espd * dir + sideX) * dt;
-      e.y += (Math.sin(e.angle) * espd * dir + sideY) * dt;
+      const espd = moveSpdOf(e) * 0.95 * spdM;
+      e.vx += (Math.cos(e.angle) * espd * dir + sideX) * 2.5 * dt;
+      e.vy += (Math.sin(e.angle) * espd * dir + sideY) * 2.5 * dt;
+      e.x += e.vx * dt;
+      e.y += e.vy * dt;
 
       e.fireCd -= dt * 1000;
-      if (e.fireCd <= 0 && bestD < pers.fireRange * 0.92) {
-        // occasional human hesitation
-        if (Math.random() > 0.11) fire(e);
-        else e.fireCd = 140 + Math.random() * 180;
+      if (e.fireCd <= 0 && bestD < pers.fireRange * 0.93) {
+        if (Math.random() > 0.09) fire(e);
+        else e.fireCd = 120 + Math.random() * 160;
       }
     } else {
-      // calm wander — no sudden sprints
       e.aiCd -= dt;
       if (e.aiCd <= 0) {
         e.aiAngle = Math.random() * Math.PI * 2;
-        e.aiCd = 2.2 + Math.random() * 3.5;
+        e.aiCd = 1.8 + Math.random() * 3;
       }
-      e.angle = lerpAngle(e.angle, e.aiAngle, 2.2 * dt);
-      e.x += Math.cos(e.angle) * moveSpdOf(e) * 0.32 * dt;
-      e.y += Math.sin(e.angle) * moveSpdOf(e) * 0.32 * dt;
-      e.fireCd = Math.max(e.fireCd, 200);
+      e.angle = lerpAngle(e.angle, e.aiAngle, 2.5 * dt);
+      e.x += Math.cos(e.angle) * moveSpdOf(e) * spdM * 0.38 * dt;
+      e.y += Math.sin(e.angle) * moveSpdOf(e) * spdM * 0.38 * dt;
+      e.fireCd = Math.max(e.fireCd, 180);
     }
 
-    e.recoil = Math.max(0, e.recoil - dt * 42);
+    e.recoil = Math.max(0, e.recoil - dt * 40);
     e.flash = Math.max(0, e.flash - dt);
     e.hp = Math.min(maxHpOf(e), e.hp + regenOf(e) * dt);
     e.hitCd -= dt;
     e.x = Math.max(e.radius, Math.min(WORLD.w - e.radius, e.x));
     e.y = Math.max(e.radius, Math.min(WORLD.h - e.radius, e.y));
+
+    // NPC bee-hive drone management
+    if (mods(e).drones) {
+      const maxD = mods(e).maxDrones || 6;
+      const alive = drones.filter(d => d.owner === e && !d.dead).length;
+      e.droneRespawnCd = (e.droneRespawnCd || 0) - dt;
+      if (alive < maxD && e.droneRespawnCd <= 0) {
+        spawnDrone(e, alive);
+        e.droneRespawnCd = droneRespawnOf(e) * 1.1;
+      }
+    }
   }
 
-  /* --- smooth spreading drones --- */
+  /* --- drones: player (cursor) + NPC (auto attack/defend) --- */
   for (let i = drones.length - 1; i >= 0; i--) {
     const d = drones[i];
     if (d.dead) { drones.splice(i, 1); continue; }
     d.hitCd -= dt;
     d.flash = Math.max(0, d.flash - dt);
-    d.orbitPhase += dt * 1.4;
+    d.orbitPhase += dt * 1.3;
 
-    // desired formation position around cursor (or owner aim)
     let cx, cy;
     if (d.owner.isPlayer) {
       cx = mouse.worldX; cy = mouse.worldY;
     } else {
-      cx = d.owner.x + Math.cos(d.owner.angle) * 140;
-      cy = d.owner.y + Math.sin(d.owner.angle) * 140;
+      // NPC auto: find nearest threat, else orbit owner
+      let best = null, bestD = 480;
+      if (player && !player.dead) {
+        const dd = Math.hypot(player.x - d.owner.x, player.y - d.owner.y);
+        if (dd < bestD) { bestD = dd; best = player; }
+      }
+      for (const o of enemies) {
+        if (o === d.owner || o.dead) continue;
+        const dd = Math.hypot(o.x - d.owner.x, o.y - d.owner.y);
+        if (dd < bestD) { bestD = dd; best = o; }
+      }
+      // also shapes near owner
+      for (const s of shapes) {
+        if (s.type === 'crasher') continue;
+        const dd = Math.hypot(s.x - d.owner.x, s.y - d.owner.y);
+        if (dd < bestD * 0.7) { bestD = dd; best = s; }
+      }
+      if (best) {
+        cx = best.x; cy = best.y;
+      } else {
+        // defend / orbit owner
+        const ang = d.orbitPhase + d.slot * 0.9;
+        cx = d.owner.x + Math.cos(ang) * 70;
+        cy = d.owner.y + Math.sin(ang) * 70;
+      }
     }
 
     const total = Math.max(1, drones.filter(dd => dd.owner === d.owner && !dd.dead).length);
-    const slotAng = (d.slot / Math.max(total, 1)) * Math.PI * 2 + d.orbitPhase * 0.15;
-    const formR = 28 + total * 3.5;
+    const slotAng = (d.slot / Math.max(total, 1)) * Math.PI * 2 + d.orbitPhase * 0.12;
+    const formR = d.owner.isPlayer ? (26 + total * 3.2) : 18;
     const tx = cx + Math.cos(slotAng) * formR;
     const ty = cy + Math.sin(slotAng) * formR;
 
-    // smooth acceleration toward desired point
     const dx = tx - d.x, dy = ty - d.y;
     const dist = Math.hypot(dx, dy) || 1;
-    const desiredSpd = Math.min(d.baseSpeed, dist * 3.2);
+    const desiredSpd = Math.min(d.baseSpeed, dist * 3.0);
     const ax = (dx / dist) * desiredSpd - d.vx;
     const ay = (dy / dist) * desiredSpd - d.vy;
-    d.vx += ax * 5.5 * dt;
-    d.vy += ay * 5.5 * dt;
-    // slight damping
-    d.vx *= Math.pow(0.15, dt);
-    d.vy *= Math.pow(0.15, dt);
+    d.vx += ax * 5.2 * dt;
+    d.vy += ay * 5.2 * dt;
+    d.vx *= Math.pow(0.18, dt);
+    d.vy *= Math.pow(0.18, dt);
     d.x += d.vx * dt;
     d.y += d.vy * dt;
-    d.angle = lerpAngle(d.angle, Math.atan2(d.vy, d.vx), 6 * dt);
+    d.angle = lerpAngle(d.angle, Math.atan2(d.vy, d.vx), 5.5 * dt);
 
     // combat
     const targets = d.owner.isPlayer ? enemies : (player ? [player] : []);
     for (const t of targets) {
       if (t && !t.dead && Math.hypot(d.x - t.x, d.y - t.y) < d.radius + t.radius) {
         if (d.hitCd <= 0) {
-          damageTank(t, d.dmg * 0.32, d.x, d.y);
-          d.hitCd = 0.26;
+          damageTank(t, d.dmg * 0.3, d.x, d.y);
+          d.hitCd = 0.28;
           d.flash = 0.1;
         }
         separate(d, t, d.radius, t.radius);
+      }
+    }
+    // NPC drones also hit other enemies
+    if (!d.owner.isPlayer) {
+      for (const o of enemies) {
+        if (o === d.owner || o.dead) continue;
+        if (Math.hypot(d.x - o.x, d.y - o.y) < d.radius + o.radius) {
+          if (d.hitCd <= 0) {
+            damageTank(o, d.dmg * 0.28, d.x, d.y);
+            d.hitCd = 0.3;
+          }
+          separate(d, o, d.radius, o.radius);
+        }
       }
     }
     for (let j = shapes.length - 1; j >= 0; j--) {
       const s = shapes[j];
       if (Math.hypot(d.x - s.x, d.y - s.y) < d.radius + s.def.radius) {
         if (d.hitCd <= 0) {
-          damageShape(s, d.dmg * 0.38, j);
-          d.hitCd = 0.22;
+          damageShape(s, d.dmg * 0.35, j);
+          d.hitCd = 0.24;
         }
         separateStatic(d, s.x, s.y, d.radius, s.def.radius);
       }
@@ -1196,22 +1317,22 @@ function update(dt) {
     for (const n of nests) {
       if (Math.hypot(d.x - n.x, d.y - n.y) < d.radius + n.radius) {
         if (d.hitCd <= 0) {
-          damageNest(n, d.dmg * 0.45);
-          d.hitCd = 0.28;
+          damageNest(n, d.dmg * 0.4);
+          d.hitCd = 0.3;
         }
         separateStatic(d, n.x, n.y, d.radius, n.radius);
       }
     }
   }
 
-  /* --- missiles (reduced assist, owner color) --- */
+  /* --- missiles (spinner + autoGun) --- */
   for (let i = missiles.length - 1; i >= 0; i--) {
     const ms = missiles[i];
     ms.life -= dt;
 
     if (ms.lockOn) {
       const targets = ms.owner.isPlayer ? enemies : (player && !player.dead ? [player] : []);
-      let best = null, bestD = 420;
+      let best = null, bestD = 400;
       for (const t of targets) {
         if (!t || t.dead) continue;
         const d = Math.hypot(ms.x - t.x, ms.y - t.y);
@@ -1220,41 +1341,84 @@ function update(dt) {
       if (best) {
         const desired = Math.atan2(best.y - ms.y, best.x - ms.x);
         const diff = angleDiff(ms.angle, desired);
-        // reduced turn rate — skill still matters
-        const turnRate = 0.85;
-        ms.angle += Math.sign(diff) * Math.min(Math.abs(diff), turnRate * dt);
+        ms.angle += Math.sign(diff) * Math.min(Math.abs(diff), 0.75 * dt);
       }
     }
 
     ms.x += Math.cos(ms.angle) * ms.speed * dt;
     ms.y += Math.sin(ms.angle) * ms.speed * dt;
+    ms.spin = (ms.spin || 0) + dt * 8;
 
+    // spinner gun: shoots while spinning
+    if (ms.spinner) {
+      ms.spinGunCd = (ms.spinGunCd || 0) - dt * 1000;
+      if (ms.spinGunCd <= 0) {
+        ms.spinGunCd = 70;
+        const a = ms.spin;
+        bullets.push({
+          x: ms.x + Math.cos(a) * (ms.radius + 4),
+          y: ms.y + Math.sin(a) * (ms.radius + 4),
+          vx: Math.cos(a) * 280, vy: Math.sin(a) * 280,
+          radius: 4, dmg: bulletDmgOf(ms.owner) * 0.28,
+          owner: ms.owner, life: 0.7, color: ms.color || '#c77dff', fade: 1
+        });
+      }
+    }
+
+    // auto gun: locks onto nearby targets and shoots
+    if (ms.autoGun) {
+      ms.autoGunCd = (ms.autoGunCd || 0) - dt * 1000;
+      if (ms.autoGunCd <= 0) {
+        ms.autoGunCd = 85;
+        const targets = ms.owner.isPlayer ? enemies : (player && !player.dead ? [player] : []);
+        let best = null, bestD = 380;
+        for (const t of targets) {
+          if (!t || t.dead) continue;
+          const d = Math.hypot(ms.x - t.x, ms.y - t.y);
+          if (d < bestD) { bestD = d; best = t; }
+        }
+        if (best) {
+          const a = Math.atan2(best.y - ms.y, best.x - ms.x);
+          bullets.push({
+            x: ms.x, y: ms.y,
+            vx: Math.cos(a) * 320, vy: Math.sin(a) * 320,
+            radius: 4.5, dmg: bulletDmgOf(ms.owner) * 0.32,
+            owner: ms.owner, life: 0.75, color: ms.color || '#e0a0ff', fade: 1
+          });
+        }
+      }
+    }
+
+    // engine flame
     ms.flameCd -= dt;
     if (ms.flameCd <= 0) {
-      ms.flameCd = 0.028;
+      ms.flameCd = 0.03;
       particles.push({
         x: ms.x - Math.cos(ms.angle) * ms.radius,
         y: ms.y - Math.sin(ms.angle) * ms.radius,
-        vx: -Math.cos(ms.angle) * 80 + (Math.random() - 0.5) * 40,
-        vy: -Math.sin(ms.angle) * 80 + (Math.random() - 0.5) * 40,
-        life: 0.18, maxLife: 0.18,
+        vx: -Math.cos(ms.angle) * 70 + (Math.random() - 0.5) * 35,
+        vy: -Math.sin(ms.angle) * 70 + (Math.random() - 0.5) * 35,
+        life: 0.16, maxLife: 0.16,
         color: [ms.color || '#ff9a3d', '#ffd34d'][Math.floor(Math.random()*2)],
-        size: 1.4 + Math.random() * 2.2
+        size: 1.3 + Math.random() * 2
       });
     }
-    ms.emitCd -= dt * 1000;
-    if (ms.emitCd <= 0) {
-      ms.emitCd = ms.swarmling ? 105 : 90;
-      const a = ms.angle + Math.PI + (Math.random() - 0.5) * 0.45;
-      bullets.push({
-        x: ms.x - Math.cos(ms.angle) * ms.radius,
-        y: ms.y - Math.sin(ms.angle) * ms.radius,
-        vx: Math.cos(a) * 230, vy: Math.sin(a) * 230,
-        radius: ms.swarmling ? 4 : 5,
-        dmg: bulletDmgOf(ms.owner) * (ms.swarmling ? 0.26 : 0.33),
-        owner: ms.owner, life: 0.95,
-        color: ms.color || '#ff9a3d', fade: 1
-      });
+
+    // classic engine spray (only non-spinner/auto)
+    if (!ms.spinner && !ms.autoGun) {
+      ms.emitCd -= dt * 1000;
+      if (ms.emitCd <= 0) {
+        ms.emitCd = ms.swarmling ? 100 : 88;
+        const a = ms.angle + Math.PI + (Math.random() - 0.5) * 0.4;
+        bullets.push({
+          x: ms.x - Math.cos(ms.angle) * ms.radius,
+          y: ms.y - Math.sin(ms.angle) * ms.radius,
+          vx: Math.cos(a) * 220, vy: Math.sin(a) * 220,
+          radius: ms.swarmling ? 3.8 : 4.5,
+          dmg: bulletDmgOf(ms.owner) * (ms.swarmling ? 0.24 : 0.3),
+          owner: ms.owner, life: 0.9, color: ms.color || '#ff9a3d', fade: 1
+        });
+      }
     }
 
     let boom = ms.life <= 0 || ms.x < 8 || ms.x > WORLD.w - 8 || ms.y < 8 || ms.y > WORLD.h - 8;
@@ -1262,21 +1426,21 @@ function update(dt) {
       const candidates = ms.owner.isPlayer ? enemies : enemies.concat(player ? [player] : []);
       for (const t of candidates) {
         if (t && !t.dead && t !== ms.owner && Math.hypot(ms.x - t.x, ms.y - t.y) < ms.radius + t.radius) {
-          damageTank(t, bulletDmgOf(ms.owner) * 1.12, ms.x, ms.y); boom = true; break;
+          damageTank(t, bulletDmgOf(ms.owner) * 1.05, ms.x, ms.y); boom = true; break;
         }
       }
     }
     if (!boom) {
       for (let j = shapes.length - 1; j >= 0; j--) {
         if (Math.hypot(ms.x - shapes[j].x, ms.y - shapes[j].y) < ms.radius + shapes[j].def.radius) {
-          damageShape(shapes[j], bulletDmgOf(ms.owner) * 1.12, j); boom = true; break;
+          damageShape(shapes[j], bulletDmgOf(ms.owner) * 1.05, j); boom = true; break;
         }
       }
     }
     if (!boom) {
       for (const n of nests) {
         if (Math.hypot(ms.x - n.x, ms.y - n.y) < ms.radius + n.radius) {
-          damageNest(n, bulletDmgOf(ms.owner) * 1.25); boom = true; break;
+          damageNest(n, bulletDmgOf(ms.owner) * 1.15); boom = true; break;
         }
       }
     }
@@ -1287,10 +1451,9 @@ function update(dt) {
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
-    if (b.life < 0.25) b.fade = b.life / 0.25;
+    if (b.life < 0.22) b.fade = b.life / 0.22;
     if (b.life <= 0 || b.x < -20 || b.x > WORLD.w + 20 || b.y < -20 || b.y > WORLD.h + 20) {
-      // fading death particles
-      spawnParticles(b.x, b.y, 3, [b.color, '#ffffff'], 20, 70, 1, 2.5, 0.12, 0.3);
+      spawnParticles(b.x, b.y, 2, [b.color, '#ffffff'], 15, 55, 0.9, 2.2, 0.1, 0.25);
       bullets.splice(i, 1); continue;
     }
     let hit = false;
@@ -1300,7 +1463,7 @@ function update(dt) {
         damageShape(s, b.dmg, j); hit = true; break;
       }
     }
-    if (hit) { spawnParticles(b.x, b.y, 4, [b.color, '#fff'], 30, 100, 1, 2.8, 0.1, 0.28); bullets.splice(i, 1); continue; }
+    if (hit) { spawnParticles(b.x, b.y, 3, [b.color, '#fff'], 25, 90, 1, 2.5, 0.08, 0.22); bullets.splice(i, 1); continue; }
 
     for (const n of nests) {
       if (Math.hypot(b.x - n.x, b.y - n.y) < b.radius + n.radius) {
@@ -1319,8 +1482,8 @@ function update(dt) {
     for (const t of candidates) {
       if (t && !t.dead && Math.hypot(b.x - t.x, b.y - t.y) < b.radius + t.radius) {
         damageTank(t, b.dmg, b.x, b.y);
-        spawnParticles(b.x, b.y, 4, ['#ffffff', b.color], 35, 110, 1, 2.8, 0.1, 0.25);
-        if (t.isPlayer) { addShake(2); AudioFX.hit(); }
+        spawnParticles(b.x, b.y, 3, ['#ffffff', b.color], 30, 95, 1, 2.5, 0.08, 0.2);
+        if (t.isPlayer) { addShake(1.8); AudioFX.hit(); }
         hit = true; break;
       }
     }
@@ -1330,9 +1493,9 @@ function update(dt) {
         if (d.owner === b.owner) continue;
         if (Math.hypot(b.x - d.x, b.y - d.y) < b.radius + d.radius) {
           d.hp -= b.dmg;
-          d.flash = 0.12;
+          d.flash = 0.1;
           if (d.hp <= 0) {
-            spawnParticles(d.x, d.y, 7, [d.color, '#fff'], 35, 120, 1, 2.8, 0.18, 0.45);
+            spawnParticles(d.x, d.y, 6, [d.color, '#fff'], 30, 100, 1, 2.5, 0.15, 0.4);
             drones.splice(di, 1);
           }
           hit = true; break;
@@ -1346,8 +1509,8 @@ function update(dt) {
   for (const e of enemies) {
     if (e.dead) continue;
     if (separate(player, e, player.radius, e.radius)) {
-      if (player.hitCd <= 0) { damageTank(e, bodyDmgOf(player), player.x, player.y); player.hitCd = 0.34; }
-      if (e.hitCd <= 0) { damageTank(player, bodyDmgOf(e), e.x, e.y); e.hitCd = 0.34; }
+      if (player.hitCd <= 0) { damageTank(e, bodyDmgOf(player), player.x, player.y); player.hitCd = 0.36; }
+      if (e.hitCd <= 0) { damageTank(player, bodyDmgOf(e), e.x, e.y); e.hitCd = 0.36; }
     }
   }
   for (let i = 0; i < enemies.length; i++) {
@@ -1355,104 +1518,109 @@ function update(dt) {
       const a = enemies[i], b = enemies[j];
       if (a.dead || b.dead) continue;
       if (separate(a, b, a.radius, b.radius)) {
-        if (a.hitCd <= 0) { damageTank(b, bodyDmgOf(a) * 0.65, a.x, a.y); a.hitCd = 0.38; }
-        if (b.hitCd <= 0) { damageTank(a, bodyDmgOf(b) * 0.65, b.x, b.y); b.hitCd = 0.38; }
+        if (a.hitCd <= 0) { damageTank(b, bodyDmgOf(a) * 0.6, a.x, a.y); a.hitCd = 0.4; }
+        if (b.hitCd <= 0) { damageTank(a, bodyDmgOf(b) * 0.6, b.x, b.y); b.hitCd = 0.4; }
       }
     }
   }
 
-  /* --- crashers: smooth orbit, lookouts, separation --- */
+  /* --- crashers: bigger range, no self-nest damage --- */
   for (let j = shapes.length - 1; j >= 0; j--) {
     const s = shapes[j];
     if (!s.def.crasher) continue;
 
-    // find potential prey
     let prey = null, preyD = 1e9;
     if (player && !player.dead) {
       const d = Math.hypot(player.x - s.x, player.y - s.y);
-      if (d < (s.lookout ? 820 : 620)) { prey = player; preyD = d; }
+      // bigger range
+      if (d < (s.lookout ? 980 : 780)) { prey = player; preyD = d; }
     }
     for (const e of enemies) {
       if (e.dead) continue;
       const d = Math.hypot(e.x - s.x, e.y - s.y);
-      if (d < preyD && d < (s.lookout ? 700 : 480)) { prey = e; preyD = d; }
+      if (d < preyD && d < (s.lookout ? 850 : 600)) { prey = e; preyD = d; }
     }
 
     if (s.nestId != null && nests[s.nestId]) {
       const nest = nests[s.nestId];
       const nd = Math.hypot(s.x - nest.x, s.y - nest.y);
 
-      if (s.state === 'orbit' || (s.state === 'return' && nd < s.orbitRadius + 25)) {
+      // hard separation from own nest (no jitter / damage)
+      const nestMin = nest.radius + s.def.radius + 8;
+      if (nd < nestMin) {
+        const push = (nestMin - nd);
+        const nx = (s.x - nest.x) / (nd || 1);
+        const ny = (s.y - nest.y) / (nd || 1);
+        s.x += nx * push;
+        s.y += ny * push;
+        s.vx += nx * 40;
+        s.vy += ny * 40;
+      }
+
+      if (s.state === 'orbit' || (s.state === 'return' && nd < s.orbitRadius + 30)) {
         s.state = 'orbit';
-        // smooth orbital motion
-        s.orbitAngle += (0.55 + s.personality * 0.4) * dt * (s.lookout ? 0.7 : 1);
+        s.orbitAngle += (0.5 + s.personality * 0.35) * dt * (s.lookout ? 0.65 : 1);
         const desiredX = nest.x + Math.cos(s.orbitAngle) * s.orbitRadius;
         const desiredY = nest.y + Math.sin(s.orbitAngle) * s.orbitRadius;
-        // accelerate toward orbital slot
         const ox = desiredX - s.x, oy = desiredY - s.y;
         const od = Math.hypot(ox, oy) || 1;
-        s.vx += (ox / od) * 280 * dt - s.vx * 3.5 * dt;
-        s.vy += (oy / od) * 280 * dt - s.vy * 3.5 * dt;
-
-        // if prey gets close, switch to chase
-        if (prey && preyD < 380 + s.personality * 120) {
+        s.vx += (ox / od) * 260 * dt - s.vx * 3.2 * dt;
+        s.vy += (oy / od) * 260 * dt - s.vy * 3.2 * dt;
+        if (prey && preyD < 420 + s.personality * 140) {
           s.state = 'chase';
           s.target = prey;
         }
       } else if (s.state === 'chase') {
-        if (!prey || preyD > 700) {
+        if (!prey || preyD > 820) {
           s.state = 'return';
           s.target = null;
         } else {
           const a = Math.atan2(prey.y - s.y, prey.x - s.x);
-          const chaseSpd = 210 + s.personality * 50;
-          s.vx += (Math.cos(a) * chaseSpd - s.vx) * 4 * dt;
-          s.vy += (Math.sin(a) * chaseSpd - s.vy) * 4 * dt;
+          const chaseSpd = 230 + s.personality * 55;
+          s.vx += (Math.cos(a) * chaseSpd - s.vx) * 4.2 * dt;
+          s.vy += (Math.sin(a) * chaseSpd - s.vy) * 4.2 * dt;
         }
       } else if (s.state === 'return') {
         const a = Math.atan2(nest.y - s.y, nest.x - s.x);
-        s.vx += (Math.cos(a) * 190 - s.vx) * 3.5 * dt;
-        s.vy += (Math.sin(a) * 190 - s.vy) * 3.5 * dt;
-        if (nd < s.orbitRadius + 15) s.state = 'orbit';
+        s.vx += (Math.cos(a) * 200 - s.vx) * 3.5 * dt;
+        s.vy += (Math.sin(a) * 200 - s.vy) * 3.5 * dt;
+        if (nd < s.orbitRadius + 20) s.state = 'orbit';
       } else if (s.state === 'investigate') {
-        // lookouts wander further, investigate then return
         s.investigateTimer -= dt;
-        if (prey && preyD < 750) {
+        if (prey && preyD < 900) {
           s.state = 'chase';
           s.target = prey;
-        } else if (s.investigateTimer <= 0 || nd > 380) {
+        } else if (s.investigateTimer <= 0 || nd > 420) {
           s.state = 'return';
           s.investigateTimer = 3 + Math.random() * 5;
         } else {
-          // gentle wander
-          s.orbitAngle += 0.3 * dt;
-          const wx = nest.x + Math.cos(s.orbitAngle) * (180 + s.personality * 100);
-          const wy = nest.y + Math.sin(s.orbitAngle) * (180 + s.personality * 100);
+          s.orbitAngle += 0.28 * dt;
+          const wx = nest.x + Math.cos(s.orbitAngle) * (200 + s.personality * 110);
+          const wy = nest.y + Math.sin(s.orbitAngle) * (200 + s.personality * 110);
           const ox = wx - s.x, oy = wy - s.y;
           const od = Math.hypot(ox, oy) || 1;
-          s.vx += (ox / od) * 140 * dt - s.vx * 2.5 * dt;
-          s.vy += (oy / od) * 140 * dt - s.vy * 2.5 * dt;
+          s.vx += (ox / od) * 150 * dt - s.vx * 2.4 * dt;
+          s.vy += (oy / od) * 150 * dt - s.vy * 2.4 * dt;
         }
       }
     } else {
-      // free crasher
       if (prey) {
         const a = Math.atan2(prey.y - s.y, prey.x - s.x);
-        s.vx += (Math.cos(a) * 200 - s.vx) * 3.8 * dt;
-        s.vy += (Math.sin(a) * 200 - s.vy) * 3.8 * dt;
+        s.vx += (Math.cos(a) * 215 - s.vx) * 4 * dt;
+        s.vy += (Math.sin(a) * 215 - s.vy) * 4 * dt;
       } else {
-        s.vx *= Math.pow(0.4, dt);
-        s.vy *= Math.pow(0.4, dt);
+        s.vx *= Math.pow(0.35, dt);
+        s.vy *= Math.pow(0.35, dt);
       }
     }
 
-    // separation from other crashers (prevent stacking)
+    // separation from other crashers
     for (let k = j + 1; k < shapes.length; k++) {
       const o = shapes[k];
       if (!o.def.crasher) continue;
       const dx = s.x - o.x, dy = s.y - o.y;
       const dist = Math.hypot(dx, dy) || 0.001;
-      const minD = s.def.radius + o.def.radius + 6;
+      const minD = s.def.radius + o.def.radius + 7;
       if (dist < minD) {
         const push = (minD - dist) * 0.5;
         const nx = dx / dist, ny = dy / dist;
@@ -1465,29 +1633,28 @@ function update(dt) {
     s.y += s.vy * dt;
     s.x = Math.max(s.def.radius, Math.min(WORLD.w - s.def.radius, s.x));
     s.y = Math.max(s.def.radius, Math.min(WORLD.h - s.def.radius, s.y));
-    // face movement
-    if (Math.hypot(s.vx, s.vy) > 10) s.rot = Math.atan2(s.vy, s.vx);
+    if (Math.hypot(s.vx, s.vy) > 12) s.rot = Math.atan2(s.vy, s.vx);
   }
 
-  // shape contact + solid push
+  // shape contact
   for (let j = shapes.length - 1; j >= 0; j--) {
     const s = shapes[j];
     if (player && !player.dead) {
       if (separateStatic(player, s.x, s.y, player.radius, s.def.radius)) {
         const dx = s.x - player.x, dy = s.y - player.y;
         const dist = Math.hypot(dx, dy) || 1;
-        s.x += (dx / dist) * 35 * dt;
-        s.y += (dy / dist) * 35 * dt;
+        s.x += (dx / dist) * 32 * dt;
+        s.y += (dy / dist) * 32 * dt;
         if (player.hitCd <= 0) {
           damageTank(player, s.def.bodyDmg, s.x, s.y);
-          player.hitCd = 0.34;
+          player.hitCd = 0.36;
         }
       }
     }
     for (const e of enemies) {
       if (e.dead) continue;
       if (separateStatic(e, s.x, s.y, e.radius, s.def.radius)) {
-        if (e.hitCd <= 0) { damageTank(e, s.def.bodyDmg, s.x, s.y); e.hitCd = 0.34; }
+        if (e.hitCd <= 0) { damageTank(e, s.def.bodyDmg, s.x, s.y); e.hitCd = 0.36; }
       }
     }
   }
@@ -1495,22 +1662,22 @@ function update(dt) {
   // nests
   for (let ni = nests.length - 1; ni >= 0; ni--) {
     const n = nests[ni];
-    n.rot += 0.25 * dt;
-    n.pulse = (n.pulse + dt * 2.2) % (Math.PI * 2);
+    n.rot += 0.22 * dt;
+    n.pulse = (n.pulse + dt * 2) % (Math.PI * 2);
     n.hurtFlash = Math.max(0, n.hurtFlash - dt);
     n.spawnCd -= dt;
     if (n.spawnCd <= 0 && countNestCrashers(ni) < n.maxCrashers) {
-      spawnNestCrasher(n, ni, Math.random() < 0.22);
-      n.spawnCd = 1.6 + Math.random() * 1.4;
+      spawnNestCrasher(n, ni, Math.random() < 0.25);
+      n.spawnCd = 1.5 + Math.random() * 1.3;
     }
     if (player && !player.dead) {
       if (separateStatic(player, n.x, n.y, player.radius, n.radius)) {
-        if (player.hitCd <= 0) { damageTank(player, 28, n.x, n.y); player.hitCd = 0.4; }
+        if (player.hitCd <= 0) { damageTank(player, 26, n.x, n.y); player.hitCd = 0.42; }
       }
     }
     for (const e of enemies) {
       if (!e.dead && separateStatic(e, n.x, n.y, e.radius, n.radius)) {
-        if (e.hitCd <= 0) { damageTank(e, 22, n.x, n.y); e.hitCd = 0.4; }
+        if (e.hitCd <= 0) { damageTank(e, 20, n.x, n.y); e.hitCd = 0.42; }
       }
     }
   }
@@ -1518,11 +1685,11 @@ function update(dt) {
   for (const s of shapes) {
     if (!s.def.crasher) {
       s.hurtFlash = Math.max(0, s.hurtFlash - dt);
-      s.spawnT = Math.min(1, s.spawnT + dt * 2.4);
+      s.spawnT = Math.min(1, s.spawnT + dt * 2.3);
       s.rot += s.spin * dt;
     } else {
       s.hurtFlash = Math.max(0, s.hurtFlash - dt);
-      s.spawnT = Math.min(1, s.spawnT + dt * 2.4);
+      s.spawnT = Math.min(1, s.spawnT + dt * 2.3);
     }
   }
   refreshUpgradeUI();
@@ -1530,11 +1697,11 @@ function update(dt) {
 
 /* ---------------- FX ---------------- */
 function updateFx(dt) {
-  shake = Math.max(0, shake - dt * 24);
+  shake = Math.max(0, shake - dt * 22);
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.x += p.vx * dt; p.y += p.vy * dt;
-    p.vx *= Math.pow(0.025, dt); p.vy *= Math.pow(0.025, dt);
+    p.vx *= Math.pow(0.03, dt); p.vy *= Math.pow(0.03, dt);
     p.life -= dt;
     if (p.life <= 0) particles.splice(i, 1);
   }
@@ -1553,16 +1720,16 @@ function updateFx(dt) {
 
 /* ---------------- Drawing ---------------- */
 function drawGrid(camX, camY) {
-  const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 50,
+  const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 40,
     canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height) * 0.85);
-  grad.addColorStop(0, '#cacaca');
-  grad.addColorStop(1, '#9e9e9e');
+  grad.addColorStop(0, '#c8c8c8');
+  grad.addColorStop(1, '#9c9c9c');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const startX = Math.floor(camX / GRID) * GRID;
   const startY = Math.floor(camY / GRID) * GRID;
-  ctx.strokeStyle = 'rgba(0,0,0,0.075)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.07)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (let x = startX; x < camX + canvas.width + GRID; x += GRID) {
@@ -1575,8 +1742,8 @@ function drawGrid(camX, camY) {
   }
   ctx.stroke();
 
-  ctx.strokeStyle = 'rgba(0,0,0,0.14)';
-  ctx.lineWidth = 1.4;
+  ctx.strokeStyle = 'rgba(0,0,0,0.13)';
+  ctx.lineWidth = 1.3;
   ctx.beginPath();
   const major = GRID * 5;
   const startMX = Math.floor(camX / major) * major;
@@ -1613,75 +1780,69 @@ function drawShape(s, camX, camY) {
   ctx.closePath();
   ctx.fillStyle = s.hurtFlash > 0 ? '#ffffff' : s.def.color;
   ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-  ctx.lineWidth = s.type === 'alphaPent' ? 6 : 3.5;
+  ctx.lineWidth = s.type === 'alphaPent' ? 5.5 : 3.3;
   ctx.fill(); ctx.stroke();
   if (s.type === 'hexagon' || s.type === 'alphaPent') {
-    ctx.globalAlpha = 0.2;
+    ctx.globalAlpha = 0.18;
     ctx.strokeStyle = s.def.color;
-    ctx.lineWidth = 9;
+    ctx.lineWidth = 8;
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
-  // lookout indicator
   if (s.lookout) {
     ctx.beginPath();
     ctx.arc(0, 0, s.def.radius + 5, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,100,120,0.45)';
+    ctx.strokeStyle = 'rgba(255,100,120,0.4)';
     ctx.lineWidth = 2;
     ctx.stroke();
   }
   ctx.restore();
   if (s.hp < s.maxHp && s.spawnT >= 1) {
-    const barW = s.type === 'alphaPent' ? 70 : 34;
-    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - barW/2, y - s.def.radius - 11, barW, 4);
-    ctx.fillStyle = '#8abc3f'; ctx.fillRect(x - barW/2, y - s.def.radius - 11, barW * (s.hp / s.maxHp), 4);
+    const barW = s.type === 'alphaPent' ? 68 : 32;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x - barW/2, y - s.def.radius - 10, barW, 3.5);
+    ctx.fillStyle = '#8abc3f'; ctx.fillRect(x - barW/2, y - s.def.radius - 10, barW * (s.hp / s.maxHp), 3.5);
   }
 }
 
 function drawNest(n, camX, camY) {
   const x = n.x - camX, y = n.y - camY;
   if (x < -120 || y < -120 || x > canvas.width + 120 || y > canvas.height + 120) return;
-  const pulse = 1 + Math.sin(n.pulse) * 0.04;
+  const pulse = 1 + Math.sin(n.pulse) * 0.035;
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(n.rot);
-  // outer glow
   ctx.beginPath();
-  ctx.arc(0, 0, n.radius * 1.15 * pulse, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(180,30,50,0.12)';
+  ctx.arc(0, 0, n.radius * 1.12 * pulse, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(180,30,50,0.1)';
   ctx.fill();
-  // main body
   ctx.beginPath();
   ctx.arc(0, 0, n.radius, 0, Math.PI * 2);
   ctx.fillStyle = n.hurtFlash > 0 ? '#ffaaaa' : n.color;
   ctx.strokeStyle = 'rgba(0,0,0,0.65)';
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 5.5;
   ctx.fill(); ctx.stroke();
-  // spiked ring
   ctx.beginPath();
   for (let i = 0; i < 10; i++) {
     const a = i / 10 * Math.PI * 2;
-    const r1 = n.radius * 0.72, r2 = n.radius * 0.95;
+    const r1 = n.radius * 0.7, r2 = n.radius * 0.92;
     const px1 = Math.cos(a) * r1, py1 = Math.sin(a) * r1;
-    const px2 = Math.cos(a + 0.15) * r2, py2 = Math.sin(a + 0.15) * r2;
+    const px2 = Math.cos(a + 0.14) * r2, py2 = Math.sin(a + 0.14) * r2;
     i === 0 ? ctx.moveTo(px1, py1) : ctx.lineTo(px1, py1);
     ctx.lineTo(px2, py2);
   }
   ctx.closePath();
   ctx.fillStyle = '#5a0f1a';
   ctx.fill(); ctx.stroke();
-  // core
   ctx.beginPath();
-  ctx.arc(0, 0, n.radius * 0.35, 0, Math.PI * 2);
+  ctx.arc(0, 0, n.radius * 0.32, 0, Math.PI * 2);
   ctx.fillStyle = '#3d0810';
   ctx.fill();
   ctx.restore();
-  // HP
-  ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - 44, y - n.radius - 18, 88, 7);
-  ctx.fillStyle = '#ff4d6d'; ctx.fillRect(x - 44, y - n.radius - 18, 88 * (n.hp / n.maxHp), 7);
-  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x - 42, y - n.radius - 16, 84, 6);
+  ctx.fillStyle = '#ff4d6d'; ctx.fillRect(x - 42, y - n.radius - 16, 84 * (n.hp / n.maxHp), 6);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
   ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
-  ctx.fillText('CRASHER NEST', x, y - n.radius - 24);
+  ctx.fillText('CRASHER NEST', x, y - n.radius - 22);
 }
 
 function drawTank(t, camX, camY, c, showInfo) {
@@ -1695,23 +1856,23 @@ function drawTank(t, camX, camY, c, showInfo) {
     c.save();
     c.translate(x, y);
     c.rotate(t.angle + (b.angle || 0));
-    c.translate(-t.recoil * 0.55, b.offset || 0);
+    c.translate(-t.recoil * 0.5, b.offset || 0);
     c.fillStyle = '#999';
     c.strokeStyle = 'rgba(0,0,0,0.55)';
-    c.lineWidth = 3;
+    c.lineWidth = 2.8;
     if (b.triangle) {
       const bl = b.length, bw = b.width;
       c.beginPath();
-      c.moveTo(t.radius * 0.4, -bw * 0.55);
-      c.lineTo(t.radius * 0.4 + bl, -bw * 0.2);
-      c.lineTo(t.radius * 0.4 + bl,  bw * 0.2);
-      c.lineTo(t.radius * 0.4,  bw * 0.55);
+      c.moveTo(t.radius * 0.4, -bw * 0.52);
+      c.lineTo(t.radius * 0.4 + bl, -bw * 0.18);
+      c.lineTo(t.radius * 0.4 + bl,  bw * 0.18);
+      c.lineTo(t.radius * 0.4,  bw * 0.52);
       c.closePath();
       c.fill(); c.stroke();
     } else {
       const bl = b.length, bw = b.width;
       c.beginPath();
-      c.rect(t.radius * 0.55 - bl * 0.4, -bw / 2, bl, bw);
+      c.rect(t.radius * 0.55 - bl * 0.38, -bw / 2, bl, bw);
       c.fill(); c.stroke();
     }
     c.restore();
@@ -1721,25 +1882,25 @@ function drawTank(t, camX, camY, c, showInfo) {
   c.arc(x, y, t.radius, 0, Math.PI * 2);
   c.fillStyle = t.color;
   c.strokeStyle = 'rgba(0,0,0,0.55)';
-  c.lineWidth = 4;
+  c.lineWidth = 3.8;
   c.fill(); c.stroke();
   if (t.flash > 0) {
     c.beginPath();
     c.arc(x, y, t.radius, 0, Math.PI * 2);
-    c.fillStyle = `rgba(255,60,60,${(t.flash / 0.15) * 0.42})`;
+    c.fillStyle = `rgba(255,60,60,${(t.flash / 0.14) * 0.4})`;
     c.fill();
   }
   if (showInfo) {
-    c.fillStyle = '#fff'; c.font = 'bold 12px Arial'; c.textAlign = 'center';
+    c.fillStyle = '#fff'; c.font = 'bold 11px Arial'; c.textAlign = 'center';
     const label = t.isPlayer ? 'You' : (TANKS[t.typeKey].name + ' · Lv' + t.level);
-    c.fillText(label, x, y - t.radius - 18);
+    c.fillText(label, x, y - t.radius - 16);
     if (!t.isPlayer && t.personality) {
-      c.fillStyle = 'rgba(255,255,255,0.5)';
-      c.font = '10px Arial';
-      c.fillText(PERSONALITIES[t.personality].name, x, y - t.radius - 6);
+      c.fillStyle = 'rgba(255,255,255,0.45)';
+      c.font = '9px Arial';
+      c.fillText(PERSONALITIES[t.personality].name, x, y - t.radius - 5);
     }
-    c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(x - 28, y - t.radius - 12, 56, 5);
-    c.fillStyle = '#8abc3f'; c.fillRect(x - 28, y - t.radius - 12, 56 * Math.max(0, t.hp / maxHpOf(t)), 5);
+    c.fillStyle = 'rgba(0,0,0,0.5)'; c.fillRect(x - 26, y - t.radius - 11, 52, 4.5);
+    c.fillStyle = '#8abc3f'; c.fillRect(x - 26, y - t.radius - 11, 52 * Math.max(0, t.hp / maxHpOf(t)), 4.5);
   }
 }
 
@@ -1750,18 +1911,18 @@ function drawDrone(d, camX, camY) {
   ctx.translate(x, y);
   ctx.rotate(d.angle);
   ctx.beginPath();
-  ctx.moveTo(d.radius * 1.15, 0);
-  ctx.lineTo(-d.radius * 0.65, d.radius * 0.8);
-  ctx.lineTo(-d.radius * 0.65, -d.radius * 0.8);
+  ctx.moveTo(d.radius * 1.1, 0);
+  ctx.lineTo(-d.radius * 0.6, d.radius * 0.75);
+  ctx.lineTo(-d.radius * 0.6, -d.radius * 0.75);
   ctx.closePath();
   ctx.fillStyle = d.flash > 0 ? '#ffffff' : d.color;
   ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-  ctx.lineWidth = 2.2;
+  ctx.lineWidth = 2;
   ctx.fill(); ctx.stroke();
   ctx.restore();
   if (d.hp < d.maxHp) {
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x - 9, y - d.radius - 7, 18, 3);
-    ctx.fillStyle = '#8abc3f'; ctx.fillRect(x - 9, y - d.radius - 7, 18 * (d.hp / d.maxHp), 3);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(x - 8, y - d.radius - 6, 16, 2.5);
+    ctx.fillStyle = '#8abc3f'; ctx.fillRect(x - 8, y - d.radius - 6, 16 * (d.hp / d.maxHp), 2.5);
   }
 }
 
@@ -1772,38 +1933,46 @@ function drawMissile(ms, camX, camY) {
   ctx.translate(x, y); ctx.rotate(ms.angle);
   ctx.fillStyle = '#888';
   ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.rect(-ms.radius - 7, -3.5, 9, 7); ctx.fill(); ctx.stroke();
+  ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.rect(-ms.radius - 6, -3, 8, 6); ctx.fill(); ctx.stroke();
+  // spinner visual
+  if (ms.spinner || ms.autoGun) {
+    ctx.rotate(ms.spin || 0);
+    ctx.fillStyle = '#aaa';
+    ctx.beginPath();
+    ctx.rect(ms.radius * 0.3, -2.5, 10, 5);
+    ctx.fill(); ctx.stroke();
+  }
   ctx.restore();
   ctx.beginPath();
   ctx.arc(x, y, ms.radius, 0, Math.PI * 2);
   ctx.fillStyle = col;
   ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2.8;
   ctx.fill(); ctx.stroke();
   if (ms.lockOn) {
     ctx.beginPath();
-    ctx.arc(x, y, ms.radius + 4, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(212,140,255,0.45)';
-    ctx.lineWidth = 2;
+    ctx.arc(x, y, ms.radius + 3.5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(212,140,255,0.4)';
+    ctx.lineWidth = 1.8;
     ctx.stroke();
   }
   ctx.beginPath();
-  ctx.arc(x + Math.cos(ms.angle) * 4, y + Math.sin(ms.angle) * 4, 3.2, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.arc(x + Math.cos(ms.angle) * 3.5, y + Math.sin(ms.angle) * 3.5, 2.8, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
   ctx.fill();
 }
 
 function drawMinimap() {
-  const size = 155, pad = 12;
+  const size = 150, pad = 12;
   const mx = canvas.width - size - pad, my = canvas.height - size - pad;
-  ctx.fillStyle = 'rgba(0,0,0,0.48)';
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.fillRect(mx, my, size, size);
   ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.strokeRect(mx, my, size, size);
   const sx = size / WORLD.w, sy = size / WORLD.h;
   for (const n of nests) {
     ctx.fillStyle = '#8b1a2b';
-    ctx.beginPath(); ctx.arc(mx + n.x * sx, my + n.y * sy, 5.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(mx + n.x * sx, my + n.y * sy, 5, 0, Math.PI * 2); ctx.fill();
   }
   for (const s of shapes) {
     if (s.type === 'pentagon') { ctx.fillStyle = '#768cfc'; ctx.fillRect(mx + s.x * sx - 1.5, my + s.y * sy - 1.5, 3, 3); }
@@ -1841,8 +2010,8 @@ function loop(now) {
     camX = player.x - canvas.width / 2;
     camY = player.y - canvas.height / 2;
   } else {
-    camX = WORLD.w / 2 - canvas.width / 2 + Math.cos(now * 0.00007) * 600;
-    camY = WORLD.h / 2 - canvas.height / 2 + Math.sin(now * 0.00009) * 450;
+    camX = WORLD.w / 2 - canvas.width / 2 + Math.cos(now * 0.00007) * 550;
+    camY = WORLD.h / 2 - canvas.height / 2 + Math.sin(now * 0.00009) * 420;
   }
   if (shake > 0) {
     camX += (Math.random() - 0.5) * shake;
@@ -1857,9 +2026,9 @@ function loop(now) {
   for (const b of bullets) {
     const x = b.x - camX, y = b.y - camY;
     const alpha = b.fade != null ? b.fade : 1;
-    for (let k = 1; k <= 3; k++) {
+    for (let k = 1; k <= 2; k++) {
       ctx.beginPath();
-      ctx.arc(x - b.vx * 0.018 * k, y - b.vy * 0.018 * k, b.radius * (1 - 0.18 * k), 0, Math.PI * 2);
+      ctx.arc(x - b.vx * 0.016 * k, y - b.vy * 0.016 * k, b.radius * (1 - 0.2 * k), 0, Math.PI * 2);
       ctx.fillStyle = b.color;
       ctx.globalAlpha = 0.1 * alpha;
       ctx.fill();
@@ -1868,7 +2037,7 @@ function loop(now) {
     ctx.beginPath();
     ctx.arc(x, y, b.radius, 0, Math.PI * 2);
     ctx.fillStyle = b.color;
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 2.4;
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2.2;
     ctx.fill(); ctx.stroke();
     ctx.globalAlpha = 1;
   }
@@ -1890,10 +2059,10 @@ function loop(now) {
     ctx.beginPath();
     ctx.arc(ex.x - camX, ex.y - camY, r, 0, Math.PI * 2);
     ctx.strokeStyle = ex.color || '#ff9a3d';
-    ctx.globalAlpha = (1 - prog) * 0.85;
-    ctx.lineWidth = 5 * (1 - prog) + 1;
+    ctx.globalAlpha = (1 - prog) * 0.8;
+    ctx.lineWidth = 4.5 * (1 - prog) + 1;
     ctx.stroke();
-    ctx.globalAlpha = (1 - prog) * 0.18;
+    ctx.globalAlpha = (1 - prog) * 0.15;
     ctx.fillStyle = ex.color || '#ff9a3d';
     ctx.fill();
     ctx.globalAlpha = 1;
@@ -1905,7 +2074,7 @@ function loop(now) {
     ctx.globalAlpha = 1 - prog;
     ctx.fillStyle = '#fff2ae';
     ctx.beginPath();
-    ctx.moveTo(0, -6); ctx.lineTo(17 * (1 - prog), 0); ctx.lineTo(0, 6);
+    ctx.moveTo(0, -5); ctx.lineTo(15 * (1 - prog), 0); ctx.lineTo(0, 5);
     ctx.closePath(); ctx.fill();
     ctx.restore();
     ctx.globalAlpha = 1;
