@@ -2238,6 +2238,308 @@ initWorld();
 buildClassSelect();
 refreshLeaderboard();
 requestAnimationFrame(loop);
+ // ===== TANK v8 ADD-ON (mod + debug guard) — paste right BEFORE the final </script> at the very bottom of your game file =====
+// ===== TANK v8 MOD =====
+// Paste this whole block directly ABOVE the line:  /* ---------------- Boot ---------------- */
+// (and make the one-line debug edit described in the chat).
+
+let DEBUG = false;
+const pk = (t, k) => !!(t && t.perks && t.perks[k]);
+const rnd = a => a[Math.floor(Math.random() * a.length)];
+const NPC_NAMES = ['Vortex','Blitz','Nova','Rusty','Havoc','Mochi','Zeta','Gunner','Pixel','Tango','Ghost','Bolt','Comet','Sarge','Echo','Rook'];
+const BOSS_NAMES = ['Ironclad','Warden','Behemoth','Overseer','Colossus'];
+const PU = { heal: { c: '#58e06a', l: '+' }, rapid: { c: '#ffd34d', l: '»' }, shield: { c: '#4db8ff', l: '◈' } };
+const PERKS = [
+  { k: 'hardy',   n: 'Thick Hull',        d: '+30% max health' },
+  { k: 'trigger', n: 'Hair Trigger',      d: '12% faster reload' },
+  { k: 'sprint',  n: 'Sprinter',          d: '+15% move speed' },
+  { k: 'sharp',   n: 'Sharpened Rounds',  d: '+20% damage' },
+  { k: 'vamp',    n: 'Vampiric',          d: 'Kills heal 25% health' },
+  { k: 'scholar', n: 'Scholar',           d: '+15% XP gain' }
+];
+let pickups = [], streak = 0, streakT = 0, bossT = 50, perkOpts = [];
+
+// ---------- UI ----------
+(function () {
+  const s = document.createElement('style');
+  s.textContent = `
+  #banner{position:fixed;top:22%;left:50%;transform:translateX(-50%);font:900 34px 'Segoe UI',Arial;letter-spacing:3px;text-shadow:0 0 18px currentColor,2px 2px 0 #000;opacity:0;pointer-events:none;z-index:7;white-space:nowrap}
+  #banner.show{animation:bn 2.2s ease-out}
+  @keyframes bn{0%{opacity:0;transform:translateX(-50%) scale(1.7)}12%{opacity:1;transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
+  #vig{position:fixed;inset:0;pointer-events:none;z-index:4;box-shadow:inset 0 0 160px 40px rgba(0,0,0,.3)}
+  #vig.low{box-shadow:inset 0 0 180px 60px rgba(220,30,50,.55);animation:lw 1s infinite}
+  @keyframes lw{50%{opacity:.55}}
+  #buffs{position:fixed;top:96px;left:50%;transform:translateX(-50%);color:#fff;font-size:12px;font-weight:bold;text-shadow:1px 1px 0 #000;z-index:5;pointer-events:none;text-align:center}`;
+  document.head.appendChild(s);
+  for (const id of ['banner', 'vig', 'buffs']) { const d = document.createElement('div'); d.id = id; document.body.appendChild(d); }
+  document.getElementById('controls-hint').innerHTML =
+    'WASD · Mouse · Click / E autofire · <b>Space dash</b> · 1–7 upgrades · Class Lv15/35 · Perks Lv25/45 · Tab leaderboard<br>Press ` to toggle debug mode (then Shift+L/U/H/K/R/S)';
+})();
+function refreshDbg() { document.getElementById('debug-hint').textContent = DEBUG ? 'DEBUG ON · hold Shift + L/U/H/K/R/S' : ''; }
+refreshDbg();
+function banner(t, c) {
+  const b = document.getElementById('banner');
+  b.textContent = t; b.style.color = c || '#fff';
+  b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+}
+
+// ---------- New classes ----------
+TANKS.shotgun = {
+  name: 'Shotgun', radius: 27, color: '#e6b84c', desc: 'Close-range pellet blast. Brutal up close.',
+  modifiers: { reloadMult: 1.9, bulletDmgMult: 0.5, bulletSizeMult: 0.6, bulletLifeMult: 0.45, pellets: 6, pelletSpread: 0.55, recoilMult: 2.1 },
+  barrels: [{ angle: 0, length: 42, width: 26, offset: 0 }], branches: [], branchLevel: 0
+};
+TANKS.railgun = {
+  name: 'Railgun', radius: 25, color: '#5ff0ff', desc: 'Slow, enormous-range, very fast heavy slug.',
+  modifiers: { reloadMult: 2.8, bulletDmgMult: 2.6, bulletSizeMult: 0.55, bulletSpdMult: 2.2, bulletLifeMult: 1.9, recoilMult: 2.6 },
+  barrels: [{ angle: 0, length: 74, width: 10, offset: 0 }], branches: [], branchLevel: 0
+};
+TANKS.minigun = {
+  name: 'Minigun', radius: 28, color: '#3fe08a', desc: 'Insane fire rate, wide spray, light bullets.',
+  modifiers: { reloadMult: 0.3, bulletDmgMult: 0.4, bulletSizeMult: 0.55, spread: 0.4, recoilMult: 0.5 },
+  barrels: [{ angle: 0, length: 40, width: 28, offset: 0 }], branches: [], branchLevel: 0
+};
+TANKS.basic.branches.push('shotgun');
+TANKS.sniper.branches = ['railgun']; TANKS.sniper.branchLevel = 35;
+TANKS.machine.branches = ['minigun']; TANKS.machine.branchLevel = 35;
+
+// ---------- Stat wrappers ----------
+const _bd = bulletDmgOf; bulletDmgOf = t => _bd(t) * (pk(t, 'sharp') ? 1.2 : 1);
+const _ms = moveSpdOf;   moveSpdOf = t => _ms(t) * (pk(t, 'sprint') ? 1.15 : 1);
+const _rl = reloadOf;    reloadOf = t => _rl(t) * (pk(t, 'trigger') ? 0.88 : 1) * (t.buffs && t.buffs.rapid > 0 ? 0.65 : 1);
+const _mh = maxHpOf;     maxHpOf = t => _mh(t) * (t.boss ? 3 : 1) * (pk(t, 'hardy') ? 1.3 : 1);
+
+// ---------- Pellets (shotgun) ----------
+const _fire = fire;
+fire = function (t) {
+  _fire(t);
+  const m = mods(t);
+  if (m.pellets && !m.missile && !m.drones) {
+    const tip = barrelTip(t, TANKS[t.typeKey].barrels[0]);
+    for (let i = 0; i < m.pellets; i++) {
+      const a = t.angle + (Math.random() - 0.5) * (m.pelletSpread || 0.5);
+      const sp = bulletSpdOf(t) * (0.75 + Math.random() * 0.5);
+      bullets.push({ x: tip.x, y: tip.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        radius: bulletRadiusOf(t) * 0.9, dmg: bulletDmgOf(t), owner: t,
+        life: bulletLifeOf(t) * (0.7 + Math.random() * 0.6), color: t.isPlayer ? '#00e0ff' : t.color, fade: 1 });
+    }
+  }
+};
+
+// ---------- NPC names ----------
+const _ct = createTank;
+createTank = function (...a) { const t = _ct(...a); t.name = t.isPlayer ? 'You' : rnd(NPC_NAMES); return t; };
+function refreshLeaderboard() {
+  const rows = document.getElementById('lb-rows'); if (!rows) return;
+  const list = [];
+  if (player && !player.dead) list.push({ name: 'You', score: player.score, cls: TANKS[player.typeKey].name, you: true });
+  for (const e of enemies) if (!e.dead)
+    list.push({ name: (e.boss ? '★ ' : '') + (e.name || 'Bot'), score: e.score, cls: TANKS[e.typeKey].name });
+  list.sort((a, b) => b.score - a.score);
+  rows.innerHTML = list.slice(0, 10).map((r, i) =>
+    `<div class="row${r.you ? ' you' : ''}"><span class="rank">${i + 1}</span><span class="name">${r.name}</span><span class="cls">${r.cls}</span><span class="scr">${formatScore(r.score)}</span></div>`).join('');
+}
+
+// ---------- Perks (semi-upgrades at Lv25 / Lv45) ----------
+function checkPerk() {
+  const p = player;
+  if (!p || p.dead || gameState !== 'playing') return;
+  p.perks = p.perks || {}; p.perkN = p.perkN || 0;
+  if (p.perkN >= 2 || p.level < (p.perkN ? 45 : 25)) return;
+  perkOpts = PERKS.filter(x => !p.perks[x.k]).sort(() => Math.random() - 0.5).slice(0, 3);
+  gameState = 'perk';
+  document.querySelector('#branch-overlay h1').textContent = 'CHOOSE A PERK';
+  document.getElementById('branch-sub').textContent = 'Permanent bonus';
+  const box = document.getElementById('branch-cards'); box.innerHTML = '';
+  perkOpts.forEach((o, i) => {
+    const c = document.createElement('div'); c.className = 'card';
+    c.innerHTML = `<div class="num">PRESS ${i + 1}</div><h3>${o.n}</h3><p>${o.d}</p>`;
+    c.onclick = () => pickPerk(o); box.appendChild(c);
+  });
+  document.getElementById('branch-overlay').classList.remove('hidden');
+  AudioFX.branch();
+}
+function pickPerk(o) {
+  const p = player; if (!p || gameState !== 'perk') return;
+  p.perks[o.k] = true; p.perkN++;
+  gameState = 'playing';
+  document.getElementById('branch-overlay').classList.add('hidden');
+  floatText(p.x, p.y - 40, o.n.toUpperCase(), '#ffd34d', 18);
+  explosions.push({ x: p.x, y: p.y, maxR: 90 * sizeOf(p), life: 0.45, maxLife: 0.45, color: '#ffd34d' });
+  spawnParticles(p.x, p.y, 22, ['#ffd34d', '#fff'], 60, 200, 2, 5, 0.3, 0.8);
+  AudioFX.levelup();
+  checkPerk();
+}
+addEventListener('keydown', e => {
+  if (e.key === '`') { DEBUG = !DEBUG; refreshDbg(); }
+  if (gameState === 'perk') { const n = parseInt(e.key); if (n >= 1 && n <= perkOpts.length) pickPerk(perkOpts[n - 1]); }
+  if (e.key === ' ') {
+    e.preventDefault();
+    const p = player;
+    if (p && gameState === 'playing' && !(p.dashCd > 0)) {
+      let dx = (keys.d ? 1 : 0) - (keys.a ? 1 : 0), dy = (keys.s ? 1 : 0) - (keys.w ? 1 : 0);
+      if (!dx && !dy) { dx = Math.cos(p.angle); dy = Math.sin(p.angle); }
+      const l = Math.hypot(dx, dy);
+      p.vx += dx / l * 900; p.vy += dy / l * 900; p.dashCd = 4;
+      spawnParticles(p.x, p.y, 12, ['#fff', p.color], 60, 220, 2, 4, 0.2, 0.5);
+      addShake(3);
+    }
+  }
+});
+const _ob = offerBranch;
+offerBranch = function (s) { _ob(s); document.querySelector('#branch-overlay h1').textContent = 'CLASS UPGRADE'; };
+const _ab = applyBranch;
+applyBranch = function (k) { _ab(k); checkPerk(); };
+const _ax = addXp;
+addXp = function (t, a) { if (pk(t, 'scholar')) a *= 1.15; _ax(t, a); if (t.isPlayer) checkPerk(); };
+
+// ---------- Mini-boss: Guardians ----------
+function spawnBoss() {
+  let x, y, n = 0;
+  do { x = 300 + Math.random() * (WORLD.w - 600); y = 300 + Math.random() * (WORLD.h - 600); n++; }
+  while (player && Math.hypot(x - player.x, y - player.y) < 1500 && n < 30);
+  const e = createTank(x, y, rnd(['destroyer', 'quadriplet', 'swarm', 'triFlank', 'railgun', 'superPounder']), false, rnd(['aggressive', 'tank', 'sniper']));
+  e.boss = true; e.name = rnd(BOSS_NAMES); e.color = '#ff3b5c'; e.level = 48; e.score = 180000;
+  for (const d of STAT_DEFS) e.stats[d.key] = 5;
+  e.stats.maxHp = 8;
+  e.hp = e.lastHp = maxHpOf(e); e.radius = tankRadiusOf(e);
+  enemies.push(e);
+  banner('⚠ GUARDIAN ' + e.name.toUpperCase() + ' HAS SPAWNED', '#ff4d6d');
+  addShake(6); AudioFX.boom();
+}
+
+// ---------- Pickups ----------
+function drop(x, y, n) {
+  for (let i = 0; i < n; i++)
+    pickups.push({ x: x + (Math.random() - 0.5) * 50, y: y + (Math.random() - 0.5) * 50, k: rnd(Object.keys(PU)), life: 22 });
+}
+const _ds = damageShape;
+damageShape = function (s, dmg, idx) {
+  _ds(s, dmg, idx);
+  if (s && s.hp <= 0 && (s.type === 'hexagon' || s.type === 'alphaPent' || (s.type === 'pentagon' && Math.random() < 0.25))) drop(s.x, s.y, 1);
+};
+
+// ---------- Damage hook: numbers, shield, kill streaks, boss rewards, vampire ----------
+const _dt = damageTank;
+damageTank = function (t, dmg, fx, fy) {
+  if (!t || t.dead) return;
+  if (t.buffs && t.buffs.shield > 0) dmg *= 0.35;
+  if (floatTexts.length < 70 && dmg >= 2) {
+    if (t.isPlayer) { if (dmg >= 3) floatText(t.x + (Math.random() - 0.5) * 20, t.y - t.radius, '-' + Math.round(dmg), '#ff6b6b', 12); }
+    else floatText(t.x + (Math.random() - 0.5) * 24, t.y - t.radius, '' + Math.round(dmg), '#ffffff', 10);
+  }
+  _dt(t, dmg, fx, fy);
+  if (t.dead && !t.isPlayer && player && !player.dead && Math.hypot(t.x - player.x, t.y - player.y) < 1000) {
+    streak++; streakT = 4;
+    if (streak >= 2) banner(['', '', 'DOUBLE KILL', 'TRIPLE KILL', 'MEGA KILL', 'RAMPAGE!'][Math.min(streak, 5)], '#ffd34d');
+    if (pk(player, 'vamp')) player.hp = Math.min(maxHpOf(player), player.hp + maxHpOf(player) * 0.25);
+    drop(t.x, t.y, t.boss ? 3 : (Math.random() < 0.4 ? 1 : 0));
+    if (t.boss) { addXp(player, 5000); banner('GUARDIAN DESTROYED  +5000', '#ffd34d'); addShake(14); }
+  }
+};
+
+// ---------- Per-frame extras ----------
+const _update = update;
+update = function (dt) {
+  _update(dt);
+  if (gameState !== 'playing' || !player) return;
+  const p = player;
+  p.buffs = p.buffs || { rapid: 0, shield: 0 };
+  p.buffs.rapid = Math.max(0, p.buffs.rapid - dt);
+  p.buffs.shield = Math.max(0, p.buffs.shield - dt);
+  p.dashCd = Math.max(0, (p.dashCd || 0) - dt);
+  streakT -= dt; if (streakT <= 0) streak = 0;
+
+  if (Math.hypot(p.vx, p.vy) > 90 && Math.random() < 0.4)
+    particles.push({ x: p.x - p.vx * 0.04 + (Math.random() - 0.5) * 8, y: p.y - p.vy * 0.04 + (Math.random() - 0.5) * 8,
+      vx: -p.vx * 0.1, vy: -p.vy * 0.1, life: 0.3, maxLife: 0.3, color: 'rgba(70,70,70,.8)', size: 2 + Math.random() * 2 });
+  for (const b of bullets) if (b.owner === p && Math.random() < 0.3)
+    particles.push({ x: b.x, y: b.y, vx: 0, vy: 0, life: 0.16, maxLife: 0.16, color: b.color, size: b.radius * 0.6 });
+  if (p.buffs.rapid > 0 && Math.random() < 0.3) spawnParticles(p.x, p.y, 1, ['#ffd34d'], 40, 100, 1.5, 3, 0.2, 0.4);
+
+  for (let i = pickups.length - 1; i >= 0; i--) {
+    const o = pickups[i]; o.life -= dt;
+    const dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy) || 1;
+    if (d < 170) { o.x += dx / d * 260 * dt; o.y += dy / d * 260 * dt; }
+    if (d < p.radius + 16) {
+      if (o.k === 'heal') p.hp = Math.min(maxHpOf(p), p.hp + maxHpOf(p) * 0.4);
+      else p.buffs[o.k] = o.k === 'rapid' ? 8 : 6;
+      floatText(o.x, o.y - 10, { heal: 'HEALED', rapid: 'RAPID FIRE', shield: 'SHIELD' }[o.k], PU[o.k].c, 14);
+      spawnParticles(o.x, o.y, 10, [PU[o.k].c, '#fff'], 50, 160, 1.5, 3.5, 0.2, 0.5);
+      explosions.push({ x: o.x, y: o.y, maxR: 40, life: 0.25, maxLife: 0.25, color: PU[o.k].c });
+      pickups.splice(i, 1); AudioFX.levelup();
+    } else if (o.life <= 0) pickups.splice(i, 1);
+  }
+
+  bossT -= dt;
+  if (bossT <= 0) { bossT = 80; if (enemies.filter(e => e.boss).length < 2) spawnBoss(); }
+
+  document.getElementById('vig').classList.toggle('low', p.hp / maxHpOf(p) < 0.3);
+  const bu = [];
+  if (p.buffs.rapid > 0) bu.push('⚡ RAPID ' + p.buffs.rapid.toFixed(1));
+  if (p.buffs.shield > 0) bu.push('◈ SHIELD ' + p.buffs.shield.toFixed(1));
+  bu.push(p.dashCd > 0 ? 'DASH ' + p.dashCd.toFixed(1) + 's' : 'DASH READY [Space]');
+  document.getElementById('buffs').textContent = bu.join('  ·  ');
+};
+
+// ---------- Drawing extras ----------
+const _dg = drawGrid;
+drawGrid = function (cx, cy, vw, vh) {
+  _dg(cx, cy, vw, vh);
+  const tm = performance.now() / 300;
+  for (const o of pickups) {
+    const s = toScreen(o.x, o.y, cx, cy), r = (14 + Math.sin(tm + o.x) * 2) * camZoom;
+    ctx.globalAlpha = o.life < 4 ? (Math.sin(tm * 4) > 0 ? 1 : 0.35) : 1;
+    ctx.beginPath(); ctx.arc(s.x, s.y, r + 5 * camZoom, 0, 7); ctx.fillStyle = PU[o.k].c + '44'; ctx.fill();
+    ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, 7); ctx.fillStyle = PU[o.k].c;
+    ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 2 * camZoom; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = `bold ${15 * camZoom}px Arial`; ctx.textAlign = 'center';
+    ctx.fillText(PU[o.k].l, s.x, s.y + 5 * camZoom);
+  }
+  ctx.globalAlpha = 1;
+};
+const _dtk = drawTank;
+drawTank = function (t, cx, cy, c, si) {
+  _dtk(t, cx, cy, c, si);
+  if (si === false || (c && c !== ctx)) return;
+  const s = toScreen(t.x, t.y, cx, cy);
+  if (s.x < -150 || s.y < -150 || s.x > canvas.width + 150 || s.y > canvas.height + 150) return;
+  const r = tankRadiusOf(t) * camZoom, now = performance.now();
+  if (t.buffs && t.buffs.shield > 0) {
+    ctx.beginPath(); ctx.arc(s.x, s.y, r + 8 * camZoom, 0, 7);
+    ctx.strokeStyle = 'rgba(77,184,255,' + (0.5 + Math.sin(now / 120) * 0.25) + ')'; ctx.lineWidth = 4 * camZoom; ctx.stroke();
+  }
+  if (t.boss) {
+    ctx.save(); ctx.strokeStyle = 'rgba(255,70,100,.85)'; ctx.lineWidth = 3 * camZoom; ctx.setLineDash([10, 8]);
+    ctx.beginPath(); ctx.arc(s.x, s.y, r + (12 + Math.sin(now / 200) * 4) * camZoom, now / 700, now / 700 + 6.28); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = '#ffd34d'; ctx.font = `bold ${13 * camZoom}px Arial`; ctx.textAlign = 'center';
+    ctx.fillText('★ ' + t.name + ' ★', s.x, s.y - r - 30 * camZoom);
+  } else if (!t.isPlayer && t.name) {
+    ctx.fillStyle = 'rgba(120,220,255,.9)'; ctx.font = `bold ${10 * camZoom}px Arial`; ctx.textAlign = 'center';
+    ctx.fillText(t.name, s.x, s.y - r - 26 * camZoom);
+  }
+};
+const _dmm = drawMinimap;
+drawMinimap = function () {
+  _dmm();
+  const size = 148, mx = canvas.width - size - 12, my = canvas.height - size - 12;
+  ctx.fillStyle = '#ffd34d';
+  for (const e of enemies) if (e.boss) ctx.fillRect(mx + e.x * size / WORLD.w - 3, my + e.y * size / WORLD.h - 3, 6, 6);
+};
+
+// ===== DEBUG GUARD =====
+// Paste directly above:  /* ---------------- Boot ---------------- */
+// Debug keys (L U H K R S) now only work after pressing ` and while holding Shift.
+let _guardState = null;
+addEventListener('keydown', e => {
+  if (gameState === 'playing' && e.key.length === 1 && 'luhkrs'.includes(e.key.toLowerCase()) && !(DEBUG && e.shiftKey)) {
+    _guardState = gameState;
+    gameState = 'guard';   // original debug block only runs while gameState is 'playing'
+  }
+}, true);                  // capture phase = runs before your original handler
+addEventListener('keydown', () => {
+  if (_guardState) { gameState = _guardState; _guardState = null; }
+});
 </script>
 </body>
 </html>
