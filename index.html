@@ -67,7 +67,7 @@
 <div id="points">Upgrade points: 0 (press 1–7 or click)</div>
 <div id="upgrades"></div>
 
-<div class="overlay" id="death-overlay">
+<div class="overlay hidden" id="death-overlay">
   <h1>You were destroyed</h1>
   <p id="death-stats"></p>
   <p>Press <b>Enter</b> to respawn</p>
@@ -219,7 +219,10 @@ addEventListener('keydown', e => {
   if (e.key.toLowerCase() === 'e') autoFire = !autoFire;
   const n = parseInt(e.key);
   if (n >= 1 && n <= STAT_DEFS.length) spendPoint(STAT_DEFS[n - 1].key);
-  if (e.key === 'Enter' && player.dead) respawn();
+  if (e.key === 'Enter' &&
+      !document.getElementById('death-overlay').classList.contains('hidden')) {
+    respawn();
+  }
 });
 addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
