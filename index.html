@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Tank Prototype — Arras-style v4</title>
+<title>Tank Prototype — Arras-style v5</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #555; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; }
@@ -25,7 +25,7 @@
   #drone-label { margin-top: 1px; font-size: 11px; color: #a8e6cf; text-shadow: 1px 1px 0 #000; display: none; }
   #controls-hint {
     position: fixed; bottom: 12px; left: 12px; color: rgba(255,255,255,.75);
-    font-size: 11px; text-shadow: 1px 1px 0 #000; user-select: none; z-index: 5; max-width: 420px; line-height: 1.4;
+    font-size: 11px; text-shadow: 1px 1px 0 #000; user-select: none; z-index: 5; max-width: 440px; line-height: 1.4;
   }
   #debug-hint {
     position: fixed; top: 12px; right: 12px; color: rgba(255,200,80,.85);
@@ -91,14 +91,14 @@
 <div id="upgrades"></div>
 <div id="controls-hint">
   WASD move · Mouse aim · Hold click / E autofire · 1–7 upgrades · Branch at Lv 15<br>
-  Debug: L = +5 levels · U = +5 points · H = full heal · K = clear nearby · R = random teleport
+  Debug: L +5 levels · U +5 points · H heal · K clear nearby · R teleport
 </div>
 <div id="debug-hint">DEBUG ON</div>
 <div class="overlay" id="class-overlay">
-  <h1>TANK PROTOTYPE v4</h1>
+  <h1>TANK PROTOTYPE v5</h1>
   <p>Choose your class — press <b>1–5</b> or click</p>
   <div id="class-cards"></div>
-  <p style="font-size:12px;color:#888">Destroy shapes, nests & tanks. Reach Level 15 to unlock a class branch.<br>NPCs now fight each other. Crashers have nests. Bee Hive commands drones.</p>
+  <p style="font-size:12px;color:#888">Orbiting nests · smart lookout crashers · smooth drones · human-like bots · polished combat</p>
 </div>
 <div class="overlay hidden" id="branch-overlay">
   <h1>CLASS UPGRADE</h1>
@@ -108,18 +108,17 @@
 <div class="overlay hidden" id="death-overlay">
   <h1 style="animation:none;text-shadow:0 0 20px rgba(241,78,84,.9)">You were destroyed</h1>
   <p id="death-stats"></p>
-  <p>Press <b>Enter</b> to choose a new class (safe random spawn)</p>
+  <p>Press <b>Enter</b> for a new class (safe random spawn)</p>
 </div>
 <canvas id="game"></canvas>
 <script>
 'use strict';
 /* =====================================================================
-   ARRAS-STYLE TANK PROTOTYPE v4
-   Bee Hive drones, nests, solid collision, debug, NPC vs NPC, fixed grid
+   ARRAS-STYLE TANK PROTOTYPE v5
+   — Orbiting nests + lookouts, smooth drones, human bots, combat polish
    ===================================================================== */
 
 const TANKS = {
-  /* ---- Tier 1 ---- */
   basic: {
     name: 'Basic Tank', radius: 26, color: '#00b2e1',
     desc: 'Balanced single-barrel. The classic all-rounder.',
@@ -152,14 +151,12 @@ const TANKS = {
     branches: ['lockOn', 'swarm']
   },
   beehive: {
-    name: 'Bee Hive', radius: 28, color: '#f0c gener',
-    desc: 'Commands a swarm of triangle drones that follow your cursor. Drones die & slowly respawn.',
+    name: 'Bee Hive', radius: 28, color: '#f0c040',
+    desc: 'Commands triangle drones that follow your cursor. They die & slowly respawn.',
     modifiers: { drones: true, maxDrones: 8, droneSize: 11 },
     barrels: [ { angle: 0, length: 28, width: 32, offset: 0, triangle: true } ],
     branches: ['droner']
   },
-
-  /* ---- Tier 2 ---- */
   sniper: {
     name: 'Sniper', radius: 25, color: '#3ecfcf',
     desc: 'Long-range precision. Fast thin bullets, longer life.',
@@ -211,7 +208,7 @@ const TANKS = {
   },
   lockOn: {
     name: 'Lock-On Missile', radius: 27, color: '#d48cff',
-    desc: 'Missiles gently curve toward nearby targets. Soft assist.',
+    desc: 'Missiles gently curve toward nearby targets. Soft assist only.',
     modifiers: { missile: true, lockOn: true, reloadMult: 3.6 },
     barrels: [ { angle: 0, length: 54, width: 26, offset: 0 } ],
     branches: []
@@ -234,8 +231,6 @@ const TANKS = {
     branches: []
   }
 };
-// fix color typo
-TANKS.beehive.color = '#f0c040';
 
 const CLASS_KEYS = ['basic', 'pounder', 'twin', 'missile', 'beehive'];
 const BRANCH_LEVEL = 15;
@@ -248,13 +243,19 @@ const SHAPE_TYPES = {
   crasher:   { sides: 3, radius: 13, hp: 16,  xp: 6,   color: '#ff4d6d', bodyDmg: 18, crasher: true },
   alphaPent: { sides: 5, radius: 58, hp: 1400,xp: 900, color: '#4a6cf7', bodyDmg: 45 }
 };
-const SHAPE_COUNTS = { square: 50, triangle: 24, pentagon: 9, hexagon: 4, crasher: 10, alphaPent: 1 };
+const SHAPE_COUNTS = { square: 48, triangle: 22, pentagon: 8, hexagon: 4, crasher: 6, alphaPent: 1 };
+
+const NPC_COLORS = [
+  '#f14e54','#e05c5c','#d14e9c','#ff6b6b','#c44569',
+  '#ff8c42','#e67e22','#d35400','#e74c3c','#c0392b',
+  '#9b59b6','#8e44ad','#3498db','#2980b9','#1abc9c'
+];
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
 addEventListener('resize', resize); resize();
-const WORLD = { w: 5200, h: 5200 };
+const WORLD = { w: 5400, h: 5400 };
 const GRID = 48;
 
 let gameState = 'menu';
@@ -275,9 +276,9 @@ const MAX_STAT = 8;
 
 let bullets = [];
 let missiles = [];
-let drones = [];      // player/enemy drones
+let drones = [];
 let shapes  = [];
-let nests   = [];     // crasher nests
+let nests   = [];
 let enemies = [];
 let particles = [];
 let explosions = [];
@@ -322,13 +323,13 @@ const AudioFX = {
     src.connect(f); f.connect(g); g.connect(this.ctx.destination);
     src.start(t);
   },
-  shoot()   { this.tone(200 + Math.random() * 60, 0.07, 'square', 0.02, 90); },
-  boom()    { this.noise(0.32, 0.1); this.tone(90, 0.28, 'sawtooth', 0.045, 30); },
-  hit()     { this.tone(140, 0.05, 'triangle', 0.016, 70); },
-  levelup() { this.tone(440, 0.1, 'sine', 0.04, 660); setTimeout(() => this.tone(660, 0.12, 'sine', 0.04, 880), 90); },
-  branch()  { this.tone(520, 0.12, 'sine', 0.045, 780); setTimeout(() => this.tone(780, 0.14, 'sine', 0.045, 1040), 105); },
-  die()     { this.noise(0.45, 0.12); this.tone(200, 0.45, 'sawtooth', 0.055, 40); },
-  drone()   { this.tone(320 + Math.random()*40, 0.04, 'triangle', 0.012, 180); }
+  shoot()   { this.tone(200 + Math.random() * 60, 0.07, 'square', 0.018, 90); },
+  boom()    { this.noise(0.32, 0.09); this.tone(90, 0.28, 'sawtooth', 0.04, 30); },
+  hit()     { this.tone(140, 0.05, 'triangle', 0.014, 70); },
+  levelup() { this.tone(440, 0.1, 'sine', 0.038, 660); setTimeout(() => this.tone(660, 0.12, 'sine', 0.038, 880), 90); },
+  branch()  { this.tone(520, 0.12, 'sine', 0.04, 780); setTimeout(() => this.tone(780, 0.14, 'sine', 0.04, 1040), 105); },
+  die()     { this.noise(0.45, 0.11); this.tone(200, 0.45, 'sawtooth', 0.05, 40); },
+  drone()   { this.tone(320 + Math.random()*40, 0.04, 'triangle', 0.01, 180); }
 };
 
 /* ---------------- Helpers ---------------- */
@@ -344,9 +345,9 @@ function moveSpdOf(t)   { return 170 + t.stats.moveSpd * 14; }
 function bulletRadiusOf(t) { return (8 + t.stats.bulletDmg * 0.5) * (mods(t).bulletSizeMult || 1); }
 function bulletLifeOf(t) { return 1.6 * (mods(t).bulletLifeMult || 1); }
 function droneDmgOf(t)  { return (7 + t.stats.bulletDmg * 4.2); }
-function droneSpdOf(t)  { return (210 + t.stats.bulletSpd * 28); }
+function droneSpdOf(t)  { return (200 + t.stats.bulletSpd * 26); }
 function droneHpOf(t)   { return (28 + t.stats.maxHp * 6 + t.stats.bodyDmg * 3); }
-function droneRespawnOf(t) { return Math.max(0.6, 3.2 * Math.pow(0.88, t.stats.reload)); }
+function droneRespawnOf(t) { return Math.max(0.55, 3.0 * Math.pow(0.88, t.stats.reload)); }
 function xpToNext(level) { return Math.round(14 * Math.pow(level, 1.7)); }
 function xpForLevel(lvl) {
   let total = 0; for (let l = 1; l < lvl; l++) total += xpToNext(l); return total;
@@ -362,13 +363,11 @@ function addXp(t, amount) {
       floatTexts.push({ x: t.x, y: t.y - t.radius - 24, vy: -45, life: 1.1, maxLife: 1.1,
                         text: 'LEVEL UP!', color: '#ffd34d', size: 20 });
       explosions.push({ x: t.x, y: t.y, maxR: 60, life: 0.35, maxLife: 0.35, color: '#ffd34d' });
-      if (t.level >= BRANCH_LEVEL && !branchOffered && TANKS[t.typeKey].branches.length) {
-        offerBranch();
-      }
+      if (t.level >= BRANCH_LEVEL && !branchOffered && TANKS[t.typeKey].branches.length) offerBranch();
     }
   }
 }
-function addShake(amount) { shake = Math.min(26, shake + amount); }
+function addShake(amount) { shake = Math.min(24, shake + amount); }
 function spawnParticles(x, y, count, colors, speedMin, speedMax, sizeMin, sizeMax, lifeMin, lifeMax) {
   for (let i = 0; i < count; i++) {
     const a = Math.random() * Math.PI * 2;
@@ -381,13 +380,22 @@ function spawnParticles(x, y, count, colors, speedMin, speedMax, sizeMin, sizeMa
       size: sizeMin + Math.random() * (sizeMax - sizeMin)
     });
   }
-  if (particles.length > 800) particles.splice(0, particles.length - 800);
+  if (particles.length > 900) particles.splice(0, particles.length - 900);
 }
 function floatText(x, y, text, color, size) {
   floatTexts.push({ x, y, vy: -50, life: 0.9, maxLife: 0.9, text, color, size: size || 14 });
 }
+function angleDiff(a, b) {
+  let d = b - a;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return d;
+}
+function lerpAngle(a, b, t) {
+  return a + angleDiff(a, b) * t;
+}
 
-/* ---------------- Solid separation (no overlapping) ---------------- */
+/* ---------------- Solid separation ---------------- */
 function separate(a, b, ra, rb) {
   const dx = a.x - b.x, dy = a.y - b.y;
   const dist = Math.hypot(dx, dy) || 0.001;
@@ -395,11 +403,10 @@ function separate(a, b, ra, rb) {
   if (dist < minD) {
     const overlap = minD - dist;
     const nx = dx / dist, ny = dy / dist;
-    // push both (or one if static)
-    a.x += nx * overlap * 0.55;
-    a.y += ny * overlap * 0.55;
-    b.x -= nx * overlap * 0.55;
-    b.y -= ny * overlap * 0.55;
+    a.x += nx * overlap * 0.52;
+    a.y += ny * overlap * 0.52;
+    b.x -= nx * overlap * 0.52;
+    b.y -= ny * overlap * 0.52;
     return true;
   }
   return false;
@@ -419,12 +426,12 @@ function separateStatic(a, sx, sy, ra, rb) {
 
 /* ---------------- Personalities ---------------- */
 const PERSONALITIES = {
-  aggressive: { name: 'Aggressive', preferDist: 170, approach: 1.2, retreat: -0.25, fireRange: 600, circle: false, statBias: ['bulletDmg','reload','moveSpd','bulletSpd'] },
-  cautious:   { name: 'Cautious',   preferDist: 430, approach: 0.5,  retreat: -1.15, fireRange: 720, circle: false, statBias: ['maxHp','regen','bulletSpd','reload'] },
-  flanker:    { name: 'Flanker',    preferDist: 270, approach: 0.85, retreat: -0.7,  fireRange: 560, circle: true,  statBias: ['moveSpd','reload','bulletDmg','bulletSpd'] },
-  tank:       { name: 'Tank',       preferDist: 130, approach: 1.35, retreat: 0.15,  fireRange: 460, circle: false, statBias: ['maxHp','bodyDmg','regen','moveSpd'] },
-  sniper:     { name: 'Sniper',     preferDist: 540, approach: 0.35, retreat: -1.35, fireRange: 800, circle: false, statBias: ['bulletSpd','bulletDmg','reload','maxHp'] },
-  berserker:  { name: 'Berserker',  preferDist: 80,  approach: 1.55, retreat: 0.45,  fireRange: 380, circle: false, statBias: ['bodyDmg','maxHp','moveSpd','regen'] }
+  aggressive: { name: 'Aggressive', preferDist: 175, approach: 1.15, retreat: -0.3, fireRange: 580, circle: false, dodge: 0.7,  statBias: ['bulletDmg','reload','moveSpd','bulletSpd'] },
+  cautious:   { name: 'Cautious',   preferDist: 420, approach: 0.45, retreat: -1.2, fireRange: 700, circle: false, dodge: 1.1,  statBias: ['maxHp','regen','bulletSpd','reload'] },
+  flanker:    { name: 'Flanker',    preferDist: 265, approach: 0.8,  retreat: -0.75,fireRange: 540, circle: true,  dodge: 0.95, statBias: ['moveSpd','reload','bulletDmg','bulletSpd'] },
+  tank:       { name: 'Tank',       preferDist: 125, approach: 1.3,  retreat: 0.1,  fireRange: 450, circle: false, dodge: 0.4,  statBias: ['maxHp','bodyDmg','regen','moveSpd'] },
+  sniper:     { name: 'Sniper',     preferDist: 530, approach: 0.3,  retreat: -1.4, fireRange: 780, circle: false, dodge: 1.2,  statBias: ['bulletSpd','bulletDmg','reload','maxHp'] },
+  berserker:  { name: 'Berserker',  preferDist: 85,  approach: 1.5,  retreat: 0.4,  fireRange: 370, circle: false, dodge: 0.35, statBias: ['bodyDmg','maxHp','moveSpd','regen'] }
 };
 const PERSONALITY_KEYS = Object.keys(PERSONALITIES);
 
@@ -433,7 +440,7 @@ function createTank(x, y, typeKey, isPlayer, personalityKey) {
   const def = TANKS[typeKey];
   return {
     x, y, angle: Math.random() * Math.PI * 2, typeKey, isPlayer,
-    radius: def.radius, color: def.color,
+    radius: def.radius, color: isPlayer ? def.color : NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)],
     stats: makeStats(),
     hp: 100, level: 1, xp: 0, score: 0, upgradePoints: 0,
     fireCd: 0, recoil: 0, dead: false,
@@ -442,7 +449,11 @@ function createTank(x, y, typeKey, isPlayer, personalityKey) {
     personality: personalityKey || null,
     circleDir: Math.random() < 0.5 ? 1 : -1,
     droneRespawnCd: 0,
-    team: isPlayer ? 'player' : 'enemy'
+    // human-like AI state
+    threatX: 0, threatY: 0, threatTimer: 0,
+    dodgeDir: Math.random() < 0.5 ? 1 : -1,
+    targetLock: null,
+    lastHp: 100
   };
 }
 
@@ -450,56 +461,77 @@ function spawnShape(forceType) {
   let type = forceType;
   if (!type) {
     const roll = Math.random();
-    if (roll < 0.40) type = 'square';
-    else if (roll < 0.65) type = 'triangle';
-    else if (roll < 0.78) type = 'crasher';
-    else if (roll < 0.90) type = 'pentagon';
-    else if (roll < 0.97) type = 'hexagon';
+    if (roll < 0.42) type = 'square';
+    else if (roll < 0.68) type = 'triangle';
+    else if (roll < 0.80) type = 'crasher';
+    else if (roll < 0.91) type = 'pentagon';
+    else if (roll < 0.975) type = 'hexagon';
     else type = 'alphaPent';
   }
   const def = SHAPE_TYPES[type];
   shapes.push({
-    x: 100 + Math.random() * (WORLD.w - 200),
-    y: 100 + Math.random() * (WORLD.h - 200),
+    x: 120 + Math.random() * (WORLD.w - 240),
+    y: 120 + Math.random() * (WORLD.h - 240),
     type, def, hp: def.hp, maxHp: def.hp,
     rot: Math.random() * Math.PI * 2,
-    spin: (type === 'pentagon' || type === 'hexagon' || type === 'alphaPent' ? 0.2 : 0.09) * (Math.random() < 0.5 ? -1 : 1),
-    hurtFlash: 0, spawnT: 0, vx: 0, vy: 0,
-    nestId: null // free crashers have null
+    spin: (type === 'pentagon' || type === 'hexagon' || type === 'alphaPent' ? 0.18 : 0.08) * (Math.random() < 0.5 ? -1 : 1),
+    hurtFlash: 0, spawnT: 0,
+    vx: 0, vy: 0,
+    nestId: null,
+    state: 'free', // free | orbit | chase | return | investigate
+    orbitAngle: Math.random() * Math.PI * 2,
+    orbitRadius: 70 + Math.random() * 50,
+    lookout: false,
+    target: null,
+    personality: Math.random() // 0-1 individual variation
   });
 }
 
 function spawnNest() {
   let x, y, tries = 0;
   do {
-    x = 300 + Math.random() * (WORLD.w - 600);
-    y = 300 + Math.random() * (WORLD.h - 600);
+    x = 350 + Math.random() * (WORLD.w - 700);
+    y = 350 + Math.random() * (WORLD.h - 700);
     tries++;
-  } while (player && Math.hypot(x - player.x, y - player.y) < 900 && tries < 20);
+  } while (player && Math.hypot(x - player.x, y - player.y) < 1000 && tries < 25);
 
   const nest = {
-    x, y, radius: 55, hp: 900, maxHp: 900,
-    color: '#8b1a2b', rot: 0,
-    spawnCd: 0, maxCrashers: 14,
-    hurtFlash: 0
+    x, y,
+    radius: 68,
+    hp: 1100, maxHp: 1100,
+    color: '#7a1525',
+    rot: 0,
+    spawnCd: 0,
+    maxCrashers: 16,
+    hurtFlash: 0,
+    pulse: 0
   };
   nests.push(nest);
-  // seed defenders
-  for (let i = 0; i < 8; i++) spawnNestCrasher(nest);
+  const nestIdx = nests.length - 1;
+  // seed orbiting defenders + a few lookouts
+  for (let i = 0; i < 10; i++) spawnNestCrasher(nest, nestIdx, i < 3);
 }
 
-function spawnNestCrasher(nest) {
+function spawnNestCrasher(nest, nestIdx, isLookout) {
   const a = Math.random() * Math.PI * 2;
-  const d = 40 + Math.random() * 90;
+  const d = 55 + Math.random() * 70;
   const def = SHAPE_TYPES.crasher;
   shapes.push({
     x: nest.x + Math.cos(a) * d,
     y: nest.y + Math.sin(a) * d,
-    type: 'crasher', def, hp: def.hp, maxHp: def.hp,
-    rot: Math.random() * Math.PI * 2, spin: 0.15 * (Math.random() < 0.5 ? -1 : 1),
-    hurtFlash: 0, spawnT: 1, vx: 0, vy: 0,
-    nestId: nests.indexOf(nest),
-    guardAngle: a
+    type: 'crasher', def, hp: def.hp + (isLookout ? 6 : 0), maxHp: def.hp + (isLookout ? 6 : 0),
+    rot: Math.random() * Math.PI * 2,
+    spin: 0.2 * (Math.random() < 0.5 ? -1 : 1),
+    hurtFlash: 0, spawnT: 1,
+    vx: 0, vy: 0,
+    nestId: nestIdx,
+    state: isLookout ? 'investigate' : 'orbit',
+    orbitAngle: a,
+    orbitRadius: 60 + Math.random() * 55 + (isLookout ? 40 : 0),
+    lookout: !!isLookout,
+    target: null,
+    personality: 0.3 + Math.random() * 0.7,
+    investigateTimer: 2 + Math.random() * 4
   });
 }
 
@@ -513,18 +545,17 @@ function spawnEnemy() {
   let x, y, tries = 0;
   do {
     x = Math.random() * WORLD.w; y = Math.random() * WORLD.h; tries++;
-  } while (player && Math.hypot(x - player.x, y - player.y) < 900 && tries < 25);
+  } while (player && Math.hypot(x - player.x, y - player.y) < 950 && tries < 30);
 
   let typeKey;
   const roll = Math.random();
-  if (roll < 0.42) typeKey = CLASS_KEYS[Math.floor(Math.random() * CLASS_KEYS.length)];
+  if (roll < 0.40) typeKey = CLASS_KEYS[Math.floor(Math.random() * CLASS_KEYS.length)];
   else {
     const all = Object.keys(TANKS).filter(k => !CLASS_KEYS.includes(k));
     typeKey = all[Math.floor(Math.random() * all.length)];
   }
   const personality = PERSONALITY_KEYS[Math.floor(Math.random() * PERSONALITY_KEYS.length)];
   const e = createTank(x, y, typeKey, false, personality);
-  e.color = ['#f14e54', '#e05c5c', '#d14e9c', '#ff6b6b', '#c44569'][Math.floor(Math.random() * 5)];
   e.level = 10 + Math.floor(Math.random() * 22);
   e.xp = xpForLevel(e.level);
   let pts = e.level - 1;
@@ -534,17 +565,18 @@ function spawnEnemy() {
     if (e.stats[key] < MAX_STAT) e.stats[key]++;
   }
   e.hp = maxHpOf(e);
+  e.lastHp = e.hp;
   e.radius = TANKS[typeKey].radius;
   enemies.push(e);
 }
 
 function findSafeSpawn() {
-  for (let tries = 0; tries < 40; tries++) {
-    const x = 200 + Math.random() * (WORLD.w - 400);
-    const y = 200 + Math.random() * (WORLD.h - 400);
+  for (let tries = 0; tries < 45; tries++) {
+    const x = 250 + Math.random() * (WORLD.w - 500);
+    const y = 250 + Math.random() * (WORLD.h - 500);
     let ok = true;
-    for (const e of enemies) if (Math.hypot(x - e.x, y - e.y) < 700) { ok = false; break; }
-    for (const n of nests) if (Math.hypot(x - n.x, y - n.y) < 600) { ok = false; break; }
+    for (const e of enemies) if (Math.hypot(x - e.x, y - e.y) < 750) { ok = false; break; }
+    for (const n of nests) if (Math.hypot(x - n.x, y - n.y) < 650) { ok = false; break; }
     if (ok) return { x, y };
   }
   return { x: WORLD.w / 2, y: WORLD.h / 2 };
@@ -556,7 +588,7 @@ function initWorld() {
   branchOffered = false;
   for (const [t, n] of Object.entries(SHAPE_COUNTS)) for (let i = 0; i < n; i++) spawnShape(t);
   for (let i = 0; i < 3; i++) spawnNest();
-  for (let i = 0; i < 12; i++) spawnEnemy();
+  for (let i = 0; i < 11; i++) spawnEnemy();
 }
 
 /* ---------------- Class / Branch UI ---------------- */
@@ -602,7 +634,7 @@ function chooseClass(key) {
   gameState = 'playing';
   shake = 0;
   branchOffered = false;
-  drones = drones.filter(d => d.owner && d.owner.isPlayer === false); // clear old player drones
+  drones = drones.filter(d => !d.owner || !d.owner.isPlayer);
   document.getElementById('class-overlay').classList.add('hidden');
   document.getElementById('death-overlay').classList.add('hidden');
   document.getElementById('branch-overlay').classList.add('hidden');
@@ -611,9 +643,8 @@ function chooseClass(key) {
   explosions.push({ x: player.x, y: player.y, maxR: 70, life: 0.4, maxLife: 0.4, color: player.color });
   spawnParticles(player.x, player.y, 18, [player.color, '#ffffff'], 60, 200, 2, 5, 0.3, 0.7);
   AudioFX.levelup();
-  // seed initial drones if beehive
   if (mods(player).drones) {
-    for (let i = 0; i < Math.min(4, mods(player).maxDrones); i++) spawnDrone(player);
+    for (let i = 0; i < Math.min(4, mods(player).maxDrones); i++) spawnDrone(player, i);
   }
 }
 
@@ -647,7 +678,6 @@ function applyBranch(key) {
   if (!player) return;
   const oldColor = player.color;
   const def = TANKS[key];
-  // clear old drones, will reseed
   drones = drones.filter(d => d.owner !== player);
   player.typeKey = key;
   player.radius = def.radius;
@@ -661,7 +691,7 @@ function applyBranch(key) {
   floatText(player.x, player.y - 40, def.name.toUpperCase() + '!', '#ffd34d', 22);
   AudioFX.branch();
   if (mods(player).drones) {
-    for (let i = 0; i < Math.min(5, mods(player).maxDrones); i++) spawnDrone(player);
+    for (let i = 0; i < Math.min(5, mods(player).maxDrones); i++) spawnDrone(player, i);
   }
 }
 
@@ -673,10 +703,8 @@ function updateClassLabel() {
     if (mods(player).drones) {
       dl.style.display = 'block';
       const alive = drones.filter(d => d.owner === player && !d.dead).length;
-      dl.textContent = Drones: ${alive} / ${mods(player).maxDrones};
-    } else {
-      dl.style.display = 'none';
-    }
+      dl.textContent = `Drones: ${alive} / ${mods(player).maxDrones}`;
+    } else dl.style.display = 'none';
   } else {
     el.textContent = '';
     dl.style.display = 'none';
@@ -693,9 +721,8 @@ addEventListener('keydown', e => {
   keys[k] = true;
   if (k === 'e') autoFire = !autoFire;
 
-  // DEBUG TOOLS
   if (player && gameState === 'playing') {
-    if (k === 'l') { // +5 levels
+    if (k === 'l') {
       for (let i = 0; i < 5; i++) addXp(player, xpToNext(player.level));
       floatText(player.x, player.y - 30, '+5 LEVELS', '#ffd34d', 16);
     }
@@ -709,16 +736,13 @@ addEventListener('keydown', e => {
       floatText(player.x, player.y - 30, 'HEALED', '#6fa32e', 16);
     }
     if (k === 'k') {
-      // kill nearby enemies + crashers
       for (let i = enemies.length - 1; i >= 0; i--) {
-        if (Math.hypot(enemies[i].x - player.x, enemies[i].y - player.y) < 600) {
+        if (Math.hypot(enemies[i].x - player.x, enemies[i].y - player.y) < 650)
           damageTank(enemies[i], 99999);
-        }
       }
       for (let i = shapes.length - 1; i >= 0; i--) {
-        if (shapes[i].type === 'crasher' && Math.hypot(shapes[i].x - player.x, shapes[i].y - player.y) < 500) {
+        if (shapes[i].type === 'crasher' && Math.hypot(shapes[i].x - player.x, shapes[i].y - player.y) < 550)
           damageShape(shapes[i], 9999, i);
-        }
       }
       floatText(player.x, player.y - 30, 'CLEARED', '#f14e54', 16);
     }
@@ -748,9 +772,7 @@ addEventListener('keydown', e => {
   if (n >= 1 && n <= STAT_DEFS.length) spendPoint(STAT_DEFS[n - 1].key);
 });
 addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-canvas.addEventListener('mousemove', e => {
-  mouse.x = e.clientX; mouse.y = e.clientY;
-});
+canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
 canvas.addEventListener('mousedown', () => { AudioFX.init(); mouse.down = true; });
 addEventListener('mouseup', () => mouse.down = false);
 canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -775,12 +797,12 @@ function refreshUpgradeUI() {
     if (!b) return;
     const v = player.stats[d.key];
     const pips = '●'.repeat(v) + '○'.repeat(MAX_STAT - v);
-    b.innerHTML = <span class="key">[${i + 1}]</span> <b>${d.name}</b><span class="pips">${pips}</span>;
+    b.innerHTML = `<span class="key">[${i + 1}]</span> <b>${d.name}</b><span class="pips">${pips}</span>`;
     b.style.opacity = (player.upgradePoints > 0 && v < MAX_STAT) ? 1 : 0.55;
   });
   const p = document.getElementById('points');
   p.style.display = player.upgradePoints > 0 ? 'block' : 'none';
-  p.textContent = Upgrade points: ${player.upgradePoints};
+  p.textContent = `Upgrade points: ${player.upgradePoints}`;
 }
 function spendPoint(key) {
   if (!player || gameState !== 'playing' || player.upgradePoints <= 0 || player.stats[key] >= MAX_STAT) return;
@@ -790,51 +812,49 @@ function spendPoint(key) {
   refreshUpgradeUI();
 }
 
-/* ---------------- Drones ---------------- */
-function spawnDrone(owner) {
+/* ---------------- Drones (smooth + spread) ---------------- */
+function spawnDrone(owner, slot) {
   const m = mods(owner);
   const size = m.droneSize || 11;
-  const ang = owner.angle + (Math.random() - 0.5) * 0.8;
-  const tip = {
-    x: owner.x + Math.cos(owner.angle) * (owner.radius + 20),
-    y: owner.y + Math.sin(owner.angle) * (owner.radius + 20)
-  };
+  const ang = owner.angle + (Math.random() - 0.5) * 0.6;
+  const tipX = owner.x + Math.cos(owner.angle) * (owner.radius + 18);
+  const tipY = owner.y + Math.sin(owner.angle) * (owner.radius + 18);
   drones.push({
-    x: tip.x, y: tip.y,
+    x: tipX, y: tipY,
+    vx: 0, vy: 0,
     angle: ang,
     radius: size,
     hp: droneHpOf(owner), maxHp: droneHpOf(owner),
     owner, dead: false,
     color: owner.color,
-    speed: droneSpdOf(owner),
+    baseSpeed: droneSpdOf(owner),
     dmg: droneDmgOf(owner),
-    hitCd: 0, flash: 0
+    hitCd: 0, flash: 0,
+    slot: slot != null ? slot : Math.floor(Math.random() * 20),
+    orbitPhase: Math.random() * Math.PI * 2
   });
   if (owner.isPlayer) AudioFX.drone();
 }
 
 /* ---------------- Combat ---------------- */
 function barrelTip(t, b) {
+  const ang = t.angle + (b.angle || 0);
   return {
-    x: t.x + Math.cos(t.angle + (b.angle || 0)) * (t.radius + b.length * 0.5) - Math.sin(t.angle) * (b.offset || 0),
-    y: t.y + Math.sin(t.angle + (b.angle || 0)) * (t.radius + b.length * 0.5) + Math.cos(t.angle) * (b.offset || 0)
+    x: t.x + Math.cos(ang) * (t.radius + b.length * 0.5) - Math.sin(t.angle) * (b.offset || 0),
+    y: t.y + Math.sin(ang) * (t.radius + b.length * 0.5) + Math.cos(t.angle) * (b.offset || 0)
   };
 }
 
 function fire(t) {
   const def = TANKS[t.typeKey];
   const m = def.modifiers;
-
-  // drones classes don't fire bullets from the triangle gun — they manage drones
   if (m.drones) {
-    // optional: still allow a weak body shot or just rely on drones
-    // for flavor, the triangle gun can "pulse" but main damage is drones
-    t.fireCd = reloadOf(t) * 0.7;
-    t.recoil = 4;
+    t.fireCd = reloadOf(t) * 0.65;
+    t.recoil = 3;
     return;
   }
-
   const spread = m.spread || 0;
+  const ownerColor = t.color;
 
   if (m.swarm) {
     for (let s = -1; s <= 1; s++) {
@@ -843,7 +863,7 @@ function fire(t) {
       missiles.push({
         x: tip.x, y: tip.y, angle: a,
         speed: bulletSpdOf(t) * 0.72, life: 2.1, owner: t, radius: 9,
-        emitCd: 0, flameCd: 0, lockOn: false, swarmling: true
+        emitCd: 0, flameCd: 0, lockOn: false, swarmling: true, color: ownerColor
       });
     }
   } else if (m.missile) {
@@ -853,7 +873,7 @@ function fire(t) {
       missiles.push({
         x: tip.x, y: tip.y, angle: a,
         speed: bulletSpdOf(t) * 0.8, life: 2.8, owner: t, radius: 13,
-        emitCd: 0, flameCd: 0, lockOn: !!m.lockOn
+        emitCd: 0, flameCd: 0, lockOn: !!m.lockOn, color: ownerColor
       });
     }
   } else {
@@ -865,7 +885,8 @@ function fire(t) {
         x: tip.x, y: tip.y,
         vx: Math.cos(a) * bulletSpdOf(t), vy: Math.sin(a) * bulletSpdOf(t),
         radius: bulletRadiusOf(t), dmg: bulletDmgOf(t), owner: t, life: bulletLifeOf(t),
-        color: t.isPlayer ? '#00e0ff' : '#ffd34d'
+        color: t.isPlayer ? '#00e0ff' : ownerColor,
+        fade: 1
       });
     }
   }
@@ -873,57 +894,58 @@ function fire(t) {
   for (const b of def.barrels) {
     const tip = barrelTip(t, b);
     flashes.push({ x: tip.x, y: tip.y, angle: t.angle + (b.angle || 0), life: 0.07, maxLife: 0.07 });
-    spawnParticles(tip.x, tip.y, 3, ['#fff2ae', '#ffd34d'], 60, 180, 1.5, 3, 0.1, 0.25);
+    spawnParticles(tip.x, tip.y, 2, ['#fff2ae', '#ffd34d'], 50, 150, 1.2, 2.8, 0.08, 0.2);
   }
   t.fireCd = reloadOf(t);
-  t.recoil = 8;
-  if (t.isPlayer || (player && Math.hypot(t.x - player.x, t.y - player.y) < 950)) AudioFX.shoot();
+  t.recoil = 7;
+  if (t.isPlayer || (player && Math.hypot(t.x - player.x, t.y - player.y) < 900)) AudioFX.shoot();
 }
 
 function explodeMissile(ms) {
   const owner = ms.owner;
   const n = ms.swarmling ? 9 : 14;
   const baseSpd = ms.swarmling ? 280 : 330;
+  const col = ms.color || owner.color;
   for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + Math.random() * 0.12;
+    const a = (i / n) * Math.PI * 2 + Math.random() * 0.1;
     bullets.push({
       x: ms.x, y: ms.y,
       vx: Math.cos(a) * baseSpd, vy: Math.sin(a) * baseSpd,
-      radius: (ms.swarmling ? 5 : 6) + owner.stats.bulletDmg * 0.25,
+      radius: (ms.swarmling ? 5 : 6) + owner.stats.bulletDmg * 0.22,
       dmg: bulletDmgOf(owner) * (ms.swarmling ? 0.55 : 0.7), owner, life: 1.0,
-      color: owner.isPlayer ? '#00e0ff' : '#ffd34d'
+      color: col, fade: 1
     });
   }
-  explosions.push({ x: ms.x, y: ms.y, maxR: ms.swarmling ? 55 : 95, life: 0.4, maxLife: 0.4, color: '#ff9a3d' });
-  spawnParticles(ms.x, ms.y, ms.swarmling ? 12 : 20, ['#ff9a3d', '#ffd34d', '#ff5c2e', '#ffffff'], 100, 280, 2, 6, 0.4, 0.9);
+  explosions.push({ x: ms.x, y: ms.y, maxR: ms.swarmling ? 55 : 95, life: 0.4, maxLife: 0.4, color: col });
+  spawnParticles(ms.x, ms.y, ms.swarmling ? 12 : 20, [col, '#ffd34d', '#ffffff'], 90, 260, 2, 5.5, 0.35, 0.85);
   if (player && !player.dead) {
     const d = Math.hypot(ms.x - player.x, ms.y - player.y);
-    if (d < 520) addShake((1 - d / 520) * 12);
-    if (d < 950) AudioFX.boom();
+    if (d < 500) addShake((1 - d / 500) * 11);
+    if (d < 900) AudioFX.boom();
   }
 }
 
-function damageTank(t, dmg) {
+function damageTank(t, dmg, fromX, fromY) {
   if (!t || t.dead) return;
   t.hp -= dmg;
   t.flash = 0.15;
+  // record threat for AI dodge
+  if (!t.isPlayer && fromX != null) {
+    t.threatX = fromX; t.threatY = fromY; t.threatTimer = 0.55;
+  }
   if (t.hp <= 0) {
     t.dead = true;
-    explosions.push({ x: t.x, y: t.y, maxR: t.radius * 3.2, life: 0.5, maxLife: 0.5, color: t.color });
-    spawnParticles(t.x, t.y, 28, [t.color, '#ffffff', '#666'], 80, 300, 2, 7, 0.4, 1.0);
-    // clear its drones
-    for (let i = drones.length - 1; i >= 0; i--) {
-      if (drones[i].owner === t) drones.splice(i, 1);
-    }
+    explosions.push({ x: t.x, y: t.y, maxR: t.radius * 3.1, life: 0.5, maxLife: 0.5, color: t.color });
+    spawnParticles(t.x, t.y, 28, [t.color, '#ffffff', '#666'], 70, 280, 2, 6.5, 0.4, 1.0);
+    for (let i = drones.length - 1; i >= 0; i--) if (drones[i].owner === t) drones.splice(i, 1);
     if (t.isPlayer) {
       gameState = 'dead';
-      addShake(18);
+      addShake(17);
       AudioFX.die();
       document.getElementById('death-stats').textContent =
-        Level ${t.level} · ${TANKS[t.typeKey].name} · Score ${t.score};
+        `Level ${t.level} · ${TANKS[t.typeKey].name} · Score ${t.score}`;
       document.getElementById('death-overlay').classList.remove('hidden');
     } else {
-      // XP to whoever is nearby player, or just player if present
       if (player && !player.dead) {
         const xpGain = 200 + t.level * 16;
         addXp(player, xpGain);
@@ -931,7 +953,7 @@ function damageTank(t, dmg) {
       }
       const idx = enemies.indexOf(t);
       if (idx >= 0) enemies.splice(idx, 1);
-      setTimeout(() => { if (gameState !== 'menu') spawnEnemy(); }, 1600);
+      setTimeout(() => { if (gameState !== 'menu') spawnEnemy(); }, 1500);
     }
   }
 }
@@ -942,18 +964,17 @@ function damageShape(s, dmg, idx) {
   if (s.hp <= 0) {
     const big = s.type === 'hexagon' || s.type === 'alphaPent';
     shapes.splice(idx, 1);
-    spawnParticles(s.x, s.y, big ? 22 : 10, [s.def.color, '#ffffff'], 60, 200, 2, 5, 0.3, 0.7);
+    spawnParticles(s.x, s.y, big ? 20 : 9, [s.def.color, '#ffffff'], 50, 180, 1.8, 5, 0.25, 0.65);
     if (big) {
-      explosions.push({ x: s.x, y: s.y, maxR: s.def.radius * 2, life: 0.4, maxLife: 0.4, color: s.def.color });
-      addShake(5);
+      explosions.push({ x: s.x, y: s.y, maxR: s.def.radius * 1.9, life: 0.4, maxLife: 0.4, color: s.def.color });
+      addShake(4);
     }
     if (player && !player.dead) {
       addXp(player, s.def.xp);
       floatText(s.x, s.y, '+' + s.def.xp, '#ffe763', big ? 15 : 12);
     }
-    // respawn free crashers / shapes, nest crashers are replaced by nest
     if (s.nestId == null) {
-      setTimeout(() => spawnShape(s.type), s.type === 'alphaPent' ? 14000 : (s.type === 'crasher' ? 4000 : 2600));
+      setTimeout(() => spawnShape(s.type), s.type === 'alphaPent' ? 14000 : (s.type === 'crasher' ? 4500 : 2500));
     }
   }
 }
@@ -962,25 +983,23 @@ function damageNest(n, dmg) {
   n.hp -= dmg; n.hurtFlash = 0.15;
   if (n.hp <= 0) {
     const idx = nests.indexOf(n);
-    explosions.push({ x: n.x, y: n.y, maxR: 140, life: 0.7, maxLife: 0.7, color: '#ff4d6d' });
-    spawnParticles(n.x, n.y, 40, ['#ff4d6d', '#8b1a2b', '#ffffff', '#ff9a3d'], 100, 350, 3, 8, 0.5, 1.2);
-    addShake(14);
+    explosions.push({ x: n.x, y: n.y, maxR: 160, life: 0.75, maxLife: 0.75, color: '#ff4d6d' });
+    spawnParticles(n.x, n.y, 45, ['#ff4d6d', '#7a1525', '#ffffff', '#ff9a3d'], 90, 340, 2.5, 8, 0.5, 1.3);
+    addShake(15);
     AudioFX.boom();
     if (player && !player.dead) {
-      addXp(player, 1200);
-      floatText(n.x, n.y, '+1200 NEST', '#ffd34d', 22);
+      addXp(player, 1400);
+      floatText(n.x, n.y, '+1400 NEST', '#ffd34d', 22);
     }
-    // kill remaining nest crashers
     for (let i = shapes.length - 1; i >= 0; i--) {
       if (shapes[i].nestId === idx) {
-        spawnParticles(shapes[i].x, shapes[i].y, 6, ['#ff4d6d'], 40, 120, 1, 3, 0.2, 0.5);
+        spawnParticles(shapes[i].x, shapes[i].y, 5, ['#ff4d6d'], 30, 100, 1, 2.5, 0.15, 0.4);
         shapes.splice(i, 1);
       }
     }
-    // fix nestIds after removal
     nests.splice(idx, 1);
     for (const s of shapes) if (s.nestId != null && s.nestId > idx) s.nestId--;
-    setTimeout(() => { if (gameState !== 'menu') spawnNest(); }, 20000);
+    setTimeout(() => { if (gameState !== 'menu') spawnNest(); }, 22000);
   }
 }
 
@@ -988,13 +1007,12 @@ function damageNest(n, dmg) {
 function update(dt) {
   if (gameState !== 'playing' || !player) return;
 
-  // world mouse
   const camX = player.x - canvas.width / 2;
   const camY = player.y - canvas.height / 2;
   mouse.worldX = mouse.x + camX;
   mouse.worldY = mouse.y + camY;
 
-  /* --- player movement --- */
+  /* --- player --- */
   let dx = 0, dy = 0;
   if (keys['w'] || keys['arrowup']) dy -= 1;
   if (keys['s'] || keys['arrowdown']) dy += 1;
@@ -1007,76 +1025,107 @@ function update(dt) {
   player.angle = Math.atan2(mouse.y - canvas.height / 2, mouse.x - canvas.width / 2);
   player.fireCd -= dt * 1000;
   if ((mouse.down || autoFire) && player.fireCd <= 0) fire(player);
-  player.recoil = Math.max(0, player.recoil - dt * 45);
+  player.recoil = Math.max(0, player.recoil - dt * 42);
   player.flash = Math.max(0, player.flash - dt);
   player.hp = Math.min(maxHpOf(player), player.hp + regenOf(player) * dt);
   player.hitCd -= dt;
 
-  /* --- drone management for player --- */
   if (mods(player).drones) {
     const maxD = mods(player).maxDrones;
     const alive = drones.filter(d => d.owner === player && !d.dead).length;
     player.droneRespawnCd -= dt;
     if (alive < maxD && player.droneRespawnCd <= 0) {
-      spawnDrone(player);
+      spawnDrone(player, alive);
       player.droneRespawnCd = droneRespawnOf(player);
     }
     updateClassLabel();
   }
 
-  /* --- smarter enemy AI + they fight each other --- */
+  /* --- smarter human-like enemy AI --- */
   for (const e of enemies) {
     if (e.dead) continue;
+    const pers = PERSONALITIES[e.personality] || PERSONALITIES.aggressive;
 
-    // find nearest threat (player or other enemy)
+    // detect damage → threat reaction
+    if (e.hp < e.lastHp) {
+      e.threatTimer = 0.6;
+      e.dodgeDir = Math.random() < 0.5 ? 1 : -1;
+    }
+    e.lastHp = e.hp;
+    e.threatTimer = Math.max(0, e.threatTimer - dt);
+
+    // choose target (player or nearest other enemy)
     let target = null, bestD = 1e9;
     if (player && !player.dead) {
       const d = Math.hypot(player.x - e.x, player.y - e.y);
       if (d < bestD) { bestD = d; target = player; }
     }
-    for (const other of enemies) {
-      if (other === e || other.dead) continue;
-      const d = Math.hypot(other.x - e.x, other.y - e.y);
-      if (d < bestD && d < 650) { bestD = d; target = other; }
+    for (const o of enemies) {
+      if (o === e || o.dead) continue;
+      const d = Math.hypot(o.x - e.x, o.y - e.y);
+      if (d < bestD && d < 620) { bestD = d; target = o; }
     }
-
-    const pers = PERSONALITIES[e.personality] || PERSONALITIES.aggressive;
 
     if (target && bestD < pers.fireRange) {
-      const lead = 0.1 + Math.random() * 0.08;
+      // controlled prediction (not perfect)
+      const lead = 0.07 + Math.random() * 0.06;
       let predX = target.x, predY = target.y;
       if (target.isPlayer) {
-        predX += (keys['d'] ? 1 : keys['a'] ? -1 : 0) * moveSpdOf(target) * lead;
-        predY += (keys['s'] ? 1 : keys['w'] ? -1 : 0) * moveSpdOf(target) * lead;
+        const mx = (keys['d'] ? 1 : keys['a'] ? -1 : 0);
+        const my = (keys['s'] ? 1 : keys['w'] ? -1 : 0);
+        predX += mx * moveSpdOf(target) * lead;
+        predY += my * moveSpdOf(target) * lead;
       }
-      e.angle = Math.atan2(predY - e.y, predX - e.x) + (Math.random() - 0.5) * 0.07;
+      const desiredAng = Math.atan2(predY - e.y, predX - e.x);
+      // smooth turn
+      e.angle = lerpAngle(e.angle, desiredAng + (Math.random() - 0.5) * 0.05, Math.min(1, 4.5 * dt));
 
+      // distance control + dodge when threatened
       const want = pers.preferDist;
       let dir = bestD > want ? pers.approach : pers.retreat;
+
+      // sideways dodge when under fire
+      let sideX = 0, sideY = 0;
+      if (e.threatTimer > 0) {
+        const sideAng = e.angle + Math.PI / 2 * e.dodgeDir;
+        sideX = Math.cos(sideAng) * moveSpdOf(e) * pers.dodge * 0.85;
+        sideY = Math.sin(sideAng) * moveSpdOf(e) * pers.dodge * 0.85;
+      }
+
       if (pers.circle) {
         const side = Math.atan2(target.y - e.y, target.x - e.x) + Math.PI / 2 * e.circleDir;
-        e.x += Math.cos(side) * moveSpdOf(e) * 0.65 * dt;
-        e.y += Math.sin(side) * moveSpdOf(e) * 0.65 * dt;
-        dir *= 0.5;
+        e.x += Math.cos(side) * moveSpdOf(e) * 0.6 * dt;
+        e.y += Math.sin(side) * moveSpdOf(e) * 0.6 * dt;
+        dir *= 0.45;
       }
-      const espd = moveSpdOf(e) * 0.88;
-      e.x += Math.cos(e.angle) * espd * dir * dt;
-      e.y += Math.sin(e.angle) * espd * dir * dt;
+
+      // low HP → stronger retreat
+      if (e.hp / maxHpOf(e) < 0.28) dir = Math.min(dir, -0.9);
+
+      const espd = moveSpdOf(e) * 0.9;
+      e.x += (Math.cos(e.angle) * espd * dir + sideX) * dt;
+      e.y += (Math.sin(e.angle) * espd * dir + sideY) * dt;
 
       e.fireCd -= dt * 1000;
-      if (e.fireCd <= 0 && bestD < pers.fireRange * 0.95) {
-        if (Math.random() > 0.1) fire(e);
-        else e.fireCd = 160 + Math.random() * 200;
+      if (e.fireCd <= 0 && bestD < pers.fireRange * 0.92) {
+        // occasional human hesitation
+        if (Math.random() > 0.11) fire(e);
+        else e.fireCd = 140 + Math.random() * 180;
       }
     } else {
+      // calm wander — no sudden sprints
       e.aiCd -= dt;
-      if (e.aiCd <= 0) { e.aiAngle = Math.random() * Math.PI * 2; e.aiCd = 1.5 + Math.random() * 3; }
-      e.angle = e.aiAngle;
-      e.x += Math.cos(e.aiAngle) * moveSpdOf(e) * 0.35 * dt;
-      e.y += Math.sin(e.aiAngle) * moveSpdOf(e) * 0.35 * dt;
-      e.fireCd = Math.max(e.fireCd, 220);
+      if (e.aiCd <= 0) {
+        e.aiAngle = Math.random() * Math.PI * 2;
+        e.aiCd = 2.2 + Math.random() * 3.5;
+      }
+      e.angle = lerpAngle(e.angle, e.aiAngle, 2.2 * dt);
+      e.x += Math.cos(e.angle) * moveSpdOf(e) * 0.32 * dt;
+      e.y += Math.sin(e.angle) * moveSpdOf(e) * 0.32 * dt;
+      e.fireCd = Math.max(e.fireCd, 200);
     }
-    e.recoil = Math.max(0, e.recoil - dt * 45);
+
+    e.recoil = Math.max(0, e.recoil - dt * 42);
     e.flash = Math.max(0, e.flash - dt);
     e.hp = Math.min(maxHpOf(e), e.hp + regenOf(e) * dt);
     e.hitCd -= dt;
@@ -1084,75 +1133,85 @@ function update(dt) {
     e.y = Math.max(e.radius, Math.min(WORLD.h - e.radius, e.y));
   }
 
-  /* --- drones follow cursor (player) or nearest target (future enemy drones) --- */
+  /* --- smooth spreading drones --- */
   for (let i = drones.length - 1; i >= 0; i--) {
     const d = drones[i];
     if (d.dead) { drones.splice(i, 1); continue; }
     d.hitCd -= dt;
     d.flash = Math.max(0, d.flash - dt);
+    d.orbitPhase += dt * 1.4;
 
-    // target position
-    let tx, ty;
+    // desired formation position around cursor (or owner aim)
+    let cx, cy;
     if (d.owner.isPlayer) {
-      tx = mouse.worldX; ty = mouse.worldY;
+      cx = mouse.worldX; cy = mouse.worldY;
     } else {
-      // enemy drones would chase player — not implemented for NPC yet
-      tx = d.owner.x + Math.cos(d.owner.angle) * 120;
-      ty = d.owner.y + Math.sin(d.owner.angle) * 120;
+      cx = d.owner.x + Math.cos(d.owner.angle) * 140;
+      cy = d.owner.y + Math.sin(d.owner.angle) * 140;
     }
+
+    const total = Math.max(1, drones.filter(dd => dd.owner === d.owner && !dd.dead).length);
+    const slotAng = (d.slot / Math.max(total, 1)) * Math.PI * 2 + d.orbitPhase * 0.15;
+    const formR = 28 + total * 3.5;
+    const tx = cx + Math.cos(slotAng) * formR;
+    const ty = cy + Math.sin(slotAng) * formR;
+
+    // smooth acceleration toward desired point
     const dx = tx - d.x, dy = ty - d.y;
     const dist = Math.hypot(dx, dy) || 1;
-    const spd = d.speed;
-    // smooth follow with a little orbit
-    if (dist > 18) {
-      d.x += (dx / dist) * spd * dt;
-      d.y += (dy / dist) * spd * dt;
-    }
-    d.angle = Math.atan2(dy, dx);
+    const desiredSpd = Math.min(d.baseSpeed, dist * 3.2);
+    const ax = (dx / dist) * desiredSpd - d.vx;
+    const ay = (dy / dist) * desiredSpd - d.vy;
+    d.vx += ax * 5.5 * dt;
+    d.vy += ay * 5.5 * dt;
+    // slight damping
+    d.vx *= Math.pow(0.15, dt);
+    d.vy *= Math.pow(0.15, dt);
+    d.x += d.vx * dt;
+    d.y += d.vy * dt;
+    d.angle = lerpAngle(d.angle, Math.atan2(d.vy, d.vx), 6 * dt);
 
-    // damage tanks
+    // combat
     const targets = d.owner.isPlayer ? enemies : (player ? [player] : []);
     for (const t of targets) {
       if (t && !t.dead && Math.hypot(d.x - t.x, d.y - t.y) < d.radius + t.radius) {
         if (d.hitCd <= 0) {
-          damageTank(t, d.dmg * 0.35);
-          d.hitCd = 0.28;
+          damageTank(t, d.dmg * 0.32, d.x, d.y);
+          d.hitCd = 0.26;
           d.flash = 0.1;
         }
         separate(d, t, d.radius, t.radius);
       }
     }
-    // damage shapes
     for (let j = shapes.length - 1; j >= 0; j--) {
       const s = shapes[j];
       if (Math.hypot(d.x - s.x, d.y - s.y) < d.radius + s.def.radius) {
         if (d.hitCd <= 0) {
-          damageShape(s, d.dmg * 0.4, j);
-          d.hitCd = 0.25;
+          damageShape(s, d.dmg * 0.38, j);
+          d.hitCd = 0.22;
         }
-        // soft push
         separateStatic(d, s.x, s.y, d.radius, s.def.radius);
       }
     }
-    // damage nests
     for (const n of nests) {
       if (Math.hypot(d.x - n.x, d.y - n.y) < d.radius + n.radius) {
         if (d.hitCd <= 0) {
-          damageNest(n, d.dmg * 0.5);
-          d.hitCd = 0.3;
+          damageNest(n, d.dmg * 0.45);
+          d.hitCd = 0.28;
         }
         separateStatic(d, n.x, n.y, d.radius, n.radius);
       }
     }
   }
 
-  /* --- missiles --- */
+  /* --- missiles (reduced assist, owner color) --- */
   for (let i = missiles.length - 1; i >= 0; i--) {
     const ms = missiles[i];
     ms.life -= dt;
+
     if (ms.lockOn) {
       const targets = ms.owner.isPlayer ? enemies : (player && !player.dead ? [player] : []);
-      let best = null, bestD = 500;
+      let best = null, bestD = 420;
       for (const t of targets) {
         if (!t || t.dead) continue;
         const d = Math.hypot(ms.x - t.x, ms.y - t.y);
@@ -1160,83 +1219,88 @@ function update(dt) {
       }
       if (best) {
         const desired = Math.atan2(best.y - ms.y, best.x - ms.x);
-        let diff = desired - ms.angle;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        ms.angle += Math.sign(diff) * Math.min(Math.abs(diff), 1.5 * dt);
+        const diff = angleDiff(ms.angle, desired);
+        // reduced turn rate — skill still matters
+        const turnRate = 0.85;
+        ms.angle += Math.sign(diff) * Math.min(Math.abs(diff), turnRate * dt);
       }
     }
+
     ms.x += Math.cos(ms.angle) * ms.speed * dt;
     ms.y += Math.sin(ms.angle) * ms.speed * dt;
 
     ms.flameCd -= dt;
     if (ms.flameCd <= 0) {
-      ms.flameCd = 0.03;
+      ms.flameCd = 0.028;
       particles.push({
         x: ms.x - Math.cos(ms.angle) * ms.radius,
         y: ms.y - Math.sin(ms.angle) * ms.radius,
-        vx: -Math.cos(ms.angle) * 90 + (Math.random() - 0.5) * 50,
-        vy: -Math.sin(ms.angle) * 90 + (Math.random() - 0.5) * 50,
-        life: 0.2, maxLife: 0.2,
-        color: ['#ff9a3d', '#ffd34d', '#ff5c2e'][Math.floor(Math.random() * 3)],
-        size: 1.5 + Math.random() * 2.5
+        vx: -Math.cos(ms.angle) * 80 + (Math.random() - 0.5) * 40,
+        vy: -Math.sin(ms.angle) * 80 + (Math.random() - 0.5) * 40,
+        life: 0.18, maxLife: 0.18,
+        color: [ms.color || '#ff9a3d', '#ffd34d'][Math.floor(Math.random()*2)],
+        size: 1.4 + Math.random() * 2.2
       });
     }
     ms.emitCd -= dt * 1000;
     if (ms.emitCd <= 0) {
-      ms.emitCd = ms.swarmling ? 110 : 95;
-      const a = ms.angle + Math.PI + (Math.random() - 0.5) * 0.5;
+      ms.emitCd = ms.swarmling ? 105 : 90;
+      const a = ms.angle + Math.PI + (Math.random() - 0.5) * 0.45;
       bullets.push({
         x: ms.x - Math.cos(ms.angle) * ms.radius,
         y: ms.y - Math.sin(ms.angle) * ms.radius,
-        vx: Math.cos(a) * 240, vy: Math.sin(a) * 240,
+        vx: Math.cos(a) * 230, vy: Math.sin(a) * 230,
         radius: ms.swarmling ? 4 : 5,
-        dmg: bulletDmgOf(ms.owner) * (ms.swarmling ? 0.28 : 0.35),
-        owner: ms.owner, life: 1.0, color: '#ff9a3d'
+        dmg: bulletDmgOf(ms.owner) * (ms.swarmling ? 0.26 : 0.33),
+        owner: ms.owner, life: 0.95,
+        color: ms.color || '#ff9a3d', fade: 1
       });
     }
 
-    let boom = ms.life <= 0 || ms.x < 10 || ms.x > WORLD.w - 10 || ms.y < 10 || ms.y > WORLD.h - 10;
+    let boom = ms.life <= 0 || ms.x < 8 || ms.x > WORLD.w - 8 || ms.y < 8 || ms.y > WORLD.h - 8;
     if (!boom) {
-      // hit tanks (including enemy vs enemy)
       const candidates = ms.owner.isPlayer ? enemies : enemies.concat(player ? [player] : []);
       for (const t of candidates) {
         if (t && !t.dead && t !== ms.owner && Math.hypot(ms.x - t.x, ms.y - t.y) < ms.radius + t.radius) {
-          damageTank(t, bulletDmgOf(ms.owner) * 1.15); boom = true; break;
+          damageTank(t, bulletDmgOf(ms.owner) * 1.12, ms.x, ms.y); boom = true; break;
         }
       }
     }
     if (!boom) {
       for (let j = shapes.length - 1; j >= 0; j--) {
         if (Math.hypot(ms.x - shapes[j].x, ms.y - shapes[j].y) < ms.radius + shapes[j].def.radius) {
-          damageShape(shapes[j], bulletDmgOf(ms.owner) * 1.15, j); boom = true; break;
+          damageShape(shapes[j], bulletDmgOf(ms.owner) * 1.12, j); boom = true; break;
         }
       }
     }
     if (!boom) {
       for (const n of nests) {
         if (Math.hypot(ms.x - n.x, ms.y - n.y) < ms.radius + n.radius) {
-          damageNest(n, bulletDmgOf(ms.owner) * 1.3); boom = true; break;
+          damageNest(n, bulletDmgOf(ms.owner) * 1.25); boom = true; break;
         }
       }
     }
     if (boom) { explodeMissile(ms); missiles.splice(i, 1); }
   }
 
-  /* --- bullets (now hit other enemies too) --- */
+  /* --- bullets --- */
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
-    if (b.life <= 0 || b.x < 0 || b.x > WORLD.w || b.y < 0 || b.y > WORLD.h) { bullets.splice(i, 1); continue; }
+    if (b.life < 0.25) b.fade = b.life / 0.25;
+    if (b.life <= 0 || b.x < -20 || b.x > WORLD.w + 20 || b.y < -20 || b.y > WORLD.h + 20) {
+      // fading death particles
+      spawnParticles(b.x, b.y, 3, [b.color, '#ffffff'], 20, 70, 1, 2.5, 0.12, 0.3);
+      bullets.splice(i, 1); continue;
+    }
     let hit = false;
-
     for (let j = shapes.length - 1; j >= 0; j--) {
       const s = shapes[j];
       if (Math.hypot(b.x - s.x, b.y - s.y) < b.radius + s.def.radius) {
         damageShape(s, b.dmg, j); hit = true; break;
       }
     }
-    if (hit) { bullets.splice(i, 1); continue; }
+    if (hit) { spawnParticles(b.x, b.y, 4, [b.color, '#fff'], 30, 100, 1, 2.8, 0.1, 0.28); bullets.splice(i, 1); continue; }
 
     for (const n of nests) {
       if (Math.hypot(b.x - n.x, b.y - n.y) < b.radius + n.radius) {
@@ -1245,7 +1309,6 @@ function update(dt) {
     }
     if (hit) { bullets.splice(i, 1); continue; }
 
-    // tanks — include enemy vs enemy
     const candidates = [];
     if (b.owner.isPlayer) {
       for (const e of enemies) candidates.push(e);
@@ -1255,13 +1318,12 @@ function update(dt) {
     }
     for (const t of candidates) {
       if (t && !t.dead && Math.hypot(b.x - t.x, b.y - t.y) < b.radius + t.radius) {
-        damageTank(t, b.dmg);
-        spawnParticles(b.x, b.y, 3, ['#ffffff', b.color], 40, 120, 1, 3, 0.1, 0.25);
-        if (t.isPlayer) { addShake(2.2); AudioFX.hit(); }
+        damageTank(t, b.dmg, b.x, b.y);
+        spawnParticles(b.x, b.y, 4, ['#ffffff', b.color], 35, 110, 1, 2.8, 0.1, 0.25);
+        if (t.isPlayer) { addShake(2); AudioFX.hit(); }
         hit = true; break;
       }
     }
-    // drones can be shot
     if (!hit) {
       for (let di = drones.length - 1; di >= 0; di--) {
         const d = drones[di];
@@ -1270,7 +1332,7 @@ function update(dt) {
           d.hp -= b.dmg;
           d.flash = 0.12;
           if (d.hp <= 0) {
-            spawnParticles(d.x, d.y, 8, [d.color, '#fff'], 40, 140, 1, 3, 0.2, 0.5);
+            spawnParticles(d.x, d.y, 7, [d.color, '#fff'], 35, 120, 1, 2.8, 0.18, 0.45);
             drones.splice(di, 1);
           }
           hit = true; break;
@@ -1280,131 +1342,199 @@ function update(dt) {
     if (hit) bullets.splice(i, 1);
   }
 
-  /* --- solid body collision + contact damage --- */
-  // player vs enemies
+  /* --- body collisions --- */
   for (const e of enemies) {
     if (e.dead) continue;
     if (separate(player, e, player.radius, e.radius)) {
-      if (player.hitCd <= 0) { damageTank(e, bodyDmgOf(player)); player.hitCd = 0.35; }
-      if (e.hitCd <= 0) { damageTank(player, bodyDmgOf(e)); e.hitCd = 0.35; }
+      if (player.hitCd <= 0) { damageTank(e, bodyDmgOf(player), player.x, player.y); player.hitCd = 0.34; }
+      if (e.hitCd <= 0) { damageTank(player, bodyDmgOf(e), e.x, e.y); e.hitCd = 0.34; }
     }
   }
-  // enemy vs enemy
   for (let i = 0; i < enemies.length; i++) {
     for (let j = i + 1; j < enemies.length; j++) {
       const a = enemies[i], b = enemies[j];
       if (a.dead || b.dead) continue;
       if (separate(a, b, a.radius, b.radius)) {
-        if (a.hitCd <= 0) { damageTank(b, bodyDmgOf(a) * 0.7); a.hitCd = 0.4; }
-        if (b.hitCd <= 0) { damageTank(a, bodyDmgOf(b) * 0.7); b.hitCd = 0.4; }
+        if (a.hitCd <= 0) { damageTank(b, bodyDmgOf(a) * 0.65, a.x, a.y); a.hitCd = 0.38; }
+        if (b.hitCd <= 0) { damageTank(a, bodyDmgOf(b) * 0.65, b.x, b.y); b.hitCd = 0.38; }
       }
     }
   }
 
-  /* --- shapes + crashers + nests --- */
+  /* --- crashers: smooth orbit, lookouts, separation --- */
   for (let j = shapes.length - 1; j >= 0; j--) {
     const s = shapes[j];
-    // nest defenders + free crashers AI
-    if (s.def.crasher) {
-      let chaseX = null, chaseY = null, chaseD = 1e9;
-      // prefer player if close
-      if (player && !player.dead) {
-        const d = Math.hypot(player.x - s.x, player.y - s.y);
-        if (d < 750) { chaseX = player.x; chaseY = player.y; chaseD = d; }
-      }
-      // also chase nearby enemies a bit
-      for (const e of enemies) {
-        if (e.dead) continue;
-        const d = Math.hypot(e.x - s.x, e.y - s.y);
-        if (d < chaseD && d < 500) { chaseX = e.x; chaseY = e.y; chaseD = d; }
-      }
-      // nest guardians stay near nest unless chasing
-      if (s.nestId != null && nests[s.nestId]) {
-        const nest = nests[s.nestId];
-        const nd = Math.hypot(s.x - nest.x, s.y - nest.y);
-        if (!chaseX || (chaseD > 420 && nd > 160)) {
-          // return / orbit nest
-          const a = Math.atan2(nest.y - s.y, nest.x - s.x) + 0.6;
-          s.vx = Math.cos(a) * 160;
-          s.vy = Math.sin(a) * 160;
-        } else {
-          const a = Math.atan2(chaseY - s.y, chaseX - s.x);
-          s.vx = Math.cos(a) * 230;
-          s.vy = Math.sin(a) * 230;
-        }
-      } else if (chaseX != null) {
-        const a = Math.atan2(chaseY - s.y, chaseX - s.x);
-        s.vx = Math.cos(a) * 220;
-        s.vy = Math.sin(a) * 220;
-      } else {
-        s.vx *= 0.92; s.vy *= 0.92;
-      }
-      s.x += s.vx * dt; s.y += s.vy * dt;
-      s.x = Math.max(s.def.radius, Math.min(WORLD.w - s.def.radius, s.x));
-      s.y = Math.max(s.def.radius, Math.min(WORLD.h - s.def.radius, s.y));
+    if (!s.def.crasher) continue;
+
+    // find potential prey
+    let prey = null, preyD = 1e9;
+    if (player && !player.dead) {
+      const d = Math.hypot(player.x - s.x, player.y - s.y);
+      if (d < (s.lookout ? 820 : 620)) { prey = player; preyD = d; }
+    }
+    for (const e of enemies) {
+      if (e.dead) continue;
+      const d = Math.hypot(e.x - s.x, e.y - s.y);
+      if (d < preyD && d < (s.lookout ? 700 : 480)) { prey = e; preyD = d; }
     }
 
-    // solid separation from player
+    if (s.nestId != null && nests[s.nestId]) {
+      const nest = nests[s.nestId];
+      const nd = Math.hypot(s.x - nest.x, s.y - nest.y);
+
+      if (s.state === 'orbit' || (s.state === 'return' && nd < s.orbitRadius + 25)) {
+        s.state = 'orbit';
+        // smooth orbital motion
+        s.orbitAngle += (0.55 + s.personality * 0.4) * dt * (s.lookout ? 0.7 : 1);
+        const desiredX = nest.x + Math.cos(s.orbitAngle) * s.orbitRadius;
+        const desiredY = nest.y + Math.sin(s.orbitAngle) * s.orbitRadius;
+        // accelerate toward orbital slot
+        const ox = desiredX - s.x, oy = desiredY - s.y;
+        const od = Math.hypot(ox, oy) || 1;
+        s.vx += (ox / od) * 280 * dt - s.vx * 3.5 * dt;
+        s.vy += (oy / od) * 280 * dt - s.vy * 3.5 * dt;
+
+        // if prey gets close, switch to chase
+        if (prey && preyD < 380 + s.personality * 120) {
+          s.state = 'chase';
+          s.target = prey;
+        }
+      } else if (s.state === 'chase') {
+        if (!prey || preyD > 700) {
+          s.state = 'return';
+          s.target = null;
+        } else {
+          const a = Math.atan2(prey.y - s.y, prey.x - s.x);
+          const chaseSpd = 210 + s.personality * 50;
+          s.vx += (Math.cos(a) * chaseSpd - s.vx) * 4 * dt;
+          s.vy += (Math.sin(a) * chaseSpd - s.vy) * 4 * dt;
+        }
+      } else if (s.state === 'return') {
+        const a = Math.atan2(nest.y - s.y, nest.x - s.x);
+        s.vx += (Math.cos(a) * 190 - s.vx) * 3.5 * dt;
+        s.vy += (Math.sin(a) * 190 - s.vy) * 3.5 * dt;
+        if (nd < s.orbitRadius + 15) s.state = 'orbit';
+      } else if (s.state === 'investigate') {
+        // lookouts wander further, investigate then return
+        s.investigateTimer -= dt;
+        if (prey && preyD < 750) {
+          s.state = 'chase';
+          s.target = prey;
+        } else if (s.investigateTimer <= 0 || nd > 380) {
+          s.state = 'return';
+          s.investigateTimer = 3 + Math.random() * 5;
+        } else {
+          // gentle wander
+          s.orbitAngle += 0.3 * dt;
+          const wx = nest.x + Math.cos(s.orbitAngle) * (180 + s.personality * 100);
+          const wy = nest.y + Math.sin(s.orbitAngle) * (180 + s.personality * 100);
+          const ox = wx - s.x, oy = wy - s.y;
+          const od = Math.hypot(ox, oy) || 1;
+          s.vx += (ox / od) * 140 * dt - s.vx * 2.5 * dt;
+          s.vy += (oy / od) * 140 * dt - s.vy * 2.5 * dt;
+        }
+      }
+    } else {
+      // free crasher
+      if (prey) {
+        const a = Math.atan2(prey.y - s.y, prey.x - s.x);
+        s.vx += (Math.cos(a) * 200 - s.vx) * 3.8 * dt;
+        s.vy += (Math.sin(a) * 200 - s.vy) * 3.8 * dt;
+      } else {
+        s.vx *= Math.pow(0.4, dt);
+        s.vy *= Math.pow(0.4, dt);
+      }
+    }
+
+    // separation from other crashers (prevent stacking)
+    for (let k = j + 1; k < shapes.length; k++) {
+      const o = shapes[k];
+      if (!o.def.crasher) continue;
+      const dx = s.x - o.x, dy = s.y - o.y;
+      const dist = Math.hypot(dx, dy) || 0.001;
+      const minD = s.def.radius + o.def.radius + 6;
+      if (dist < minD) {
+        const push = (minD - dist) * 0.5;
+        const nx = dx / dist, ny = dy / dist;
+        s.x += nx * push; s.y += ny * push;
+        o.x -= nx * push; o.y -= ny * push;
+      }
+    }
+
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
+    s.x = Math.max(s.def.radius, Math.min(WORLD.w - s.def.radius, s.x));
+    s.y = Math.max(s.def.radius, Math.min(WORLD.h - s.def.radius, s.y));
+    // face movement
+    if (Math.hypot(s.vx, s.vy) > 10) s.rot = Math.atan2(s.vy, s.vx);
+  }
+
+  // shape contact + solid push
+  for (let j = shapes.length - 1; j >= 0; j--) {
+    const s = shapes[j];
     if (player && !player.dead) {
       if (separateStatic(player, s.x, s.y, player.radius, s.def.radius)) {
-        // also push shape a bit
         const dx = s.x - player.x, dy = s.y - player.y;
         const dist = Math.hypot(dx, dy) || 1;
-        s.x += (dx / dist) * 30 * dt;
-        s.y += (dy / dist) * 30 * dt;
+        s.x += (dx / dist) * 35 * dt;
+        s.y += (dy / dist) * 35 * dt;
         if (player.hitCd <= 0) {
-          damageTank(player, s.def.bodyDmg);
-          player.hitCd = 0.35;
+          damageTank(player, s.def.bodyDmg, s.x, s.y);
+          player.hitCd = 0.34;
         }
       }
     }
-    // vs enemies
     for (const e of enemies) {
       if (e.dead) continue;
       if (separateStatic(e, s.x, s.y, e.radius, s.def.radius)) {
-        if (e.hitCd <= 0) { damageTank(e, s.def.bodyDmg); e.hitCd = 0.35; }
+        if (e.hitCd <= 0) { damageTank(e, s.def.bodyDmg, s.x, s.y); e.hitCd = 0.34; }
       }
     }
   }
 
-  // nest maintenance + contact
+  // nests
   for (let ni = nests.length - 1; ni >= 0; ni--) {
     const n = nests[ni];
-    n.rot += 0.3 * dt;
+    n.rot += 0.25 * dt;
+    n.pulse = (n.pulse + dt * 2.2) % (Math.PI * 2);
     n.hurtFlash = Math.max(0, n.hurtFlash - dt);
     n.spawnCd -= dt;
     if (n.spawnCd <= 0 && countNestCrashers(ni) < n.maxCrashers) {
-      spawnNestCrasher(n);
-      n.spawnCd = 1.8 + Math.random() * 1.5;
+      spawnNestCrasher(n, ni, Math.random() < 0.22);
+      n.spawnCd = 1.6 + Math.random() * 1.4;
     }
-    // solid vs player
     if (player && !player.dead) {
       if (separateStatic(player, n.x, n.y, player.radius, n.radius)) {
-        if (player.hitCd <= 0) { damageTank(player, 25); player.hitCd = 0.4; }
+        if (player.hitCd <= 0) { damageTank(player, 28, n.x, n.y); player.hitCd = 0.4; }
       }
     }
     for (const e of enemies) {
       if (!e.dead && separateStatic(e, n.x, n.y, e.radius, n.radius)) {
-        if (e.hitCd <= 0) { damageTank(e, 20); e.hitCd = 0.4; }
+        if (e.hitCd <= 0) { damageTank(e, 22, n.x, n.y); e.hitCd = 0.4; }
       }
     }
   }
 
   for (const s of shapes) {
-    s.hurtFlash = Math.max(0, s.hurtFlash - dt);
-    s.spawnT = Math.min(1, s.spawnT + dt * 2.5);
-    s.rot += s.spin * dt;
+    if (!s.def.crasher) {
+      s.hurtFlash = Math.max(0, s.hurtFlash - dt);
+      s.spawnT = Math.min(1, s.spawnT + dt * 2.4);
+      s.rot += s.spin * dt;
+    } else {
+      s.hurtFlash = Math.max(0, s.hurtFlash - dt);
+      s.spawnT = Math.min(1, s.spawnT + dt * 2.4);
+    }
   }
   refreshUpgradeUI();
 }
 
 /* ---------------- FX ---------------- */
 function updateFx(dt) {
-  shake = Math.max(0, shake - dt * 26);
+  shake = Math.max(0, shake - dt * 24);
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.x += p.vx * dt; p.y += p.vy * dt;
-    p.vx *= Math.pow(0.02, dt); p.vy *= Math.pow(0.02, dt);
+    p.vx *= Math.pow(0.025, dt); p.vy *= Math.pow(0.025, dt);
     p.life -= dt;
     if (p.life <= 0) particles.splice(i, 1);
   }
@@ -1421,55 +1551,46 @@ function updateFx(dt) {
   }
 }
 
-/* ---------------- Drawing (FIXED GRID) ---------------- */
+/* ---------------- Drawing ---------------- */
 function drawGrid(camX, camY) {
-  // background
-  const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 60,
+  const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 50,
     canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height) * 0.85);
-  grad.addColorStop(0, '#c9c9c9');
-  grad.addColorStop(1, '#a0a0a0');
+  grad.addColorStop(0, '#cacaca');
+  grad.addColorStop(1, '#9e9e9e');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // FIXED: draw grid in SCREEN space by subtracting camera
   const startX = Math.floor(camX / GRID) * GRID;
   const startY = Math.floor(camY / GRID) * GRID;
-
-  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.075)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (let x = startX; x < camX + canvas.width + GRID; x += GRID) {
     const sx = x - camX;
-    ctx.moveTo(sx, 0);
-    ctx.lineTo(sx, canvas.height);
+    ctx.moveTo(sx, 0); ctx.lineTo(sx, canvas.height);
   }
   for (let y = startY; y < camY + canvas.height + GRID; y += GRID) {
     const sy = y - camY;
-    ctx.moveTo(0, sy);
-    ctx.lineTo(canvas.width, sy);
+    ctx.moveTo(0, sy); ctx.lineTo(canvas.width, sy);
   }
   ctx.stroke();
 
-  // major lines every 5 cells
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(0,0,0,0.14)';
+  ctx.lineWidth = 1.4;
   ctx.beginPath();
   const major = GRID * 5;
   const startMX = Math.floor(camX / major) * major;
   const startMY = Math.floor(camY / major) * major;
   for (let x = startMX; x < camX + canvas.width + major; x += major) {
     const sx = x - camX;
-    ctx.moveTo(sx, 0);
-    ctx.lineTo(sx, canvas.height);
+    ctx.moveTo(sx, 0); ctx.lineTo(sx, canvas.height);
   }
   for (let y = startMY; y < camY + canvas.height + major; y += major) {
     const sy = y - camY;
-    ctx.moveTo(0, sy);
-    ctx.lineTo(canvas.width, sy);
+    ctx.moveTo(0, sy); ctx.lineTo(canvas.width, sy);
   }
   ctx.stroke();
 
-  // world border
   ctx.strokeStyle = '#1a1a1a';
   ctx.lineWidth = 8;
   ctx.strokeRect(-camX, -camY, WORLD.w, WORLD.h);
@@ -1480,7 +1601,9 @@ function drawShape(s, camX, camY) {
   if (x < -90 || y < -90 || x > canvas.width + 90 || y > canvas.height + 90) return;
   const scale = 0.15 + 0.85 * s.spawnT;
   ctx.save();
-  ctx.translate(x, y); ctx.rotate(s.rot); ctx.scale(scale, scale);
+  ctx.translate(x, y);
+  ctx.rotate(s.rot);
+  ctx.scale(scale, scale);
   ctx.beginPath();
   for (let i = 0; i < s.def.sides; i++) {
     const a = (i / s.def.sides) * Math.PI * 2 - Math.PI / 2;
@@ -1493,49 +1616,72 @@ function drawShape(s, camX, camY) {
   ctx.lineWidth = s.type === 'alphaPent' ? 6 : 3.5;
   ctx.fill(); ctx.stroke();
   if (s.type === 'hexagon' || s.type === 'alphaPent') {
-    ctx.globalAlpha = 0.22;
+    ctx.globalAlpha = 0.2;
     ctx.strokeStyle = s.def.color;
     ctx.lineWidth = 9;
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
+  // lookout indicator
+  if (s.lookout) {
+    ctx.beginPath();
+    ctx.arc(0, 0, s.def.radius + 5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,100,120,0.45)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
   ctx.restore();
   if (s.hp < s.maxHp && s.spawnT >= 1) {
-    const barW = s.type === 'alphaPent' ? 70 : 36;
-    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - barW/2, y - s.def.radius - 12, barW, 4);
-    ctx.fillStyle = '#8abc3f'; ctx.fillRect(x - barW/2, y - s.def.radius - 12, barW * (s.hp / s.maxHp), 4);
+    const barW = s.type === 'alphaPent' ? 70 : 34;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - barW/2, y - s.def.radius - 11, barW, 4);
+    ctx.fillStyle = '#8abc3f'; ctx.fillRect(x - barW/2, y - s.def.radius - 11, barW * (s.hp / s.maxHp), 4);
   }
 }
 
 function drawNest(n, camX, camY) {
   const x = n.x - camX, y = n.y - camY;
-  if (x < -100 || y < -100 || x > canvas.width + 100 || y > canvas.height + 100) return;
+  if (x < -120 || y < -120 || x > canvas.width + 120 || y > canvas.height + 120) return;
+  const pulse = 1 + Math.sin(n.pulse) * 0.04;
   ctx.save();
-  ctx.translate(x, y); ctx.rotate(n.rot);
-  // outer ring
+  ctx.translate(x, y);
+  ctx.rotate(n.rot);
+  // outer glow
+  ctx.beginPath();
+  ctx.arc(0, 0, n.radius * 1.15 * pulse, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(180,30,50,0.12)';
+  ctx.fill();
+  // main body
   ctx.beginPath();
   ctx.arc(0, 0, n.radius, 0, Math.PI * 2);
   ctx.fillStyle = n.hurtFlash > 0 ? '#ffaaaa' : n.color;
-  ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-  ctx.lineWidth = 5;
+  ctx.strokeStyle = 'rgba(0,0,0,0.65)';
+  ctx.lineWidth = 6;
   ctx.fill(); ctx.stroke();
-  // inner hex
+  // spiked ring
   ctx.beginPath();
-  for (let i = 0; i < 6; i++) {
-    const a = i / 6 * Math.PI * 2;
-    const px = Math.cos(a) * (n.radius * 0.55), py = Math.sin(a) * (n.radius * 0.55);
-    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  for (let i = 0; i < 10; i++) {
+    const a = i / 10 * Math.PI * 2;
+    const r1 = n.radius * 0.72, r2 = n.radius * 0.95;
+    const px1 = Math.cos(a) * r1, py1 = Math.sin(a) * r1;
+    const px2 = Math.cos(a + 0.15) * r2, py2 = Math.sin(a + 0.15) * r2;
+    i === 0 ? ctx.moveTo(px1, py1) : ctx.lineTo(px1, py1);
+    ctx.lineTo(px2, py2);
   }
   ctx.closePath();
-  ctx.fillStyle = '#5c0d18';
+  ctx.fillStyle = '#5a0f1a';
   ctx.fill(); ctx.stroke();
+  // core
+  ctx.beginPath();
+  ctx.arc(0, 0, n.radius * 0.35, 0, Math.PI * 2);
+  ctx.fillStyle = '#3d0810';
+  ctx.fill();
   ctx.restore();
-  // HP bar
-  ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - 40, y - n.radius - 16, 80, 6);
-  ctx.fillStyle = '#ff4d6d'; ctx.fillRect(x - 40, y - n.radius - 16, 80 * (n.hp / n.maxHp), 6);
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  // HP
+  ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - 44, y - n.radius - 18, 88, 7);
+  ctx.fillStyle = '#ff4d6d'; ctx.fillRect(x - 44, y - n.radius - 18, 88 * (n.hp / n.maxHp), 7);
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
   ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
-  ctx.fillText('CRASHER NEST', x, y - n.radius - 22);
+  ctx.fillText('CRASHER NEST', x, y - n.radius - 24);
 }
 
 function drawTank(t, camX, camY, c, showInfo) {
@@ -1549,17 +1695,16 @@ function drawTank(t, camX, camY, c, showInfo) {
     c.save();
     c.translate(x, y);
     c.rotate(t.angle + (b.angle || 0));
-    c.translate(-t.recoil * 0.6, b.offset || 0);
+    c.translate(-t.recoil * 0.55, b.offset || 0);
     c.fillStyle = '#999';
     c.strokeStyle = 'rgba(0,0,0,0.55)';
     c.lineWidth = 3;
     if (b.triangle) {
-      // thick flipped triangle / trapezoid drone launcher
       const bl = b.length, bw = b.width;
       c.beginPath();
       c.moveTo(t.radius * 0.4, -bw * 0.55);
-      c.lineTo(t.radius * 0.4 + bl, -bw * 0.22);
-      c.lineTo(t.radius * 0.4 + bl,  bw * 0.22);
+      c.lineTo(t.radius * 0.4 + bl, -bw * 0.2);
+      c.lineTo(t.radius * 0.4 + bl,  bw * 0.2);
       c.lineTo(t.radius * 0.4,  bw * 0.55);
       c.closePath();
       c.fill(); c.stroke();
@@ -1581,7 +1726,7 @@ function drawTank(t, camX, camY, c, showInfo) {
   if (t.flash > 0) {
     c.beginPath();
     c.arc(x, y, t.radius, 0, Math.PI * 2);
-    c.fillStyle = rgba(255,60,60,${(t.flash / 0.15) * 0.45});
+    c.fillStyle = `rgba(255,60,60,${(t.flash / 0.15) * 0.42})`;
     c.fill();
   }
   if (showInfo) {
@@ -1602,48 +1747,49 @@ function drawDrone(d, camX, camY) {
   const x = d.x - camX, y = d.y - camY;
   if (x < -40 || y < -40 || x > canvas.width + 40 || y > canvas.height + 40) return;
   ctx.save();
-  ctx.translate(x, y); ctx.rotate(d.angle);
-  // triangle drone
+  ctx.translate(x, y);
+  ctx.rotate(d.angle);
   ctx.beginPath();
-  ctx.moveTo(d.radius * 1.2, 0);
-  ctx.lineTo(-d.radius * 0.7, d.radius * 0.85);
-  ctx.lineTo(-d.radius * 0.7, -d.radius * 0.85);
+  ctx.moveTo(d.radius * 1.15, 0);
+  ctx.lineTo(-d.radius * 0.65, d.radius * 0.8);
+  ctx.lineTo(-d.radius * 0.65, -d.radius * 0.8);
   ctx.closePath();
   ctx.fillStyle = d.flash > 0 ? '#ffffff' : d.color;
   ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 2.2;
   ctx.fill(); ctx.stroke();
   ctx.restore();
   if (d.hp < d.maxHp) {
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x - 10, y - d.radius - 8, 20, 3);
-    ctx.fillStyle = '#8abc3f'; ctx.fillRect(x - 10, y - d.radius - 8, 20 * (d.hp / d.maxHp), 3);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(x - 9, y - d.radius - 7, 18, 3);
+    ctx.fillStyle = '#8abc3f'; ctx.fillRect(x - 9, y - d.radius - 7, 18 * (d.hp / d.maxHp), 3);
   }
 }
 
 function drawMissile(ms, camX, camY) {
   const x = ms.x - camX, y = ms.y - camY;
+  const col = ms.color || ms.owner.color;
   ctx.save();
   ctx.translate(x, y); ctx.rotate(ms.angle);
-  ctx.fillStyle = '#999';
+  ctx.fillStyle = '#888';
   ctx.strokeStyle = 'rgba(0,0,0,0.5)';
   ctx.lineWidth = 2;
   ctx.beginPath(); ctx.rect(-ms.radius - 7, -3.5, 9, 7); ctx.fill(); ctx.stroke();
   ctx.restore();
   ctx.beginPath();
   ctx.arc(x, y, ms.radius, 0, Math.PI * 2);
-  ctx.fillStyle = ms.owner.color;
+  ctx.fillStyle = col;
   ctx.strokeStyle = 'rgba(0,0,0,0.5)';
   ctx.lineWidth = 3;
   ctx.fill(); ctx.stroke();
   if (ms.lockOn) {
     ctx.beginPath();
     ctx.arc(x, y, ms.radius + 4, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(212,140,255,0.5)';
+    ctx.strokeStyle = 'rgba(212,140,255,0.45)';
     ctx.lineWidth = 2;
     ctx.stroke();
   }
   ctx.beginPath();
-  ctx.arc(x + Math.cos(ms.angle) * 4, y + Math.sin(ms.angle) * 4, 3.5, 0, Math.PI * 2);
+  ctx.arc(x + Math.cos(ms.angle) * 4, y + Math.sin(ms.angle) * 4, 3.2, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
   ctx.fill();
 }
@@ -1657,7 +1803,7 @@ function drawMinimap() {
   const sx = size / WORLD.w, sy = size / WORLD.h;
   for (const n of nests) {
     ctx.fillStyle = '#8b1a2b';
-    ctx.beginPath(); ctx.arc(mx + n.x * sx, my + n.y * sy, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(mx + n.x * sx, my + n.y * sy, 5.5, 0, Math.PI * 2); ctx.fill();
   }
   for (const s of shapes) {
     if (s.type === 'pentagon') { ctx.fillStyle = '#768cfc'; ctx.fillRect(mx + s.x * sx - 1.5, my + s.y * sy - 1.5, 3, 3); }
@@ -1665,9 +1811,9 @@ function drawMinimap() {
     else if (s.type === 'alphaPent') { ctx.fillStyle = '#4a6cf7'; ctx.fillRect(mx + s.x * sx - 3, my + s.y * sy - 3, 6, 6); }
     else if (s.type === 'crasher') { ctx.fillStyle = '#ff4d6d'; ctx.fillRect(mx + s.x * sx - 1, my + s.y * sy - 1, 2, 2); }
   }
-  for (const e of enemies) { ctx.fillStyle = '#f14e54'; ctx.fillRect(mx + e.x * sx - 1.5, my + e.y * sy - 1.5, 3, 3); }
+  for (const e of enemies) { ctx.fillStyle = e.color; ctx.fillRect(mx + e.x * sx - 1.5, my + e.y * sy - 1.5, 3, 3); }
   for (const d of drones) { ctx.fillStyle = d.color; ctx.fillRect(mx + d.x * sx - 1, my + d.y * sy - 1, 2, 2); }
-  for (const ms of missiles) { ctx.fillStyle = '#ff9a3d'; ctx.fillRect(mx + ms.x * sx - 1.5, my + ms.y * sy - 1.5, 3, 3); }
+  for (const ms of missiles) { ctx.fillStyle = ms.color || '#ff9a3d'; ctx.fillRect(mx + ms.x * sx - 1.5, my + ms.y * sy - 1.5, 3, 3); }
   if (player && !player.dead) {
     ctx.fillStyle = '#fff';
     ctx.fillRect(mx + player.x * sx - 2.5, my + player.y * sy - 2.5, 5, 5);
@@ -1678,7 +1824,7 @@ function refreshHud() {
   if (!player) return;
   const need = xpToNext(player.level);
   document.getElementById('levelbar').style.width = (player.xp / need * 100) + '%';
-  document.getElementById('leveltext').textContent = Level ${player.level};
+  document.getElementById('leveltext').textContent = `Level ${player.level}`;
   document.getElementById('score').textContent = 'Score: ' + player.score;
 }
 
@@ -1710,19 +1856,21 @@ function loop(now) {
   for (const d of drones) drawDrone(d, camX, camY);
   for (const b of bullets) {
     const x = b.x - camX, y = b.y - camY;
+    const alpha = b.fade != null ? b.fade : 1;
     for (let k = 1; k <= 3; k++) {
       ctx.beginPath();
-      ctx.arc(x - b.vx * 0.02 * k, y - b.vy * 0.02 * k, b.radius * (1 - 0.2 * k), 0, Math.PI * 2);
+      ctx.arc(x - b.vx * 0.018 * k, y - b.vy * 0.018 * k, b.radius * (1 - 0.18 * k), 0, Math.PI * 2);
       ctx.fillStyle = b.color;
-      ctx.globalAlpha = 0.12;
+      ctx.globalAlpha = 0.1 * alpha;
       ctx.fill();
-      ctx.globalAlpha = 1;
     }
+    ctx.globalAlpha = alpha;
     ctx.beginPath();
     ctx.arc(x, y, b.radius, 0, Math.PI * 2);
     ctx.fillStyle = b.color;
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 2.5;
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 2.4;
     ctx.fill(); ctx.stroke();
+    ctx.globalAlpha = 1;
   }
   for (const e of enemies) if (!e.dead) drawTank(e, camX, camY);
   if (player && !player.dead) drawTank(player, camX, camY);
@@ -1745,7 +1893,7 @@ function loop(now) {
     ctx.globalAlpha = (1 - prog) * 0.85;
     ctx.lineWidth = 5 * (1 - prog) + 1;
     ctx.stroke();
-    ctx.globalAlpha = (1 - prog) * 0.2;
+    ctx.globalAlpha = (1 - prog) * 0.18;
     ctx.fillStyle = ex.color || '#ff9a3d';
     ctx.fill();
     ctx.globalAlpha = 1;
@@ -1757,7 +1905,7 @@ function loop(now) {
     ctx.globalAlpha = 1 - prog;
     ctx.fillStyle = '#fff2ae';
     ctx.beginPath();
-    ctx.moveTo(0, -6); ctx.lineTo(18 * (1 - prog), 0); ctx.lineTo(0, 6);
+    ctx.moveTo(0, -6); ctx.lineTo(17 * (1 - prog), 0); ctx.lineTo(0, 6);
     ctx.closePath(); ctx.fill();
     ctx.restore();
     ctx.globalAlpha = 1;
@@ -1765,7 +1913,7 @@ function loop(now) {
   for (const f of floatTexts) {
     ctx.globalAlpha = Math.max(0, f.life / f.maxLife);
     ctx.fillStyle = f.color;
-    ctx.font = bold ${f.size}px Arial;
+    ctx.font = `bold ${f.size}px Arial`;
     ctx.textAlign = 'center';
     ctx.fillText(f.text, f.x - camX, f.y - camY);
   }
