@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><title>Tank Arena v18</title>
+<html lang="en"><head><meta charset="UTF-8"><title>Tank Arena v19</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}body{background:#2e2e2e;overflow:hidden;font:12px 'Segoe UI',Arial;color:#fff;user-select:none}canvas{display:block}
 .hud{position:fixed;z-index:5;text-shadow:1px 1px 0 #000;pointer-events:none}
@@ -59,41 +59,54 @@ const WW=3200; // larger map
 /* ========== CLASSES ========== */
 const D=(n,c,r,d,b,m,up,lv)=>({n,c,r,d,b,m,up:up||[],lv:lv||0});
 const T={
-basic:D('Basic','#00b2e1',24,'Balanced starter.',[{l:36,w:16}],{},['twin','sniper','pounder','flank','shotgun','machine','missile','trapper','director','booster','smasher'],10),
-twin:D('Twin','#8abc3f',24,'Dual barrels.',[{l:36,w:12,o:-9},{l:36,w:12,o:9}],{alt:1,rc:1,heat:1.1},['triplet','quad','twinstream','dual'],25),
-sniper:D('Sniper','#3ecfcf',23,'Long range.',[{l:56,w:10}],{rel:1.6,dmg:1.4,siz:.68,spd:1.45,life:1.55,rc:1.45,pen:2},['rail','assassin','marksman','hunter'],25),
-pounder:D('Pounder','#ff8c42',27,'Heavy shells.',[{l:44,w:26}],{rel:2.0,dmg:2.15,siz:1.6,rc:2.1,pen:3},['destroyer','howitzer','launcher','rocketeer'],25),
-flank:D('Flank','#e67e22',25,'Front + rear.',[{l:38,w:14},{a:Math.PI,l:32,w:12}],{rc:1},['triflank','quadflank','octo'],25),
-shotgun:D('Shotgun','#e6b84c',25,'Pellet spray.',[{l:38,w:22}],{rel:1.65,dmg:.5,siz:.55,life:.45,pel:6,spr:.48,rc:1.45},['scatter','blaster','spread'],25),
-machine:D('Machine','#5ad45a',25,'Rapid spray.',[{l:32,w:18}],{rel:.4,dmg:.45,siz:.6,spr:.26,rc:.8,heat:1.45},['minigun','gatling'],40),
-missile:D('Missile','#bf7ff5',24,'Rockets.',[{l:46,w:20}],{missile:1,rel:3.1,rc:1.55},['lockon','swarm','spinner','cruise','mega'],25),
-trapper:D('Trapper','#e8a0c0',25,'Star traps.',[{l:24,w:22,trapGun:1}],{trap:1,rel:1.45,rc:.85},['megaTrap','hexaTrap','fortress'],25),
-director:D('Director','#7ec8e3',25,'Spawns drones.',[{l:20,w:28,droneGun:1}],{drone:1,rel:2.2,rc:.7},['overseer','manager','factory'],25),
-booster:D('Booster','#f472b6',23,'Speed + rear guns.',[{l:34,w:12},{a:2.7,l:22,w:10},{a:-2.7,l:22,w:10}],{rel:.85,rc:.9,mov:1.25},['fighter','sprinter'],25),
-smasher:D('Smasher','#a3a3a3',28,'Body damage king.',[],{body:2.8,mov:.85,noGun:1},['landmine','spike'],25),
+/* Arras-style tiers: T2@15, T3@30, T4@45 */
+basic:D('Basic','#00b2e1',24,'Balanced starter.',[{l:36,w:16}],{},['twin','sniper','pounder','flank','shotgun','machine','missile','trapper','director','booster','smasher'],15),
+twin:D('Twin','#8abc3f',24,'Dual barrels.',[{l:36,w:12,o:-9},{l:36,w:12,o:9}],{alt:1,rc:1,heat:1.1},['triplet','quad','twinstream','dual','gunner'],30),
+sniper:D('Sniper','#3ecfcf',23,'Long range.',[{l:56,w:10}],{rel:1.6,dmg:1.4,siz:.68,spd:1.45,life:1.55,rc:1.45,pen:2},['rail','assassin','marksman','hunter','rifle'],30),
+pounder:D('Pounder','#ff8c42',27,'Heavy shells.',[{l:44,w:26}],{rel:2.0,dmg:2.15,siz:1.6,rc:2.1,pen:3},['destroyer','howitzer','launcher','rocketeer','artillery'],30),
+flank:D('Flank','#e67e22',25,'Front + rear.',[{l:38,w:14},{a:Math.PI,l:32,w:12}],{rc:1},['triflank','quadflank','octo','triangle','auto3'],30),
+shotgun:D('Shotgun','#e6b84c',25,'Pellet spray.',[{l:38,w:22}],{rel:1.65,dmg:.5,siz:.55,life:.45,pel:6,spr:.48,rc:1.45},['scatter','blaster','spread'],30),
+machine:D('Machine','#5ad45a',25,'Rapid spray.',[{l:32,w:18}],{rel:.4,dmg:.45,siz:.6,spr:.26,rc:.8,heat:1.45},['minigun','gatling','sprayer','gunner'],30),
+missile:D('Missile','#bf7ff5',24,'Rockets.',[{l:46,w:20}],{missile:1,rel:3.1,rc:1.55},['lockon','swarm','spinner','cruise','mega'],30),
+trapper:D('Trapper','#e8a0c0',25,'Star traps.',[{l:24,w:22,trapGun:1}],{trap:1,rel:1.45,rc:.85},['megaTrap','hexaTrap','fortress','triTrap','builder'],30),
+director:D('Director','#7ec8e3',25,'Spawns drones.',[{l:20,w:28,droneGun:1}],{drone:1,rel:2.2,rc:.7},['overseer','manager','factory','cruiser'],30),
+booster:D('Booster','#f472b6',23,'Speed + rear guns.',[{l:34,w:12},{a:2.7,l:22,w:10},{a:-2.7,l:22,w:10}],{rel:.85,rc:.9,mov:1.25},['fighter','sprinter','triangle'],30),
+smasher:D('Smasher','#a3a3a3',28,'Body damage king.',[],{body:2.8,mov:.85,noGun:1},['landmine','spike','megaSmash'],30),
 
-triplet:D('Triplet','#7dcf3a',24,'Triple stream.',[{l:38,w:10,o:-14},{l:42,w:12},{l:38,w:10,o:14}],{rel:1.0,dmg:.75,rc:1.25,heat:.8},['penta','hexa'],40),
-quad:D('Quad','#6abf2f',25,'Four barrels.',[{l:36,w:9,o:-17},{l:40,w:10,o:-5},{l:40,w:10,o:5},{l:36,w:9,o:17}],{rel:1.1,dmg:.65,rc:1.35,heat:.95},['penta'],40),
-twinstream:D('Streamliner','#6bcf50',25,'Fast twin stream.',[{l:42,w:11,o:-8},{l:42,w:11,o:8}],{alt:1,rel:.7,dmg:.7,rc:1.1,heat:1.3}),
-dual:D('Dual','#5dbf3a',25,'Independent dual.',[{l:40,w:13,o:-12},{l:40,w:13,o:12}],{alt:1,rel:.9,dmg:.85,rc:1.15}),
-penta:D('Penta','#5aaf20',26,'Five barrels.',[{l:34,w:8,o:-19},{l:38,w:9,o:-9},{l:42,w:11},{l:38,w:9,o:9},{l:34,w:8,o:19}],{rel:1.15,dmg:.58,rc:1.45,heat:1.15}),
-hexa:D('Hexa','#4a9f15',26,'Six barrels.',[{l:32,w:7,o:-22},{l:36,w:8,o:-12},{l:40,w:9,o:-4},{l:40,w:9,o:4},{l:36,w:8,o:12},{l:32,w:7,o:22}],{rel:1.2,dmg:.5,rc:1.5,heat:1.2}),
-rail:D('Railgun','#5ff0ff',23,'High velocity.',[{l:68,w:8}],{rel:2.6,dmg:2.8,siz:.5,spd:2.15,life:1.85,rc:2.4,pen:4},['hyper','beam'],40),
-hyper:D('Hyper Rail','#7affff',22,'Extreme rail.',[{l:74,w:7}],{rel:3.0,dmg:3.3,siz:.46,spd:2.6,life:2.0,rc:2.7,pen:5}),
-beam:D('Beam','#9effff',22,'Continuous beam.',[{l:70,w:6}],{rel:.15,dmg:.35,siz:.35,spd:2.8,life:.4,rc:.5,heat:2.8,pen:1}),
-assassin:D('Assassin','#2fbfae',22,'Fast sniper.',[{l:60,w:9}],{rel:1.1,dmg:1.1,siz:.55,spd:1.7,life:1.65,rc:1.1,pen:2},['stalker'],40),
-stalker:D('Stalker','#1a9a8a',22,'Stealthy.',[{l:62,w:8}],{rel:.9,dmg:1.25,siz:.5,spd:1.8,life:1.75,rc:1.0,pen:2}),
-marksman:D('Marksman','#4dd0c0',23,'Precise.',[{l:64,w:9}],{rel:1.4,dmg:1.6,siz:.6,spd:1.6,life:1.7,rc:1.3,pen:3}),
-hunter:D('Hunter','#3abfaf',23,'Tracking shots.',[{l:58,w:11}],{rel:1.5,dmg:1.5,siz:.62,spd:1.5,life:1.6,rc:1.35,homing:.4,pen:2}),
-destroyer:D('Destroyer','#e05a2b',29,'Huge shells.',[{l:50,w:30}],{rel:2.7,dmg:2.8,siz:1.8,rc:2.8,pen:4},['annihilator'],40),
-annihilator:D('Annihilator','#c0392b',31,'Massive.',[{l:56,w:36}],{rel:3.2,dmg:3.8,siz:2.1,rc:3.3,pen:5}),
-howitzer:D('Howitzer','#ff6b1a',30,'Artillery.',[{l:54,w:36}],{rel:3.4,dmg:4.0,siz:2.15,rc:3.4,pen:4}),
-launcher:D('Launcher','#ff9a4d',28,'Shell launcher.',[{l:48,w:28}],{rel:2.3,dmg:2.4,siz:1.5,life:1.3,rc:2.0,pen:3}),
-rocketeer:D('Rocketeer','#ff7a30',28,'Rocket pods.',[{l:44,w:24}],{missile:1,rel:2.4,rc:1.8,swarm:1}),
-triflank:D('Tri-Flank','#d35400',26,'Three directions.',[{l:40,w:13},{a:2.4,l:32,w:11},{a:-2.4,l:32,w:11}],{rc:1.2},['hexflank'],40),
-quadflank:D('Quad-Flank','#c0521a',26,'Four directions.',[{l:40,w:13},{a:Math.PI,l:36,w:12},{a:1.57,l:32,w:11},{a:-1.57,l:32,w:11}],{rc:1.1},['hexflank'],40),
-hexflank:D('Hexa-Flank','#a04010',27,'Six directions.',[{l:36,w:11},{a:1.05,l:32,w:10},{a:2.09,l:32,w:10},{a:Math.PI,l:34,w:11},{a:-2.09,l:32,w:10},{a:-1.05,l:32,w:10}],{rc:1.2}),
-octo:D('Octo','#9a3510',28,'Eight directions.',[{l:34,w:10},{a:.785,l:30,w:9},{a:1.57,l:30,w:9},{a:2.356,l:30,w:9},{a:Math.PI,l:32,w:10},{a:-2.356,l:30,w:9},{a:-1.57,l:30,w:9},{a:-.785,l:30,w:9}],{rc:1.3}),
+triplet:D('Triplet','#7dcf3a',24,'Triple stream.',[{l:38,w:10,o:-14},{l:42,w:12},{l:38,w:10,o:14}],{rel:1.0,dmg:.75,rc:1.25,heat:.8},['penta','hexa'],45),
+quad:D('Quad','#6abf2f',25,'Four barrels.',[{l:36,w:9,o:-17},{l:40,w:10,o:-5},{l:40,w:10,o:5},{l:36,w:9,o:17}],{rel:1.1,dmg:.65,rc:1.35,heat:.95},['penta'],45),
+twinstream:D('Streamliner','#6bcf50',25,'Fast twin stream.',[{l:42,w:11,o:-8},{l:42,w:11,o:8}],{alt:1,rel:.7,dmg:.7,rc:1.1,heat:1.3},[],45),
+dual:D('Dual','#5dbf3a',25,'Independent dual.',[{l:40,w:13,o:-12},{l:40,w:13,o:12}],{alt:1,rel:.9,dmg:.85,rc:1.15},[],45),
+gunner:D('Gunner','#4ade80',24,'Four mini guns.',[{l:28,w:7,o:-12},{l:32,w:8,o:-4},{l:32,w:8,o:4},{l:28,w:7,o:12}],{rel:.55,dmg:.4,siz:.45,rc:.7,heat:1.5},['autoGunner'],45),
+autoGunner:D('Auto Gunner','#22c55e',25,'Gunner + auto turret.',[{l:28,w:7,o:-12},{l:32,w:8,o:-4},{l:32,w:8,o:4},{l:28,w:7,o:12}],{rel:.55,dmg:.4,siz:.45,rc:.7,heat:1.5,autoTurret:1},[],45),
+penta:D('Penta','#5aaf20',26,'Five barrels.',[{l:34,w:8,o:-19},{l:38,w:9,o:-9},{l:42,w:11},{l:38,w:9,o:9},{l:34,w:8,o:19}],{rel:1.15,dmg:.58,rc:1.45,heat:1.15},[],45),
+hexa:D('Hexa','#4a9f15',26,'Six barrels.',[{l:32,w:7,o:-22},{l:36,w:8,o:-12},{l:40,w:9,o:-4},{l:40,w:9,o:4},{l:36,w:8,o:12},{l:32,w:7,o:22}],{rel:1.2,dmg:.5,rc:1.5,heat:1.2},[],45),
+rail:D('Railgun','#5ff0ff',23,'High velocity.',[{l:68,w:8}],{rel:2.6,dmg:2.8,siz:.5,spd:2.15,life:1.85,rc:2.4,pen:4},['hyper','beam'],45),
+hyper:D('Hyper Rail','#7affff',22,'Extreme rail.',[{l:74,w:7}],{rel:3.0,dmg:3.3,siz:.46,spd:2.6,life:2.0,rc:2.7,pen:5},[],45),
+beam:D('Beam','#9effff',22,'Continuous beam.',[{l:70,w:6}],{rel:.15,dmg:.35,siz:.35,spd:2.8,life:.4,rc:.5,heat:2.8,pen:1},[],45),
+assassin:D('Assassin','#2fbfae',22,'Fast sniper.',[{l:60,w:9}],{rel:1.1,dmg:1.1,siz:.55,spd:1.7,life:1.65,rc:1.1,pen:2},['stalker','ranger'],45),
+stalker:D('Stalker','#1a9a8a',22,'Stealthy.',[{l:62,w:8}],{rel:.9,dmg:1.25,siz:.5,spd:1.8,life:1.75,rc:1.0,pen:2},[],45),
+ranger:D('Ranger','#14b8a6',22,'Max range sniper.',[{l:72,w:8}],{rel:1.3,dmg:1.35,siz:.48,spd:2.0,life:2.0,rc:1.2,pen:3},[],45),
+marksman:D('Marksman','#4dd0c0',23,'Precise.',[{l:64,w:9}],{rel:1.4,dmg:1.6,siz:.6,spd:1.6,life:1.7,rc:1.3,pen:3},[],45),
+hunter:D('Hunter','#3abfaf',23,'Tracking shots.',[{l:58,w:11}],{rel:1.5,dmg:1.5,siz:.62,spd:1.5,life:1.6,rc:1.35,homing:.4,pen:2},['predator'],45),
+predator:D('Predator','#0d9488',23,'Triple stacked sniper.',[{l:50,w:8},{l:58,w:10},{l:66,w:12}],{rel:1.7,dmg:1.3,siz:.55,spd:1.55,life:1.65,rc:1.4,pen:2},[],45),
+rifle:D('Rifle','#2dd4bf',23,'Fast precise shots.',[{l:60,w:8}],{rel:1.0,dmg:1.15,siz:.5,spd:1.9,life:1.5,rc:1.15,pen:2},[],45),
+destroyer:D('Destroyer','#e05a2b',29,'Huge shells.',[{l:50,w:30}],{rel:2.7,dmg:2.8,siz:1.8,rc:2.8,pen:4},['annihilator','hybrid'],45),
+annihilator:D('Annihilator','#c0392b',31,'Massive.',[{l:56,w:36}],{rel:3.2,dmg:3.8,siz:2.1,rc:3.3,pen:5},[],45),
+hybrid:D('Hybrid','#ea580c',29,'Destroyer + drones.',[{l:50,w:30},{a:Math.PI,l:18,w:22,droneGun:1}],{rel:2.7,dmg:2.6,siz:1.7,rc:2.6,pen:4,drone:1,droneCount:3},[],45),
+howitzer:D('Howitzer','#ff6b1a',30,'Artillery.',[{l:54,w:36}],{rel:3.4,dmg:4.0,siz:2.15,rc:3.4,pen:4},[],45),
+launcher:D('Launcher','#ff9a4d',28,'Shell launcher.',[{l:48,w:28}],{rel:2.3,dmg:2.4,siz:1.5,life:1.3,rc:2.0,pen:3},['skimmer'],45),
+skimmer:D('Skimmer','#fb923c',28,'Missile with side guns.',[{l:48,w:26}],{missile:1,spin:1,rel:2.8,rc:2.0},[],45),
+rocketeer:D('Rocketeer','#ff7a30',28,'Rocket pods.',[{l:44,w:24}],{missile:1,rel:2.4,rc:1.8,swarm:1},[],45),
+artillery:D('Artillery','#f97316',28,'Pounder + side guns.',[{l:48,w:28},{l:28,w:10,o:-18},{l:28,w:10,o:18}],{rel:2.2,dmg:1.8,siz:1.4,rc:2.2,pen:3},['mortar'],45),
+triflank:D('Tri-Flank','#d35400',26,'Three directions.',[{l:40,w:13},{a:2.4,l:32,w:11},{a:-2.4,l:32,w:11}],{rc:1.2},['hexflank'],45),
+quadflank:D('Quad-Flank','#c0521a',26,'Four directions.',[{l:40,w:13},{a:Math.PI,l:36,w:12},{a:1.57,l:32,w:11},{a:-1.57,l:32,w:11}],{rc:1.1},['hexflank','octo'],45),
+hexflank:D('Hexa-Flank','#a04010',27,'Six directions.',[{l:36,w:11},{a:1.05,l:32,w:10},{a:2.09,l:32,w:10},{a:Math.PI,l:34,w:11},{a:-2.09,l:32,w:10},{a:-1.05,l:32,w:10}],{rc:1.2},[],45),
+octo:D('Octo','#9a3510',28,'Eight directions.',[{l:34,w:10},{a:.785,l:30,w:9},{a:1.57,l:30,w:9},{a:2.356,l:30,w:9},{a:Math.PI,l:32,w:10},{a:-2.356,l:30,w:9},{a:-1.57,l:30,w:9},{a:-.785,l:30,w:9}],{rc:1.3},[],45),
+triangle:D('Tri-Angle','#ea580c',24,'Front + thrusters.',[{l:38,w:14},{a:2.6,l:24,w:10},{a:-2.6,l:24,w:10}],{rel:.9,rc:.9,mov:1.3},['fighter','booster','eagle'],45),
+auto3:D('Auto-3','#84cc16',25,'Three auto turrets.',[{l:28,w:10,a:0},{l:28,w:10,a:2.094},{l:28,w:10,a:-2.094}],{rel:1.2,dmg:.6,rc:1.1,autoTurret:1},['auto5'],45),
+auto5:D('Auto-5','#65a30d',26,'Five auto turrets.',[{l:26,w:9,a:0},{l:26,w:9,a:1.256},{l:26,w:9,a:2.513},{l:26,w:9,a:3.77},{l:26,w:9,a:5.026}],{rel:1.3,dmg:.5,rc:1.15,autoTurret:1},[],45),
+eagle:D('Eagle','#c2410c',26,'Pounder + thrusters.',[{l:44,w:24},{a:2.5,l:22,w:10},{a:-2.5,l:22,w:10},{a:Math.PI,l:20,w:9}],{rel:1.8,dmg:1.8,siz:1.3,rc:1.8,mov:1.2},[],45),
 scatter:D('Scatter','#ffcf5c',26,'Wide scatter.',[{l:42,w:26}],{rel:1.85,dmg:.46,siz:.55,life:.45,pel:10,spr:.7,rc:2.0}),
 blaster:D('Blaster','#ffb84d',26,'Wide blast.',[{l:36,w:30}],{rel:1.5,dmg:.55,siz:.65,life:.4,pel:8,spr:.9,rc:1.8}),
 spread:D('Spread','#ffc84a',26,'Fan shot.',[{l:40,w:24}],{rel:1.7,dmg:.48,siz:.58,life:.42,pel:9,spr:.85,rc:1.9}),
@@ -433,7 +446,25 @@ function damageBase(b,dm,from){if(from&&from.team===b.team)return;b.hp-=dm;
 function drop(x,y,n){for(let i=0;i<n;i++)pu.push({x:x+rr(-15,15),y:y+rr(-15,15),k:pick(Object.keys(PU)),l:14})}
 function addXp(t,a){t.xp+=a;t.sc+=a;let up=0;
  while(t.xp>=need(t.lv)){t.xp-=need(t.lv);t.lv++;t.pts++;t.hp=Math.min(mx(t),t.hp+mx(t)*.22);up=1;
-  if(!t.pl){const k=pick(S)[0];if(t.st[k]<8){t.st[k]++;t.pts--}const d=T[t.k];if(d&&d.up.length&&t.lv>=d.lv)t.k=pick(d.up)}}
+  if(!t.pl){
+    // Bots always spend points smartly
+    while(t.pts>0){
+      // Prefer combat stats
+      const prefs=t.ps==='snip'?['rel','bdmg','bspd','mov','hp','body','regen']:
+                  t.ps==='tank'?['hp','body','bdmg','rel','mov','bspd','regen']:
+                  t.ps==='trapper'?['rel','hp','body','bdmg','mov','bspd','regen']:
+                  ['bdmg','rel','mov','hp','bspd','body','regen'];
+      let spent=0;
+      for(const k of prefs){if(t.pts>0&&t.st[k]<8){t.st[k]++;t.pts--;spent=1;break}}
+      if(!spent)break;
+    }
+    // Evolve when eligible
+    const d=T[t.k];
+    if(d&&d.up&&d.up.length&&t.lv>=d.lv){
+      const choice=pick(d.up.filter(k=>T[k]));
+      if(choice){t.k=choice;if(MODE==='bd'&&teamCols&&t.team!=null)t.col=teamCols[t.team][0];else t.col=T[choice].c||t.col}
+    }
+  }}
  if(up&&t.pl){flt(t.x,t.y-rad(t)-10,'LEVEL UP!','#ffd34d',12);ring(t.x,t.y,40*sz(t),'#ffd34d',.25);chk()}}
 
 function chk(){if(!P||P.dead||state!=='play')return;const d=T[P.k];
@@ -443,7 +474,7 @@ function icon(k){const c=document.createElement('canvas');c.width=100;c.height=7
 function ov(h,sub,items,cb){const o=$('ov');o.style.display='flex';o.innerHTML='<h1 style="font-size:24px;letter-spacing:1px;text-shadow:0 0 10px #0ef">'+h+'</h1><p style="color:#ccc;font-size:11px">'+sub+'</p><div class="cards"></div>';
  const box=o.querySelector('.cards');items.forEach((it,i)=>{const c=document.createElement('div');c.className='c';if(it.k)c.appendChild(icon(it.k));c.insertAdjacentHTML('beforeend','<i>PRESS '+(i+1)+'</i><b>'+it.n+'</b><p>'+(it.d||'')+'</p>');c.onclick=()=>cb(it);box.appendChild(c)});cur={items,cb}}
 function hide(){$('ov').style.display='none';cur=null}
-function menu(){MODE='ffa';state='menu';godMode=false;ov('TANK ARENA v18','Mode',[{n:'FFA',d:'Free-for-all',mode:'ffa'},{n:'Base Destruction',d:'Teams · Arras maze · destroy base',mode:'bd'}],it=>{if(it.mode==='bd')startBD();else pickClassFFA()})}
+function menu(){MODE='ffa';state='menu';godMode=false;ov('TANK ARENA v19','Mode',[{n:'FFA',d:'Free-for-all · evolving bots',mode:'ffa'},{n:'Base Destruction',d:'Teams · Arras tiers · smart AI',mode:'bd'}],it=>{if(it.mode==='bd')startBD();else pickClassFFA()})}
 function pickClassFFA(){ov('FFA','Class',STARTERS.map(k=>({k,n:T[k].n,d:T[k].d})),startFFA)}
 function startFFA(it){
   MODE='ffa';walls=[];bases=[];solid=null;nav=null;fieldTo=[null,null];huntField=null;
@@ -480,33 +511,55 @@ function spawnShape(){const t=R();const d=t<.6?SHT[0]:t<.85?SHT[1]:SHT[2];
   let x,y,n=0;do{x=rr(120,WW-120);y=rr(120,WW-120)}while(MODE==='bd'&&wallHit(x,y,d[2]+35)&&++n<25);
   sh.push({x,y,sides:d[1],r:d[2],hp:d[3],mh:d[3],xp:d[4],col:d[5],bd:d[6],rot:rr(0,TAU),sp:rr(.08,.28)*(R()<.5?-1:1),fl:0,sp0:0})}
 function spawnBot(){const p=P&&!P.dead?P:{x:-9999,y:-9999};let x,y,n=0;do{x=rr(120,WW-120);y=rr(120,WW-120)}while(hyp(x-p.x,y-p.y)<500&&++n<15);
-  const keys=Object.keys(T).filter(k=>!T[k].up||T[k].up.length||T[k].lv<=40);
-  const b=mk(x,y,pick(keys),0,null);b.lv=rr(6,18)|0;b.sc=0;let q=b.lv-1;while(q--){const k=pick(S)[0];if(b.st[k]<8)b.st[k]++}b.hp=b.hpv=mx(b);bt.push(b)}
+  const starters=STARTERS.concat(['triplet','destroyer','assassin','overseer','minigun','fighter']);
+  const b=mk(x,y,pick(starters),0,null);b.lv=8+Math.floor(rr(0,12));b.sc=b.lv*150;
+  let q=b.lv+3;while(q--){const k=pick(['bdmg','rel','hp','mov','bspd','body']);if(b.st[k]<8)b.st[k]++}
+  // Evolve through tree
+  let guard=0;
+  while(guard++<5){const d=T[b.k];if(!d||!d.up||!d.up.length||b.lv<d.lv)break;const c=pick(d.up.filter(k=>T[k]));if(!c)break;b.k=c;b.col=T[c].c||b.col}
+  b.hp=b.hpv=mx(b);b.brave=rr(.5,1);bt.push(b)}
 const GATE_Y=[500,1200,1900,2600];
 function spawnTeamBot(team,forceClass){
   const x=team===0?rr(80,720):rr(WW-720,WW-80);
   const y=rr(200,WW-200);
-  const cls=forceClass||pick(STARTERS.concat(['triplet','destroyer','scatter','trapper','lockon','director','booster','fighter','hexaTrap','overseer','mega']));
-  const b=mk(x,y,cls,0,team);b.col=teamCols[team][0];b.lv=1+Math.floor(rr(0,6));b.sc=0;
-  let q=b.lv-1;while(q--){const k=pick(S)[0];if(b.st[k]<8)b.st[k]++}b.hp=b.hpv=mx(b);
+  const cls=forceClass||pick(STARTERS.concat(['triplet','destroyer','scatter','trapper','lockon','director','booster','fighter','overseer','assassin','pounder']));
+  const b=mk(x,y,cls,0,team);b.col=teamCols[team][0];
+  // Stronger starting bots — level 8-15 with invested stats
+  b.lv=8+Math.floor(rr(0,8));b.sc=b.lv*120;
+  let q=b.lv+2;while(q--){const prefs=['bdmg','rel','hp','mov','bspd','body','regen'];const k=pick(prefs);if(b.st[k]<8)b.st[k]++}
+  b.hp=b.hpv=mx(b);
+  // Evolve if high enough level
+  const d=T[b.k];
+  if(d&&d.up&&d.up.length&&b.lv>=d.lv){const c=pick(d.up.filter(k=>T[k]));if(c){b.k=c;b.col=teamCols[team][0]}}
   if(b.ps==='trapper'){b.role='trap';b.post=[team===0?700:WW-700,pick(GATE_Y)+rr(-40,40)]}
-  else if(R()<.25){b.role='def';b.post=[team===0?rr(450,680):WW-rr(450,680),rr(300,WW-300)]}
-  else if(R()<.2){b.role='flank';b.flankSide=R()<.5?1:-1}
+  else if(R()<.2){b.role='def';b.post=[team===0?rr(450,680):WW-rr(450,680),rr(300,WW-300)]}
+  else if(R()<.25){b.role='flank';b.flankSide=R()<.5?1:-1}
   else b.role='push';
+  // Smarter personalities
+  b.brave=rr(.55,.95);b.patience=rr(.4,.9);
   bt.push(b);
 }
 
 /* ========== SMART AI — no jitter, no base camping ========== */
 function pickT(b,all,p){
-  let tg=null,bestScore=-1e9;const bdm=MODE==='bd',rg=p.rg*1.25;
+  let tg=null,bestScore=-1e9;const bdm=MODE==='bd',rg=p.rg*1.35;
+  // Count how many teammates already focus the player — focus fire
+  let alliesOnPlayer=0;
+  if(bdm&&P&&!P.dead&&P.team!==b.team){
+    for(const a of all){if(a===b||a.dead||a.team!==b.team)continue;if(a.tg===P)alliesOnPlayer++}
+  }
   for(const o of all){
     if(o===b||o.dead)continue;
     if(bdm&&o.team===b.team)continue;
     const d=hyp(o.x-b.x,o.y-b.y);
     if(d>rg)continue;
-    if(bdm&&d>140&&!hasLOS(b.x,b.y,o.x,o.y))continue;
+    if(bdm&&d>160&&!hasLOS(b.x,b.y,o.x,o.y))continue;
     const hpF=o.hp/mx(o);
-    const score=(1-hpF)*45+(o.sc||0)*.002+(rg-d)*.09+(o.pl?30:0)-(o.lv||1)*1.5;
+    let score=(1-hpF)*50+(o.sc||0)*.003+(rg-d)*.1-(o.lv||1);
+    // Heavy priority on the player — coordinated focus fire
+    if(o.pl)score+=55+alliesOnPlayer*12;
+    // Prefer finishing wounded
+    if(hpF<.4)score+=25;
     if(score>bestScore){bestScore=score;tg=o}
   }
   if(!tg&&!bdm){let bd=1e9;for(const s of sh){if(s.dead)continue;const d=hyp(s.x-b.x,s.y-b.y);if(d<450&&d<bd){bd=d;tg=s}}}
@@ -669,7 +722,8 @@ function update(dt){
   for(const b of bt){ai(b,dt,all);if(b.cd<=0)b.heat=Math.max(0,b.heat-dt*.32);
     if(MODE==='bd')for(const base of bases){if(base.team===b.team&&hyp(b.x-base.x,b.y-base.y)<base.r+30)b.hp=Math.min(mx(b),b.hp+14*dt)}}
   for(const t of all){t.cd-=dt*1000;t.rc=Math.max(0,t.rc-dt*50);t.fl=Math.max(0,t.fl-dt);t.mf=Math.max(0,t.mf-dt);t.hpv+=(t.hp-t.hpv)*Math.min(1,8*dt);t.hp=Math.min(mx(t),t.hp+(.25+t.st.regen*.4)*dt);t.spawn=Math.min(1,(t.spawn||0)+dt*2.5);
-    const r=rad(t);const f=Math.pow(t.pl?.05:.07,dt);t.vx*=f;t.vy*=f;t.x=cl(t.x+t.vx*dt,r,WW-r);t.y=cl(t.y+t.vy*dt,r,WW-r);if(!t.pl)t.sc+=4*dt;
+    const r=rad(t);const f=Math.pow(t.pl?.05:.07,dt);t.vx*=f;t.vy*=f;t.x=cl(t.x+t.vx*dt,r,WW-r);t.y=cl(t.y+t.vy*dt,r,WW-r);if(!t.pl){t.sc+=8*dt;t.xp+=6*dt; // bots farm passively and evolve
+      if(t.xp>=need(t.lv)){addXp(t,0)}}
     if(MODE==='bd')resolveWall(t);
     const spd=hyp(t.vx,t.vy);if(spd>100&&R()<dt*16)pt.push({x:t.x-t.vx/spd*r*.8+rr(-3,3),y:t.y-t.vy/spd*r*.8+rr(-3,3),vx:rr(-14,14),vy:rr(-14,14),l:.35,m:.35,c:'#8a8a8a',s:rr(1.8,3.6)});
     if(spd>420&&R()<dt*40)spark(t.x,t.y,1,[t.col,'#fff'],10,40,1.5,3,.1,.25);
